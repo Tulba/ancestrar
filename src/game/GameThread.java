@@ -4672,9 +4672,14 @@ public class GameThread implements Runnable
 				if(_perso.is_away()){SocketManager.GAME_SEND_GA903_ERROR_PACKET(_out,'o',guid);return;};
 				if(World.getPersonnage(guid) == null)return;
 				Fight F = _perso.get_curCarte().getFight(Integer.parseInt(infos[0]));
+				if(F == null)
+				{
+					int Fid = Fight.getFightIDByFighter(_perso.get_curCarte(), Integer.parseInt(infos[1]));
+					F = _perso.get_curCarte().getFight(Fid);
+				}
 				if(_perso.get_guild() != null)
 				{
-					if(F.get_guildID() == _perso.get_guild().get_id()) 
+					if(F != null && F.get_guildID() == _perso.get_guild().get_id()) 
 					{
 						return;
 					}

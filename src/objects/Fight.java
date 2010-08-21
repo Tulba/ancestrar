@@ -2949,6 +2949,12 @@ public class Fight
 				infos += _team1.get(_team1.keySet().toArray()[0]).getMob().getTemplate().getAlign()+",";
 				infos += _team1.size()+";";
 			break;
+			
+			case Constants.FIGHT_TYPE_PVT:
+				infos += "4,";//FIXME: valeur pour Percepteur
+				infos += "0,";
+				infos += _team1.size()+";";
+			break;
 		}
 		return infos;
 	}
@@ -3131,29 +3137,45 @@ public class Fight
 					SocketManager.GAME_SEND_GAME_ADDFLAG_PACKET_TO_PLAYER(P, fight.getValue()._init0.getPersonnage().get_curCarte(),4,fight.getValue()._init0.getGUID(),fight.getValue()._mobGroup.getID(),(fight.getValue()._init0.getPersonnage().get_curCell().getID()+1),"0;-1",fight.getValue()._mobGroup.getCellID(),"1;-1");
 					for(Entry<Integer, Fighter> F : fight.getValue()._team0.entrySet())
 					{
-						if(Ancestra.CONFIG_DEBUG) System.out.println(F.getValue().getPersonnage().get_name());
+						if(Ancestra.CONFIG_DEBUG) System.out.println("PVM1: "+F.getValue().getPersonnage().get_name());
 						SocketManager.GAME_SEND_ADD_IN_TEAM_PACKET_TO_PLAYER(P, fight.getValue()._init0.getPersonnage().get_curCarte(),fight.getValue()._init0.getGUID(), fight.getValue()._init0);
 					}
 					for(Entry<Integer, Fighter> F : fight.getValue()._team1.entrySet())
 					{
-						if(Ancestra.CONFIG_DEBUG) System.out.println(F.getValue().getPersonnage().get_name());
-						SocketManager.GAME_SEND_ADD_IN_TEAM_PACKET_TO_PLAYER(P, fight.getValue()._init0.getPersonnage().get_curCarte(),fight.getValue()._mobGroup.getID(), F.getValue());
+						if(Ancestra.CONFIG_DEBUG) System.out.println("PVM2: "+F.getValue());
+						SocketManager.GAME_SEND_ADD_IN_TEAM_PACKET_TO_PLAYER(P, fight.getValue()._map,fight.getValue()._mobGroup.getID(), F.getValue());
 					}
 				}else if(fight.getValue()._type == Constants.FIGHT_TYPE_PVT)
 				{
 					SocketManager.GAME_SEND_GAME_ADDFLAG_PACKET_TO_PLAYER(P, fight.getValue()._init0.getPersonnage().get_curCarte(),5,fight.getValue()._init0.getGUID(),fight.getValue()._Perco.getGuid(),(fight.getValue()._init0.getPersonnage().get_curCell().getID()+1),"0;-1",fight.getValue()._Perco.get_cellID(),"1;-1");
 					for(Entry<Integer, Fighter> F : fight.getValue()._team0.entrySet())
 					{
-						if(Ancestra.CONFIG_DEBUG) System.out.println(F.getValue().getPersonnage().get_name());
+						if(Ancestra.CONFIG_DEBUG) System.out.println("PVT1: "+F.getValue().getPersonnage().get_name());
 						SocketManager.GAME_SEND_ADD_IN_TEAM_PACKET_TO_PLAYER(P, fight.getValue()._init0.getPersonnage().get_curCarte(),fight.getValue()._init0.getGUID(), fight.getValue()._init0);
 					}
 					for(Entry<Integer, Fighter> F : fight.getValue()._team1.entrySet())
 					{
-						if(Ancestra.CONFIG_DEBUG) System.out.println(F.getValue());
+						if(Ancestra.CONFIG_DEBUG) System.out.println("PVT2: "+F.getValue());
 						SocketManager.GAME_SEND_ADD_IN_TEAM_PACKET_TO_PLAYER(P, fight.getValue()._map,fight.getValue()._Perco.getGuid(), F.getValue());
 					}
 				}
 			}
 		}
 	}
+	
+	public static int getFightIDByFighter(Carte _map, int guid)
+	{
+		for(Entry<Integer, Fight> fight : _map.get_fights().entrySet())
+		{
+			for(Entry<Integer, Fighter> F : fight.getValue()._team0.entrySet())
+			{
+				if(F.getValue().getPersonnage() != null && F.getValue().getGUID() == guid)
+				{
+					return F.getValue()._id;
+				}
+			}
+		}
+		return 0;
+	}
+	
 }
