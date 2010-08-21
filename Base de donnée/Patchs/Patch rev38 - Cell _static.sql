@@ -1,0 +1,3 @@
+UPDATE interactive_objects_data SET walkable=0 WHERE `Name IO` LIKE 'Porte';
+DELETE FROM `ancestra_static`.`scripted_cells` WHERE `scripted_cells`.`MapID` = 7409 AND `scripted_cells`.`CellID` = 338 AND `scripted_cells`.`ActionID` = 0 AND `scripted_cells`.`EventID` = 1 AND `scripted_cells`.`ActionsArgs` = '7739,271' AND `scripted_cells`.`Conditions` = '-1' LIMIT 1;
+DELETE FROM `ancestra_static`.`scripted_cells` WHERE `scripted_cells`.`MapID` = 7409 AND `scripted_cells`.`CellID` = 309 AND `scripted_cells`.`ActionID` = 0 AND `scripted_cells`.`EventID` = 1 AND `scripted_cells`.`ActionsArgs` = '7739,271' AND `scripted_cells`.`Conditions` = '-1' LIMIT 1;

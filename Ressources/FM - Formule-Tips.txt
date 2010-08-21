@@ -1,0 +1,24 @@
+Stats négatives :
+98 Chance -
+9a Agi -
+9b Intel -
+9d Force -
+74 Porter -
+99 Vita -
+
+Stats positives :
+7b Chance +
+77 Agi +
+7e Intel +
+76 Force +
+75 Porter +
+7d Vita +
+
+Non "FM-able" :
+7f PM -
+65 PA perdu cible
+
+
+Vous trouverez tous ce qui est nécessaire a faire une formule dans Metier.java.
+La chance de réussite est calculée dans Formulas.java.
+Ma formule ne prend pas en compte les stats négatif ce qui pose quelques problèmes.

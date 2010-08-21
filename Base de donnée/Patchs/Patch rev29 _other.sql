@@ -1,0 +1,1 @@
+ALTER TABLE `accounts` ADD `vipdate` VARCHAR( 255 ) NOT NULL DEFAULT '0' AFTER `verif`  
