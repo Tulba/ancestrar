@@ -1,0 +1,372 @@
+[21/08/2010]
+- GameThread/Fight : Correction des bug liés a "Rejoindre le combat".
+- SVN : Ré-organisation des répertoires.
+
+[20/08/2010]
+- Fight : Le bouton annuler n'apparait plus lorsque l'on rejoint un combat autre qu'un Défis.
+- Fight : Les drapeaux du début des combats ne disparaissent plus lors du changement de map.
+
+[19/08/2010]
+- Fight : Gestion de la fonction annuler 90% (Quelques bugs peuvent survenir).
+
+[18/08/2010]
+Ancestra_Remake 0.5.3
+- Percepteur :  Ajout du système d'affichage des défenseurs.
+/!\ Je rappelle que les percepteurs servent uniquement au PVP. Ils n'attaquent pas et ne se défendent pas.
+/!\ Pour des raison de conflits d'ID avec les percepteurs, il est déconseiller de mettre plus de 49 NPC par Map.
+
+[17/08/2010]
+- Percepteur : Rejoindre le combat en défenseur 80% (Il manque l'affichage des défenseur et le fait de rejoindre le combat vous fait l'intégrer aussitôt).
+- Percepteur : Ajout du système d'affichage des attaquants.
+- Percepteur : On peut poser qu'un seul percepteur tout les 10 niveaux de guilde.
+- Sorts : Correction de la perte de PA sur le sort Dévouement.
+
+[16/08/2010]
+- Percepteur : Refonte du systeme de percepteur.
+- Percepteur : Gestion de l'affichage des percepteurs 40% (Correction de l'affichage de la position du percepteur).
+- GameThread : Ajout de la commande SPAWN (GMlevel 3) arguments : MonstreID,lvlMin,lvlMax;MonstreID,lvlMin,lvlMax .
+
+[15/08/2010]
+- Guilde : Gestion de l'affichage des percepteurs 30%.
+- Guilde : Ré-actualisation de la guilde automatique aprés agression d'un percepteur.
+- Guilde : Un message s'affiche lors de l'agression du percepteur/de la rentrée en combat/de l'issue du combat.
+
+[14/08/2010]
+- Métier : Correction des case du métier de boulanger (THX snowiiz).
+- Constants : Correction des Jobaction pour les métier des Forge ce qui rendez certains métier "bug" (THX xox1505).
+- BDD : Ajout du patch "Patch rev80 _other.sql" /!\ Attention celui-ci supprimera tous les enclos pré-configurés /!\ (THX DeXt).
+- Percepteur : Un personnage de même guilde que le percepteur ne peut plus rejoindre le combat.
+- Percepteur : On ne peut plus attaquer un percepteur déja attaquer.
+- Percepteur : Pendant l'attaque il n'apparait plus sur la map.
+- Percepteur : Un percepteur battu et supprimer de la map + bdd.
+
+[13/08/2010]
+- BDD : Création de la colone infos sur la table npc.
+- Guilde : Le nom des percos est stocker dans le BDD en fonction d'un rand (=> Génère parfois des bugs).
+- Enlos : Ajout de la téléportation vers enclos (THX xox1505).
+- FM : Correction de l'échec si les stats de l'item sont vides.
+- FM : Refonte des probabilités de la forgemagie.
+- FM : Nouvelle formule d'OverMax (afin d'éviter les abus).
+- Fight : Création d'un system de combat permettant de ce battre contre des NPC (Sera utile uniquement contre le percepteur).
+- Fight : On ne peut plus abandonner un combat et recevoir les gains.
+- Fight : L'abandon provoque une téléportation au point de sauvegarde ainsi qu'une perte de ses points de vie.
+- Percepteur : On peut désormais attaquer un percepteur (il passe son tour)(aucune jonction avec la guilde).
+
+[12/08/2010]
+- BDD : Correction de l'affichage du dofus émeraude.
+- Guilde : Ajout du PNJ Percepteur.
+- Guilde : Mise en place de la gestion d'affichage pour les percos.
+- Guilde : On peut désormais spawn un percepteur (avec gestion des droits de guildes).
+- Guilde : On peut désormais retirer un percepteur (avec gestion des droits de guildes).
+- Map : On ne peut plus spawn deux percepteur sur une même map.
+
+[11/08/2010]
+Ancestra_Remake 0.5.2
+- ActionID : Ajout de l'actionID :
+20 : Ajout de points de sorts, arguments : nombre de points de sorts.
+- BDD : Ajout du patch : "Patch rev78 - use_item_actions_full by xox1505 _static.sql" de xox1505.
+- FM : Correction d'un problème de mise en forme des stats aprés FM.
+- FM : Lègére correction d'un bug dans la formule de FM.
+- Code : Correction du bug du premier personnage (Thx Gui205).
+- Maison : Il n'est plus possible de mettre une maison en maison de guilde sans que celle-ci possède au minimum 10 membres.
+- Enclos : Il est désormais possible d'acheter un enclo.
+- Enclos : Le blason et le nom de guilde s'affiche désormais sur les enclos acheter.
+- Enclos : Il est désormais possible de vendre un enclo.
+
+[09/08/2010]
+Ancestra_Remake 0.5.1
+- Maison : Suppression de quelques scripted_cells sur astrub.
+- Maison : Correction de quelques Houses-téléportations.
+- Maison : RE-Correction des requetes SQLs dans "House.java".
+- Maison : Refonte de la gestion des cell_id pour les maisons.
+- Maison : Correction d'un petit bug de mise en vente des maisons.
+- Maison : Il n'est plus possible d'acheter plus d'une maison par compte.
+- Maison : Début de l'intérieur des maisons 55% (Mise en maison de guilde, blason(membre ou autre), entrer sans code pour les membre de guilde, entrer interdite pour les non-membres de guilde && Expulser de la maison).
+- Maison : Simplification du chargement de celle-ci.
+- Guildes : Correction d'un problème d'affichage des maison de guildes.
+- Guildes : Il est possible de ce téléporter vers une maison de guilde avec la potion adéquate.
+- ActionID : Ajout de l'actionID :
+18 : Téléportation dans sa maison pas d'arguments.
+- BDD : Mise en place de la potion de Foyer.
+- FM : Ajout de la rune dommages renvoyer.
+- FM : Ajout de la gestion des stats négatives en cas d'échec.
+- FM : Ajout de la gestion des stats négatives en cas de réussite.
+- FM : 70%. Merci de rapporter tous bug liés au système.
+- Code : Optimisation des variables des cartes.
+- HDV : Correction de deux HDVs a Brâkmar et d'un a Bonta.
+(Patchs rev 74, 75, 76 et 77 a appliquer)
+PS : Je recherche les paquets correspondant a l'achat d'enclos, merci de me les transmettre si vous les possèdez.
+
+[08/08/2010]
+- Correction de l'actionID 16.
+- Correction des requetes SQLs dans "House.java".
+- Correction de l'ensemble des cellIDs pour l'achat des maisons sur Astrub.
+- Nouvelle formule de ForgeMagie => A tester.
+
+[05/08/2010]
+- Correction : Il faut désormais possèder le métier niveau 65 pour devenir Mage (FM).
+- Il n'est plus possible de FM une arme qui dépasse le (niveau de son métier)x2 (=> Donne un échec a coup sur, donc pertes de stats).
+
+[04/08/2010]
+- Il faut désormais possèder le métier niveau 60 pour devenir Mage.
+- Correction des Capture d'âmes.
+- Ajout de deux ActionID :
+16 : Ajout d'honneur. Argument : ValeurAajouter
+17 : Ajout d'xp métier. Arguments : IDMétier,XpAajouter
+
+[03/08/2010]
+- Xp dragodindes.
+
+[02/08/2010]
+- Révision de la formule d'xp(A la baisse).
+- Suppression d'une formule inutile.
+- Correction du sort Lien Spiritueux et du Pandawasta.
+
+[30/07/2010]
+(MAJ qui inclue tout le travail de MarthieuBean, sans autorisation)
+Ancestra_Remake 0.5.0
+- Réduction de la consommation en mémoire vive.
+- Ajout d'une limite de monstre dans un groupe par map.
+- Ajout de la condition capturable dans la table monstre (innutile pour le moment).
+- Correction d'un bug mineur sur les groupes.
+- Ajout du lock groupe.
+- Correction du système de guilde (panel).
+- Correction des droits de guildes.
+- Ajout de l'xp guilde.
+- Ajout des commandes joueur : /away /invisible.
+- Correction mineur des groupes.
+- Correction du message de vente des HDV.
+- Ajout des NPC Question conditions.
+- Correction du système de sauvegarde (World).
+- Correction des problèmes lié au nom de personnages (deux personnages ne peuveut plus s'appeler pareil).
+- Les kamas sont désormais de type long.
+- Pierre d'âme.
+- Correction de la couleur des mobs.
+- Correction du sort Épée du Destin.
+- Correction des sorts qui faisaient déconnecter lorsqu'ils étaient lancés en bord de map.
+- Ajout d'une option permettant de désactiver les aura sur le serveur.
+- Création d'un lisezmoi.
+(Patchs rev 68, 69 et 70 a appliquer)
+
+[29/07/2010]
+- Ajout de l'action ID 14 : Oublie de sort.
+- Retrait d'un pré-load.
+- Simplification du chargement des guildes.
+- Début des arènes (Pierre d'âmes ...) 5%.
+- Retrait des mobs en MAPID 10135.
+- Ajout de l'action ID 14 a Fée Risette.
+- Refonte du config.txt
+- Correction d'un petit bug lié aux HDVs.
+
+[27/07/2010]
+- Ajout de l'effet 402 (Blyphe du blop).
+(Si quelqu'un connait l'ID couleur du blyphe associé, merci de me la transmettre).
+- Implantation de la fonction recherche sur les HDV 70% (Manque message d'erreur + fermeture de la fenetre).
+
+[25/07/2010]
+- Implantation des droits de guilde : Kick/Propre Xp/Autre Xp/Invite.
+- Système Guilde/Percepteur : 5% (Affichage).
+- Système Guilde/Maison : 5% (Affichage).
+- GUILDES 20%.
+
+[23/07/2010]
+- Correction du Vendeur Forgeron de Bonta.
+- Ajout de la gestion des droits dans les guildes (ils n'ont aucun effets).
+- Correction de l'invite guilde (Uniquement disponible par le meneur).
+- GUILDES 15%.
+
+[14/07/2010]
+- Correction de l'affichage des sorts :
+Contre.
+Protection aveuglante.
+- Correction du Gain PA des xélors (Durée + Cible).
+
+[13/07/2010]
+- RE-Correction des dommage de la sacrifié.
+- RE-Correction des invocation morte pendant leurs tours de jeu.
+
+[12/07/2010]
+- Correction du sort Frappe du Craqueleur.
+- Correction du sort Horloge (L'effet n'est plus illimité, le vol de PA ne dure plus que le temps de jeu du joueurs).
+- Correction du sort dévoument : Il ne booste plus l'adversaire.
+- Correction du sort Vol du Temps (Le vol de PA ne dure plus que le temps de jeu du joueurs).
+- Correction du cadran de xélor (PA/PM).
+- FM (de type 1/2 (SC ou EC)) 50% => Formule a tester.
+
+[11/07/2010]
+- FM 35%.
+- Mise en place d'un système de calcul de poid de l'arme (avec FM, jet aléatoires).
+- Mise en place d'un système de calcul de poid de l'arme de base (sans FM, jet max).
+- Mise en place d'un système de calcul de poid du stats de l'arme de base (sans FM, jet max).
+- Mise en place d'un système de calcul de poid du stats de l'arme (avec FM, jet aléatoires).
+- Mise en place d'un fonction qui vérifie si l'arme possède ce stat de base.
+
+[10/07/2010]
+- FM 30%.
+- Mise en place d'une action qui refreshmob sur toutes les maps, toutes les 5heures.
+
+[09/07/2010]
+- Petit problème des quantités lors de l'achat.
+- FM 10%.
+
+[08/07/2010]
+- HDV 70% => Mise en place des différents HDV Bonta/Brakmar + Foire aux trolls + Pandala.
+- Correction d'une suppression d'item aprés la vente.
+- HDV 80% => Mise en place du prix moyen.
+(Les 10 autre % c'est la correction de failles, les 10 dernier % c'est les message in-game)
+
+[06/07/2010]
+- HDV 70% => Correction de nombreux problèmes de duplication O_o'.
+- Chargement des items au "Start serveur".
+
+[04/07/2010)
+- HDV 70%.
+
+[03/07/2010)
+- HDV 30%.
+
+[02/07/2010]
+- Maison 60%.
+
+[01/07/2010]
+- Maison 35%.
+
+[30/06/2010]
+- Correction d'un petit problème lié a la boutique.
+- Correction des dégats de la sacrifié.
+- Gestion de l'affichage de brokle, sans les effets.
+- Correction de 4 Maps aux gelées
+
+[28/06/2010]
+- Rang VIP.
+- Donjon bwork + PNJ.
+- Correction des quelques triggers (Bonta, Brak, Wabit et Bwork).
+- Ajout a la vente des sorts : Flamiche, foudroiment, félintion et invocation du chaferfu.
+Ces sort sont vendu par Bricky Brock.
+
+[25/06/2010]
+- Débugge du sort Épée de Iop.
+- Correction des item poser dans la banque.
+- Débugge du sort Momification, il est désormais "débuffable".
+- Implantation des maitrises + affichage du buff + effets. 
+
+[21/06/2010]
+- Débugge du sort Mot d'Altruisme.
+- Débugge effet illimité de l'état d'Altruisme.
+- Débugge du sort Mot Revitalisant.
+- Débugge Esprit félin.
+- Correction de l'affichage des jets Mot d'épine, Mot Revitalisant et Châtiments des Sacrieurs.
+- Débugge effet illimité de l'état Affaiblie.
+- Débugge du sort Chatiment Vitalitesque à 10%.
+
+[19/06/2010]
+- Correction d'une faille de duplication d'items par échanges.
+- Amélioration de la table Map [...].
+- Amélioration de la formule d'esquive PA/PM : (esquiveLanceur/esquiveCible * PA/PM actuelles / PA/PM Totaux * 50) = xx% (Formule officielle).
+- Ajout de l'effet de prospection booster par la chance (Aller vous restats à Fée risette pour obtenir les effets). 
+
+[16/06/2010]
+- Correction du Zaap Brakmar.
+- Correction de la perte des PM. 
+
+[15/06/2010]
+- Débugge d'une grande partie des map manquantes (Banque, Statue de classes ...).
+- Débugge des banques.
+- Ajout du zaapi Banque de Bonta.
+- Ajout du zaapi HDV Boulanger de Brâkmar.
+- Ajout d'une sauvegarde a l'ouverture et a la fermeture de la banque.
+- Correction du temps de jeu des mobs.
+- Ajout de la commande .save
+- Correction de la limite du Flood dans le canal Recrutement.
+- Rajout de l'xp métier/niveau 39 O_o.
+- On ne peut plus marcher sur les Zaap/Zaapi.
+- Ajout du donjon champs.
+
+[14/06/2010]
+- On ne peut plus prendre le Zaap tout en combattant.
+- Ajout de la fonction "Informations" lorsque l'on clique sur un joueurs. 
+- Correction de la potion de Rappel elle téléporte désormais au zaap sauvegarder.
+- Correction des gain donnés par les Grands Parchemins de caractéristiques.
+- Bricky Brock vends désormais les parchemins de caractéristiques.
+- Le Dofus Ocre ne coute 700 000k.
+- Correction du sort Roue de la Fortune. 
+
+[08/06/2010]
+- Correction du nombre maximal de métier (3 au maximum) et spécialisation (3 au maximum) qu'il est possible d'apprendre.
+- Ajout de la GameAction 15, qui oblige le joueurs a possèder une clef pour rentrer dans le donjon ainsi qu'une map (ils doivent se trouver sur la mapid définie).
+- Réinitialisation de la variable 'logged' au démarrage du serveur.
+
+[07/06/2010]
+- Correction de 3 plots de téléportation à Tainela.
+- Ajout du métier Paysan à Emia Elliesol (558).
+- Ajout de la vente de la Faux du Paysan (577) à Emia Elliesol (558).
+- Création du PNJ Agrid Shakok (59).
+- Ajout du métier de Bûcheron à Agrid Shakok (59).
+- Ajout de la vente de la Hache du Bucheron (477) à Agrid Shakok (59) (non fonctionel sans modification du npcs.swf.
+- Ajout du métier de Pêcheur à Kana Petch (594).
+- Ajout de la vente de la Canne a peche du débutant (8541) à Kana Petch (594).
+- Ajout du métier de Mineur à Chipo Atufe (596).
+- Ajout de la vente de la Pioche du mineur (497) à Chipo Atufe (596).
+- Ajout du métier d'Alchimiste à Cirle Drawde (599).
+- Ajout de la vente des Gants de l'apprenti alchimiste(8542) à Cirle Drawde (599).
+
+[06/06/2010]
+- La mort d'une invocation pendant sont tour de jeu ne fait plus passer le tour du joueur suivant.
+- Nouvelle formule de dommage des mobs. Les mobs "HL" tapent désormais plus fort qu'avant (Formule : (niveauMob*0.5)/100).
+- Correction des PM perdu lors du Tacle (NaN).
+- Correction de la Dragodinde Prune-Pourpre.
+- Ajout d'une limite anti flood (3 secondes d'attente entre deux messages) dans le canal commerce + recrutement.
+- Ajout de la liste d'ennemis.
+- Les ennemis ne peuvent pas vous MP.
+- Ajout du Donjon Goulet du Rasboul.
+- Ajout du Donjon ScaraFeuille.
+- Ajout du Donjon Laboratoire du Tynril.
+
+[03/06/2010]
+- Ajout du Donjon rat noir.
+- Ajout du Donjon Dragoeuf.
+- Ajout du Donjon Dragon Cochon.
+- Ajout du drop a 0.01% du dofus turquoise sur le Dragon Cochon.
+
+[02/06/2010]
+- L'agression d'un joueurs neutre ne fait plus gagner de points d'honneur.
+- Lègere refonte de l'IA.
+- Retraits des mobs en [-1;0] (mapid 952) 
+
+[01/06/2010]
+Il ne vous sera désormais plus possible de gagner de l'honneur sur un joueurs qui possède 10 niveaux de moins que vous.
+Si vous faite une "agros" de type 2vs1 ou 3vs2,
+Si [le niveau de l'équipe gagnante] moins [le niveau de l'équipe perdante] et supérieur à 10 niveau vous ne remporter aucune points d'honneur.
+
+[31/05/2010]
+- Ajout de l'action id 13, pour remettre ces caractéristiques a 0.
+- Modification du endTurn pour les Mobs, il faut attende que le sort est finit d'être lancer pour commencer son tour.
+- Mise en place d'un nouveau système d'intelligence artificiel.
+
+    Type : 0 //Ne rien faire
+    Type : 1 //Buff sois même, Buff Alliés, Avancer vers ennemis, Attaque, Fuite
+    Type : 2 //Soutien
+    Type : 3 //Avancer vers Alliés, Buff Alliés, Buff sois même
+    Type : 4 //Attaque, Fuite, Buff Alliés, Buff sois même
+    Type : 5 //Avancer vers ennemis
+
+[30/05/2010]
+- Mise en place du Donjon Blop.
+- Mise en place du Donjon Blop Multicolor.
+	
+[27/05/2010]
+- Ajout de la commande : .command (Liste les commandes disponibles).
+
+[26/05/2010]
+- Correction de SavePostition (Lié au zaap) pour l'utilisation du ".start".
+- Ajout de la commande ".infos" pour les joueurs.
+- Ajout de la génération automatique d'un nom lors de la création d'un personnage.
+- Mise en place du chemin vers Tainéla.
+- Mise en place du Donjon Bouftou.
+- Mise en place du Donjon Ensablé.
+- Correction du Dofus émeraude (mais pas l'affichage lors de l'achat).
+
+[25/05/2010]
+- Retrait du Zaap Undefined (Duty Fruity =D).
+- Création d'une variable logged pour connaitre le nombre de joueurs connectés.
+- Ajout des potion de Rappel, Bontarien et Brâkmarien.

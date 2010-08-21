@@ -1,0 +1,45 @@
+--------------------------------------------------------------------------------------------------------
+
+			Ancestra_Remake v0.5.3
+			Commencé le 25/05/2010
+			DeathDown & leCirconcit
+				
+--------------------------------------------------------------------------------------------------------
+			
+			Remerciement à : 
+			Diabu & Melancholia - Ancestra.
+			MarthieuBean - mAncestra.
+			Pyfus.
+			Pour leurs participations :
+			Gui205
+			Biscuit
+			xox1505
+			snowiiz
+			DeXt
+			
+--------------------------------------------------------------------------------------------------------
+			
+			TODO :
+			Si un mob fait un EC, sa passe le tour du joueur (rare).
+			Barre d'objets.
+			Finir les Percepteurs.
+			Finir les Maisons : intérieurs (Coffre+Spécialisations+Droits).
+			Finir de corriger les sorts.
+			Finir le PvP(Prismes-Zones)/PvM.
+			Finir la FM.
+			Implanté le systeme d'élevage.
+			Si on meurt le groupe de monstre lancé ne disparait pas de la map.
+			Refaire l'IA.
+			Système d'énergie (Tombe, Fantôme+Téléportation au cimetiere, Phoénix).
+			Obvijevans.
+			Optimisation du code.
+			
+			
+			
+			
+			
+			
+			
+			RECHERCHE :
+			Paquet(s) pour l'ouverture du panneau de guilde (lorsque l'on lance la potion de téléportation de maison de guilde).
+			Paquets liés a l'agression de percepteurs.

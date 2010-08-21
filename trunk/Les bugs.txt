@@ -1,0 +1,40 @@
+Sram:
+- Concentration de chakra (Regarder les effets).
+- Pulsions de chakra (Regarder les effets).
+
+Eca :
+- Roulette.
+
+Cra :
+- Dopeul (il booste l'ennemi) .
+- Tir critique.
+
+Pandawa :
+- Karcham => Si on meurt en portant quelqu'un (la personne porté ne peux plus rien faire .).
+
+Sacri :
+- Châtiment vitalitesque 10%.
+
+Osa :
+- Boost non fonctionnel sur les Invocations.
+
+Global :
+- Libération.
+- Brokle.
+- Cawotte.
+- Invocation arakne.
+- Revoir le système de drop.
+- Les arbres que les bucherons peuvent couper, impossible de se déplacer derrière.
+
+Invocations :
+
+- Arbre /Déco(Sadida).
+- La bloqueuse /Déco(Sadida).
+- Double /Déco(Sram).
+
+- Lien Spiritueux /IA-Sorts(Panda).
+- Cadran /IA-Sorts(Xélor).
+- Coffre animé /IA-Sorts(Enu).
+- Sac animé /IA-Sorts(Enu).
+- Griffe invocatrices /IA-Sorts(Eca).
+- Le dragonnet /IA-Sorts(Osa).
