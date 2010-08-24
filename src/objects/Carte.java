@@ -461,7 +461,7 @@ public class Carte {
 				return false;
 				//Polir
 				case 48:
-					return _object.getID() == 7510;
+					return _object.getID() == 7005;//7510
 				//Moule/Fondre - Mineur
 				case 32:
 					return _object.getID() == 7002;
@@ -923,7 +923,6 @@ public class Carte {
 				CcellID = Short.parseShort(GA._args.split(";")[0]);
 			}catch(Exception e){e.printStackTrace();}
 			if(actionID == -1)return;
-			
 			if(Constants.isJobAction(actionID))
 			{
 				perso.doJobAction(actionID,_object,GA,this);

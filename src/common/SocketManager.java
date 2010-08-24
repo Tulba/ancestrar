@@ -1230,6 +1230,19 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: ALL("+World.getOnlinePersos().size()+"): Send>>"+packet);
 	}
+	public static void GAME_SEND_cMK_PACKET_TO_ALIGN(String suffix,int guid,String name,String msg, Personnage _perso)
+	{
+		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
+		for(Personnage perso : World.getOnlinePersos())
+		{
+			if(perso.get_align() == _perso.get_align())
+			{
+				send(perso,packet);
+			}
+		}
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: ALL("+World.getOnlinePersos().size()+"): Send>>"+packet);
+	}
 	public static void GAME_SEND_cMK_PACKET_TO_ADMIN(String suffix,int guid,String name,String msg)
 	{
 		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;

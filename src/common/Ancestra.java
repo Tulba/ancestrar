@@ -340,7 +340,14 @@ public class Ancestra {
 			}
 		}catch(IOException e)
 		{
+			/*On créer les dossiers*/
 			System.out.println("Les fichiers de logs n'ont pas pu etre creer");
+			System.out.println("Création des dossiers");
+			new File("Shop_logs").mkdir(); 
+			new File("Game_logs").mkdir(); 
+			new File("Realm_logs").mkdir(); 
+			new File("Gms_logs").mkdir(); 
+			new File("Error_logs").mkdir();
 			System.out.println(e.getMessage());
 			System.exit(1);
 		}

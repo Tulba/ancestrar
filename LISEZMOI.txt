@@ -25,7 +25,7 @@
 			Finir les Percepteurs.
 			Finir les Maisons : intérieurs (Coffre+Spécialisations+Droits).
 			Finir de corriger les sorts.
-			Finir le PvP(Prismes-Zones)/PvM.
+			Finir le PvP(Prismes-Zones/Traques)/PvM.
 			Finir la FM.
 			Implanté le systeme d'élevage.
 			Si on meurt le groupe de monstre lancé ne disparait pas de la map.

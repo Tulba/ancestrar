@@ -521,11 +521,11 @@ public class SpellEffect
 				case 171://Malus CC
 					applyEffect_171(fight,cibles);
 				break;
-				/*
+
 				case 180://Double du sram
 					applyEffect_180(fight);
 				break;
-				*/
+
 				case 181://Invoque une créature
 					applyEffect_181(fight);
 				break;
@@ -1542,6 +1542,32 @@ public class SpellEffect
 				target.addBuff(effectID, val, turns, 1, false, spell, args, caster);
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, effectID, caster.getGUID()+"", target.getGUID()+","+val+","+turns);
 			}		
+		}
+		
+		private void applyEffect_180(Fight fight)//invocation
+		{
+			int cell = this.cell.getID();
+			int id = fight.getNextLowerFighterGuid();
+			Personnage Clone = Personnage.ClonePerso(caster.getPersonnage(), id);
+			Fighter F = new Fighter(fight,Clone);
+			F.setTeam(caster.getTeam());
+			F.setInvocator(caster);
+			fight.get_map().getCase(cell).addFighter(F);
+			F.set_fightCell(fight.get_map().getCase(cell));
+			fight.get_ordreJeu().add((fight.get_ordreJeu().indexOf(caster)+1),F);
+			fight.addFighterInTeam(F,caster.getTeam());
+			String gm = F.getGmPacket().substring(3);
+			String gtl = fight.getGTL();
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 180, caster.getGUID() + "", gm);
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 999, caster.getGUID()+"", gtl);
+			ArrayList<Piege> P = (new ArrayList<Piege>());
+			P.addAll(fight.get_traps());
+			for(Piege p : P)
+			{
+				int dist = Pathfinding.getDistanceBetween(fight.get_map(),p.get_cell().getID(),F.get_fightCell().getID());
+				//on active le piege
+				if(dist <= p.get_size())p.onTraped(F);
+			}
 		}
 		
 		private void applyEffect_181(Fight fight)//invocation

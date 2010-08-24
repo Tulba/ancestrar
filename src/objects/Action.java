@@ -2,6 +2,7 @@ package objects;
 
 import java.io.PrintWriter;
 
+import objects.Metier.StatsMetier;
 import objects.NPC_tmpl.NPC_question;
 import objects.Objet.ObjTemplate;
 
@@ -193,18 +194,18 @@ public class Action {
 					   mID == 62 || mID == 63 ||
 					   mID == 64)
 					{
-						//Métier simple level 60 nécessaire
-						if(perso.getMetierByID(17) != null && perso.getMetierByID(17).get_lvl() >= 60 && mID == 43
-						|| perso.getMetierByID(11) != null && perso.getMetierByID(11).get_lvl() >= 60 && mID == 44
-						|| perso.getMetierByID(14) != null && perso.getMetierByID(14).get_lvl() >= 60 && mID == 45
-						|| perso.getMetierByID(20) != null && perso.getMetierByID(20).get_lvl() >= 60 && mID == 46
-						|| perso.getMetierByID(31) != null && perso.getMetierByID(31).get_lvl() >= 60 && mID == 47
-						|| perso.getMetierByID(13) != null && perso.getMetierByID(13).get_lvl() >= 60 && mID == 48
-						|| perso.getMetierByID(19) != null && perso.getMetierByID(19).get_lvl() >= 60 && mID == 49
-						|| perso.getMetierByID(18) != null && perso.getMetierByID(18).get_lvl() >= 60 && mID == 50
-						|| perso.getMetierByID(15) != null && perso.getMetierByID(15).get_lvl() >= 60 && mID == 62
-						|| perso.getMetierByID(16) != null && perso.getMetierByID(16).get_lvl() >= 60 && mID == 63
-						|| perso.getMetierByID(27) != null && perso.getMetierByID(27).get_lvl() >= 60 && mID == 64)
+						//Métier simple level 65 nécessaire
+						if(perso.getMetierByID(17) != null && perso.getMetierByID(17).get_lvl() >= 65 && mID == 43
+						|| perso.getMetierByID(11) != null && perso.getMetierByID(11).get_lvl() >= 65 && mID == 44
+						|| perso.getMetierByID(14) != null && perso.getMetierByID(14).get_lvl() >= 65 && mID == 45
+						|| perso.getMetierByID(20) != null && perso.getMetierByID(20).get_lvl() >= 65 && mID == 46
+						|| perso.getMetierByID(31) != null && perso.getMetierByID(31).get_lvl() >= 65 && mID == 47
+						|| perso.getMetierByID(13) != null && perso.getMetierByID(13).get_lvl() >= 65 && mID == 48
+						|| perso.getMetierByID(19) != null && perso.getMetierByID(19).get_lvl() >= 65 && mID == 49
+						|| perso.getMetierByID(18) != null && perso.getMetierByID(18).get_lvl() >= 65 && mID == 50
+						|| perso.getMetierByID(15) != null && perso.getMetierByID(15).get_lvl() >= 65 && mID == 62
+						|| perso.getMetierByID(16) != null && perso.getMetierByID(16).get_lvl() >= 65 && mID == 63
+						|| perso.getMetierByID(27) != null && perso.getMetierByID(27).get_lvl() >= 65 && mID == 64)
 						{
 							//On compte les specialisations déja acquis si c'est supérieur a 2 on ignore
 							if(perso.totalJobFM() > 2)
@@ -395,6 +396,33 @@ public class Action {
 				if(pts < 1) return;
 				perso.addSpellPoint(pts);
 				SocketManager.GAME_SEND_STATS_PACKET(perso);
+			break;
+			case 21://+Energie
+				int Energy = Integer.parseInt(args);
+				if(Energy < 1) return;
+				
+				int EnergyTotal = perso.get_energy()+Energy;
+				if(EnergyTotal > 10000) EnergyTotal = 10000;
+				
+				perso.set_energy(EnergyTotal);
+				SocketManager.GAME_SEND_STATS_PACKET(perso);
+			break;
+			case 22://+Xp
+				long XpAdd = Integer.parseInt(args);
+				if(XpAdd < 1) return;
+				
+				long TotalXp = perso.get_curExp()+XpAdd;
+				perso.set_curExp(TotalXp);
+				SocketManager.GAME_SEND_STATS_PACKET(perso);
+			break;
+			case 23://UnlearnJob
+				int Job = Integer.parseInt(args);
+				if(Job < 1) return;
+				StatsMetier m = perso.getMetierByID(Job);
+				if(m == null) return;
+				perso.unlearnJob(m.getID());
+				SocketManager.GAME_SEND_STATS_PACKET(perso);
+				SQLManager.SAVE_PERSONNAGE(perso, false);
 			break;
 			default:
 				GameServer.addToLog("Action ID="+ID+" non implantée");

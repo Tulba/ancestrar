@@ -35,7 +35,7 @@ public class GameThread implements Runnable
 	private Compte _compte;
 	private Personnage _perso;
 	private Map<Integer,GameAction> _actions = new TreeMap<Integer,GameAction>();
-	private long _timeLastTradeMsg = 0, _timeLastRecrutmentMsg = 0, _timeLastsave = 0;
+	private long _timeLastTradeMsg = 0, _timeLastRecrutmentMsg = 0, _timeLastsave = 0, _timeLastAlignMsg = 0;
 	
 	public static class GameAction
 	{
@@ -3277,7 +3277,6 @@ public class GameThread implements Runnable
 			int job = -1;
 			try
 			{
-				System.out.println(infos[1]);
 				job = Integer.parseInt(infos[1]);
 			}catch(Exception e){};
 			if(job == -1 || World.getMetier(job) == null)
@@ -4099,7 +4098,6 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
 				return;
 			}
-			System.out.println("GROUP DATA : "+infos[1]);
 			_perso.get_curCarte().spawnGroupOnCommand(_perso.get_curCell().getID(), infos[1]);
 		}
 		else
@@ -4213,8 +4211,8 @@ public class GameThread implements Runnable
 				long l;
 				if((l = System.currentTimeMillis() - _timeLastTradeMsg) < Ancestra.FLOOD_TIME)
 				{
-					l = (Ancestra.FLOOD_TIME  - l)/10;//On calcul la différence en secondes
-					
+					l = (Ancestra.FLOOD_TIME  - l)/1000;//On calcul la différence en secondes
+					SocketManager.GAME_SEND_MESSAGE(_perso, "Pour parler de nouveau, il faut attendre : "+((int)Math.ceil(l)+1)+" s", "009900");
 					return;
 				}
 				_timeLastTradeMsg = System.currentTimeMillis();
@@ -4231,8 +4229,8 @@ public class GameThread implements Runnable
 				long j;
 				if((j = System.currentTimeMillis() - _timeLastRecrutmentMsg) < Ancestra.FLOOD_TIME)
 				{
-					j = (Ancestra.FLOOD_TIME  - j)/10;//On calcul la différence en secondes
-					
+					j = (Ancestra.FLOOD_TIME  - j)/1000;//On calcul la différence en secondes
+					SocketManager.GAME_SEND_MESSAGE(_perso, "Pour parler de nouveau, il faut attendre : "+((int)Math.ceil(j)+1)+" s", "009900");
 					return;
 				}
 				_timeLastRecrutmentMsg = System.currentTimeMillis();
@@ -4246,6 +4244,20 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_cMK_PACKET_TO_GUILD(_perso.get_guild(), "%", _perso.get_GUID(), _perso.get_name(), msg);
 			break;
 			case 0xC2://Canal 
+			break;
+			case '!'://Alignement
+				if(!_perso.get_canaux().contains(packet.charAt(2)+""))return;
+				if(_perso.get_align() == 0) return;
+				long k;
+				if((k = System.currentTimeMillis() - _timeLastAlignMsg) < Ancestra.FLOOD_TIME)
+				{
+					k = (Ancestra.FLOOD_TIME  - k)/1000;//On calcul la différence en secondes
+					SocketManager.GAME_SEND_MESSAGE(_perso, "Pour parler de nouveau, il faut attendre : "+((int)Math.ceil(k)+1)+" s", "009900");
+					return;
+				}
+				_timeLastAlignMsg = System.currentTimeMillis();
+				msg = packet.split("\\|",2)[1];
+				SocketManager.GAME_SEND_cMK_PACKET_TO_ALIGN("!", _perso.get_GUID(), _perso.get_name(), msg, _perso);
 			break;
 			default:
 				String nom = packet.substring(2).split("\\|")[0];
@@ -4317,7 +4329,7 @@ public class GameThread implements Runnable
 				Game_on_GK_packet(packet);
 			break;
 			case 'P'://PvP Toogle
-				_perso.toogleWings(packet.charAt(2));
+				_perso.toggleWings(packet.charAt(2));
 			break;
 			case 'p':
 				Game_on_ChangePlace_packet(packet);
@@ -4596,7 +4608,7 @@ public class GameThread implements Runnable
 			 * 
 			 */
 
-			_perso.toogleWings('+');
+			_perso.toggleWings('+');
 			SocketManager.GAME_SEND_GA_PACKET_TO_MAP(_perso.get_curCarte(),"", 906, _perso.get_GUID()+"", id+"");
 			_perso.get_curCarte().newFight(_perso, target, Constants.FIGHT_TYPE_AGRESSION);
 		}catch(Exception e){};

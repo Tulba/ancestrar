@@ -637,6 +637,7 @@ public class SQLManager {
 						RS.getInt("account"),
 						stats,
 						RS.getInt("seeFriend"),
+						RS.getByte("seeAlign"),
 						RS.getString("canaux"),
 						RS.getShort("map"),
 						RS.getInt("cell"),
@@ -709,6 +710,7 @@ public class SQLManager {
 								accID,
 								stats,
 								RS.getInt("seeFriend"),
+								RS.getByte("seeAlign"),
 								RS.getString("canaux"),
 								RS.getShort("map"),
 								RS.getInt("cell"),
@@ -778,6 +780,7 @@ public class SQLManager {
 						RS.getInt("account"),
 						stats,
 						RS.getInt("seeFriend"),
+						RS.getByte("seeAlign"),
 						RS.getString("canaux"),
 						RS.getShort("map"),
 						RS.getInt("cell"),
@@ -1006,7 +1009,8 @@ public class SQLManager {
 						"`jobs` = ?,"+
 						"`mountxpgive` = ?,"+
 						"`zaaps` = ?,"+
-						"`mount` = ?"+		
+						"`mount` = ?,"+
+						"`seeAlign` = ?"+
 						" WHERE `personnages`.`guid` = ? LIMIT 1 ;";
 		
 		PreparedStatement p = null;
@@ -1045,7 +1049,8 @@ public class SQLManager {
 			p.setInt(28,_perso.getMountXpGive());
 			p.setString(29,_perso.parseZaaps());
 			p.setInt(30, (_perso.getMount()!=null?_perso.getMount().get_id():-1));
-			p.setInt(31,_perso.get_GUID());
+			p.setInt(31,(_perso.is_showWings()?1:0));
+			p.setInt(32,_perso.get_GUID());
 			
 			p.executeUpdate();
 			
