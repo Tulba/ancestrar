@@ -1,0 +1,1 @@
+ALTER TABLE `personnages` ADD `seeAlign` INT( 11 ) NOT NULL DEFAULT '0' AFTER `seeFriend`;

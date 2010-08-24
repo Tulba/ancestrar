@@ -150,7 +150,7 @@ public class Percepteur
 	    				//TODO : Temps restant du combat, les timer ce n'est pas mon fort.
 	    				packet += "45000;";//TimerActuel
 	    				packet += "45000;";//TimerInit
-	    				packet += "7;";//Nombre de place maximum
+	    				packet += "7;";//Nombre de place maximum FIXME : En fonction de la map
 	    				packet += "?,?,";//?
 	    			}else
 	    			{

@@ -108,6 +108,8 @@ public class Personnage {
 	public boolean isInvisible = false;
 	//Oublie de sort
 	private boolean isForgetingSpell = false;
+	//Double
+	public boolean isClone = false;
 	
 	public static class Group
 	{
@@ -404,7 +406,7 @@ public class Personnage {
 	public Personnage(int _guid, String _name, int _sexe, int _classe,
 			int _color1, int _color2, int _color3,long _kamas, int pts, int _capital, int _energy, int _lvl, long exp,
 			int _size, int _gfxid, byte alignement, int _compte, Map<Integer,Integer> stats,
-			int seeFriend,String canaux, short map, int cell,String stuff,int pdvPer,String spells, String savePos,String jobs,
+			int seeFriend, byte seeAlign, String canaux, short map, int cell,String stuff,int pdvPer,String spells, String savePos,String jobs,
 			int mountXp,int mount,int honor,int deshonor,int alvl,String z)
 	{
 		this._GUID = _guid;
@@ -432,6 +434,13 @@ public class Personnage {
 		this._accID = _compte;
 		this._compte = World.getCompte(_compte);
 		this._showFriendConnection = seeFriend==1;
+		if(this.get_align() != 0)
+		{
+			this._showWings = seeAlign==1;
+		}else
+		{
+			this._showWings = false;
+		}
 		this._canaux = canaux;
 		this._curCarte = World.getCarte(map);
 		this._savePos = savePos;
@@ -521,6 +530,66 @@ public class Personnage {
 			}
 		}
 	}
+	
+	//Clone double
+	public Personnage(int _guid, String _name, int _sexe, int _classe,
+			int _color1, int _color2, int _color3,int _lvl,
+			int _size, int _gfxid, Map<Integer,Integer> stats,
+			String stuff,int pdvPer, byte seeAlign, int mount, int alvl, byte alignement)
+	{
+		this._GUID = _guid;
+		this._name = _name;
+		this._sexe = _sexe;
+		this._classe = _classe;
+		this._color1 = _color1;
+		this._color2 = _color2;
+		this._color3 = _color3;
+		this._lvl = _lvl;
+		this._aLvl = alvl;
+		this._size = _size;
+		this._gfxID = _gfxid;
+		this._baseStats = new Stats(stats,true,this);
+		if(!stuff.equals(""))
+		{
+			if(stuff.charAt(stuff.length()-1) == '|')
+				stuff = stuff.substring(0,stuff.length()-1);
+			SQLManager.LOAD_ITEMS(stuff.replace("|",","));
+		}
+		for(String item : stuff.split("\\|"))
+		{
+			if(item.equals(""))continue;
+			String[] infos = item.split(":");
+			int guid = Integer.parseInt(infos[0]);
+			Objet obj = World.getObjet(guid);
+			if( obj == null)continue;
+			_items.put(obj.getGuid(), obj);
+		}
+		
+		this._PDVMAX = (_lvl-1)*5+Constants.getBasePdv(_classe)+getTotalStats().getEffect(Constants.STATS_ADD_VITA);
+		this._PDV = (_PDVMAX*pdvPer)/100;
+		
+		this._Prospection = (int)Math.ceil(_baseStats.getEffect(Constants.STATS_ADD_CHAN)/10);
+		
+
+		_sitTimer = new Timer(2000,new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				regenLife();
+			}
+		});
+		_exPdv = _PDV;
+		
+		this._align = alignement;
+		if(this.get_align() != 0)
+		{
+			this._showWings = seeAlign==1;
+		}else
+		{
+			this._showWings = false;
+		}
+		if(mount != -1)this._mount = World.getDragoByID(mount);
+	}
 
 	public void regenLife()
 	{
@@ -572,6 +641,7 @@ public class Personnage {
 				compte.get_GUID(),
 				new TreeMap<Integer,Integer>(),
 				1,
+				(byte)0,
 				"*#%!pi$:?",
 				(short)Constants.getStartMap(classe),
 				Constants.getStartCell(classe),
@@ -741,6 +811,10 @@ public class Personnage {
 	public boolean is_showFriendConnection() {
 		return _showFriendConnection;
 	}
+	
+	public boolean is_showWings() {
+		return _showWings;
+	}
 
 	public String get_canaux() {
 		return _canaux;
@@ -770,7 +844,7 @@ public class Personnage {
 		_curCell = cell;
 	}
 
-	public void set_curExp(int exp) {
+	public void set_curExp(long exp) {
 		_curExp = exp;
 	}
 
@@ -1766,6 +1840,11 @@ public class Personnage {
 		}
 		return pos;
 	}
+	
+	public void unlearnJob(int m)
+	{
+		_metiers.remove(m);
+	}
 
 	public boolean hasEquiped(int id)
 	{
@@ -2467,7 +2546,7 @@ public class Personnage {
 		return _aLvl;
 	}
 
-	public void toogleWings(char c)
+	public void toggleWings(char c)
 	{
 		if(_align == Constants.ALIGNEMENT_NEUTRE)return;
 		int hloose = _honor*5/100;//FIXME: perte de X% honneur
@@ -2479,11 +2558,13 @@ public class Personnage {
 		case '+':
 			_showWings = true;
 			SocketManager.GAME_SEND_STATS_PACKET(this);
+			SQLManager.SAVE_PERSONNAGE(this, false);
 		break;
 		case '-':
 			_showWings = false;
 			_honor -= hloose;
 			SocketManager.GAME_SEND_STATS_PACKET(this);
+			SQLManager.SAVE_PERSONNAGE(this, false);
 		break;
 		}
 		//SocketManager.GAME_SEND_ALTER_GM_PACKET(_curCarte, this);
@@ -2685,5 +2766,74 @@ public class Personnage {
 		
 		return true;
 	}
-
+	
+	public boolean get_isClone()
+	{
+		return isClone;
+	}
+	
+	public void set_isClone(boolean _isClone)
+	{
+		isClone = _isClone;
+	}
+	
+	public static Personnage ClonePerso(Personnage P, int id)
+	{	
+		TreeMap<Integer,Integer> stats = new TreeMap<Integer,Integer>();
+		stats.put(Constants.STATS_ADD_VITA, P.get_baseStats().getEffect(Constants.STATS_ADD_VITA));
+		stats.put(Constants.STATS_ADD_FORC, P.get_baseStats().getEffect(Constants.STATS_ADD_FORC));
+		stats.put(Constants.STATS_ADD_SAGE, P.get_baseStats().getEffect(Constants.STATS_ADD_SAGE));
+		stats.put(Constants.STATS_ADD_INTE, P.get_baseStats().getEffect(Constants.STATS_ADD_INTE));
+		stats.put(Constants.STATS_ADD_CHAN, P.get_baseStats().getEffect(Constants.STATS_ADD_CHAN));
+		stats.put(Constants.STATS_ADD_AGIL, P.get_baseStats().getEffect(Constants.STATS_ADD_AGIL));
+		stats.put(Constants.STATS_ADD_PA, P.get_baseStats().getEffect(Constants.STATS_ADD_PA));
+		stats.put(Constants.STATS_ADD_PM, P.get_baseStats().getEffect(Constants.STATS_ADD_PM));
+		stats.put(Constants.STATS_ADD_RP_NEU, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_NEU));
+		stats.put(Constants.STATS_ADD_RP_TER, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_TER));
+		stats.put(Constants.STATS_ADD_RP_FEU, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_FEU));
+		stats.put(Constants.STATS_ADD_RP_EAU, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_EAU));
+		stats.put(Constants.STATS_ADD_RP_AIR, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_AIR));
+		stats.put(Constants.STATS_ADD_AFLEE, P.get_baseStats().getEffect(Constants.STATS_ADD_AFLEE));
+		stats.put(Constants.STATS_ADD_MFLEE, P.get_baseStats().getEffect(Constants.STATS_ADD_MFLEE));
+		
+		byte showWings = 0;
+		int alvl = 0;
+		if(P.get_align() != 0 && P._showWings)
+		{
+			showWings = 1;
+			alvl = P.getGrade();
+		}
+		int mountID = -1;
+		if(P.getMount() != null)
+		{
+			mountID = P.getMount().get_id();
+		}
+		
+		Personnage Clone = new Personnage(
+				id, 
+				P.get_name(), 
+				P.get_sexe(), 
+				P.get_classe(), 
+				P.get_color1(), 
+				P.get_color2(), 
+				P.get_color3(), 
+				P.get_lvl(), 
+				100, 
+				P.get_gfxID(),
+				stats,
+				"",//FIXME STUFF
+				100,
+				showWings,
+				mountID,
+				alvl,
+				P.get_align()
+				);
+		
+		Clone.set_isClone(true);
+		if(P._onMount)
+		{
+			Clone._onMount = true;
+		}
+		return Clone;
+	}
 }

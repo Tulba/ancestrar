@@ -30,7 +30,6 @@ Invocations :
 
 - Arbre /Déco(Sadida).
 - La bloqueuse /Déco(Sadida).
-- Double /Déco(Sram).
 
 - Lien Spiritueux /IA-Sorts(Panda).
 - Cadran /IA-Sorts(Xélor).

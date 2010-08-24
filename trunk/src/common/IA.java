@@ -290,7 +290,19 @@ public class IA {
 		{
 			stop = false;
 			if(_fighter.getMob() == null)
-				return;
+			{
+				if(_fighter.isInvocation())
+				{
+					apply_type5(_fighter,_fight);
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {};
+					_fight.endTurn();
+				}else
+				{
+					return;	
+				}
+			}
 			switch(_fighter.getMob().getTemplate().getIAType())
 			{
 				case 0://Ne rien faire

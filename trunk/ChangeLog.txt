@@ -1,3 +1,24 @@
+[24/08/2010]
+- SpellEffect/Personnage/Fight : Mise en place du double du sram : 90% (Il manque le stuff).
+- Personnage : Correction de l'alignement du double du sram (affichage des ailes).
+- Personnage : Correction de l'affichage de la monture pour le double du sram.
+- Constants : Correction du niveau de métier requis pour obtenir une spécialisation.
+/!\ Le double a été tester brievement, rien ne promet qu'il fonctionnera sans aucun bug.
+
+[23/08/2010]
+- Ajout de l'action ID :
+21 : Ajout d'ernergie. Argument : EnergyAddValue.
+22 : Ajout d'expérience. Argument : XpAddValue.
+23 : Oublier un métier. Argument : MétierID (Il faut déco/reco pour faire disparaitre totalement le métier).
+- Personnage : La déconnection n'entraine plus la perte de l'affichage de ses ailes.
+- GameThread : Mise en place du canal alignement avec limite de flood de 3 secondes.
+- GameThread : Un message signale le temps restant a attendre avant l'envoi du prochain message.
+- Lib : Mise en place d'un répertoire qui contiendra toutes les librairies.
+- Logs : Création des dossiers de logs si ils n'existent pas (le serveur est ensuite relancer grâce au start.bat).
+
+[22/08/2010]
+- Constants : Correction de l'action "polir une pierre" (THX snowiiz).
+
 [21/08/2010]
 - GameThread/Fight : Correction des bug liés a "Rejoindre le combat".
 - SVN : Ré-organisation des répertoires.
