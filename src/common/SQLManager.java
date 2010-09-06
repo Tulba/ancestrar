@@ -250,8 +250,10 @@ public class SQLManager {
 						RS.getString("emblem"),
 						RS.getInt("lvl"),
 						RS.getLong("xp"),
-						new TreeMap<Integer, Integer>(),
-						new TreeMap<Integer, Integer>()
+						RS.getInt("capital"),
+						RS.getInt("nbrmax"),
+						RS.getString("sorts"),
+						RS.getString("stats")
 				),false
 				);
 			}
@@ -521,6 +523,7 @@ public class SQLManager {
 			{
 				Carte map = World.getCarte(RS.getShort("mapid"));
 				if(map == null)continue;
+				
 				Percepteur.addPerco(
 						new Percepteur(
 						RS.getInt("guid"),
@@ -529,7 +532,10 @@ public class SQLManager {
 						RS.getByte("orientation"),
 						RS.getInt("guild_id"),
 						RS.getShort("N1"),
-						RS.getShort("N2")
+						RS.getShort("N2"),
+						RS.getString("objets"),
+						RS.getLong("kamas"),
+						RS.getLong("xp")
 						));
 				nbr ++;
 			}
@@ -1888,7 +1894,7 @@ public class SQLManager {
 	public static boolean ADD_PERCO_ON_MAP(int guid,int mapid, int guildID, int cellid,int o, short N1, short N2)
 	{
 		String baseQuery = "INSERT INTO `percepteurs`" +
-				" VALUES (?,?,?,?,?,?,?);";
+				" VALUES (?,?,?,?,?,?,?,?,?,?);";
 		try {
 			PreparedStatement p = newTransact(baseQuery, othCon);
 			p.setInt(1, guid);
@@ -1898,7 +1904,9 @@ public class SQLManager {
 			p.setInt(5, guildID);
 			p.setShort(6, N1);
 			p.setShort(7, N2);
-			
+			p.setString(8, "");
+			p.setLong(9, 0);
+			p.setLong(10, 0);
 			p.execute();
 			closePreparedStatement(p);
 			return true;
@@ -1908,7 +1916,28 @@ public class SQLManager {
 		}
 		return false;
 	}
-
+	public static void UPDATE_PERCO(Percepteur P)
+	{
+		String baseQuery = "UPDATE `percepteurs` SET "+
+		"`objets` = ?,"+
+		"`kamas` = ?," +
+		"`xp` = ?" +
+		" WHERE guid = ?;";
+		
+		try {
+			PreparedStatement p = newTransact(baseQuery, othCon);
+			p.setString(1, P.parseItemPercepteur());
+			p.setLong(2, P.getKamas());
+			p.setLong(3, P.getXp());
+			p.setInt(4, P.getGuid());
+			
+			p.execute();
+			closePreparedStatement(p);
+		} catch (SQLException e) {
+			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+			GameServer.addToLog("Game: Query: "+baseQuery);
+		}
+	}
 	public static boolean ADD_ENDFIGHTACTION(int mapID, int type, int Aid,String args,String cond)
 	{
 		if(!DEL_ENDFIGHTACTION(mapID,type,Aid))return false;
@@ -2004,14 +2033,22 @@ public class SQLManager {
 	{
 		String baseQuery = "UPDATE `guilds` SET "+
 		"`lvl` = ?,"+
-		"`xp` = ?" +
+		"`xp` = ?," +
+		"`capital` = ?," +
+		"`nbrmax` = ?," +
+		"`sorts` = ?," +
+		"`stats` = ?" +
 		" WHERE id = ?;";
 		
 		try {
 			PreparedStatement p = newTransact(baseQuery, othCon);
 			p.setInt(1, g.get_lvl());
 			p.setLong(2, g.get_xp());
-			p.setInt(3, g.get_id());
+			p.setInt(3, g.get_Capital());
+			p.setInt(4, g.get_nbrPerco());
+			p.setString(5, g.compileSpell());
+			p.setString(6, g.compileStats());
+			p.setInt(7, g.get_id());
 			
 			p.execute();
 			closePreparedStatement(p);

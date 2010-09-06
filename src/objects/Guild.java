@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
-import objects.Sort.SortStats;
-
 import org.joda.time.LocalDate;
 import org.joda.time.Days;
 import common.SQLManager;
@@ -21,7 +19,9 @@ public class Guild {
 	private int _lvl;
 	private long _xp;
 	
-	//Boost
+	//Percepteur
+	private int _capital = 0;
+	private int _nbrPerco = 0;
 	private Map<Integer, Integer> sorts = new TreeMap<Integer, Integer>();	//<ID, Level>
 	private Map<Integer, Integer> stats = new TreeMap<Integer, Integer>(); //<Effet, Quantité>
 	
@@ -230,61 +230,6 @@ public class Guild {
 			_lastCo = lastCo;
 		}
 	}
-	public static class Percepteur {
-		private int ID;
-		private String nom;
-		private Guild guild;
-		private ArrayList<Objet> objets;
-		private long kamas;
-		private long xp;
-		private int capital;	//Point à investir dans les stats/sorts
-		
-		
-		public Percepteur(int iD, String nom, Guild guild, ArrayList<Objet> objets,
-				long kamas, long xp, Map<Integer, SortStats> sorts,
-				Map<Integer, Integer> stats, int capital) {
-			super();
-			ID = iD;
-			this.nom = nom;
-			this.guild = guild;
-			this.objets = objets;
-			this.kamas = kamas;
-			this.xp = xp;
-
-			this.capital = capital;
-		}
-		public long getKamas() {
-			return kamas;
-		}
-		public void setKamas(long kamas) {
-			this.kamas = kamas;
-		}
-		public long getXp() {
-			return xp;
-		}
-		public void setXp(long xp) {
-			this.xp = xp;
-		}
-		public int getCapital() {
-			return capital;
-		}
-		public void setCapital(int capital) {
-			this.capital = capital;
-		}
-		public int getID() {
-			return ID;
-		}
-		public String getNom() {
-			return nom;
-		}
-		public Guild getGuild() {
-			return guild;
-		}
-		public ArrayList<Objet> getObjets() {
-			return objets;
-		}
-	}
-	
 
 	public Guild(Personnage owner,String name,String emblem)
 	{
@@ -296,15 +241,18 @@ public class Guild {
 		//decompileSpell(Ancestra.BASE_GUILD_SPELL);
 	}
 	public Guild(int id,String name, String emblem,int lvl,long xp,
-			Map<Integer, Integer> sorts, Map<Integer, Integer> stats)
+			int capital, int nbrmax,
+			String sorts, String stats)
 	{
 		_id = id;
 		_name = name;
 		_emblem = emblem;
 		_xp = xp;
 		_lvl = lvl;
-		this.sorts = sorts;
-		this.stats = stats;
+		_capital = capital;
+		_nbrPerco = nbrmax;
+		decompileSpell(sorts);
+		decompileStats(stats);
 	}
 
 	public GuildMember addMember(int guid,String name,int lvl,int gfx,int r,byte pXp,long x,int ri,byte a,String lastCo)
@@ -324,7 +272,25 @@ public class Guild {
 	{
 		return _id;
 	}
-
+	
+	public int get_nbrPerco()
+	{
+		return _nbrPerco;
+	}
+	public void set_nbrPerco(int nbr)
+	{
+		_nbrPerco = nbr;
+	}
+	
+	public int get_Capital()
+	{
+		return _capital;
+	}
+	public void set_Capital(int nbr)
+	{
+		_capital = nbr;
+	}
+	
 	public Map<Integer, Integer> getSorts() {
 		return sorts;
 	}
@@ -420,6 +386,17 @@ public class Guild {
 			if(newMeneur != null)
 				newMeneur.setRank(1);
 		}*/
+		House.HouseCoordByPerso(World.getPersonnage(guid));
+		if(House.isMapID > 0)
+		{
+			if(House.HouseOnGuild(_id) > 0)
+			{
+				House.CcarteID = House.isMapID;
+				House.CcellID = House.isCellID;
+				SQLManager.HOUSE_GUILD(World.getPersonnage(guid), _id);
+				SQLManager.HOUSE_GUILD_RIGHTS(World.getPersonnage(guid), 0);
+			}
+		}
 		_members.remove(guid);
 		SQLManager.DEL_GUILDMEMBER(guid);
 	}
@@ -428,13 +405,14 @@ public class Guild {
 	{
 		this._xp+=xp;
 		
-		while(_xp >= World.getGuildXpMax(_lvl) && _lvl<100)
+		while(_xp >= World.getGuildXpMax(_lvl) && _lvl<200)
 			levelUp();
 	}
 	
 	public void levelUp()
 	{
 		this._lvl++;
+		this._capital = this._capital+5;
 	}
 	
 	public void decompileSpell(String spellStr) //ID;lvl|ID;lvl|...
@@ -450,6 +428,21 @@ public class Guild {
 			sorts.put(id, lvl);
 		}
 	}
+	
+	public void decompileStats(String statsStr) //ID;lvl|ID;lvl|...
+	{
+		int id;
+		int value;
+		
+		for(String split : statsStr.split("\\|"))//pp pod sagesse
+		{
+			id = Integer.parseInt(split.split(";")[0]);
+			value = Integer.parseInt(split.split(";")[1]);
+			
+			stats.put(id, value);
+		}
+	}
+	
 	public String compileSpell()
 	{
 		String toReturn = "";
@@ -466,5 +459,48 @@ public class Guild {
 		}
 		
 		return toReturn;
+	}
+	public String compileStats()
+	{
+		String toReturn = "";
+		boolean isFirst = true;
+		
+		for(Entry<Integer, Integer> curStats : stats.entrySet())
+		{
+			if(!isFirst)
+				toReturn += "|";
+			
+			toReturn += curStats.getKey() + ";" + curStats.getValue();
+			
+			isFirst = false;
+		}
+		
+		return toReturn;
+	}
+	
+	public void upgrade_Stats(int statsid, int add)
+	{
+		int actual = stats.get(statsid).intValue();
+		stats.put(statsid, (actual+add));
+	}
+	
+	public int get_Stats(int statsid)
+	{
+		int value = 0;
+		for(Entry<Integer, Integer> curStats : stats.entrySet())
+		{
+			if(curStats.getKey() == statsid)
+			{
+				value = curStats.getValue();
+			}
+		}
+		return value;
+	}
+	
+	public String parsePercotoGuild()
+	{
+		//Percomax|0|100*level|level|perco_add_pods|perco_prospection|perco_sagesse|perco_max|perco_boost|1000+10*level|perco_spells
+		String packet = get_nbrPerco()+"|"+Percepteur.CountPercoGuild(get_id())+"|"+100*get_lvl()+"|"+get_lvl()+"|"+get_Stats(158)+"|"+get_Stats(176)+"|"+get_Stats(124)+"|"+get_nbrPerco()+"|"+get_Capital()+"|"+(1000+(10*get_lvl()))+"|"+compileSpell();
+		return packet;
 	}
 }

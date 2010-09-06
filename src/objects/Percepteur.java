@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import objects.Fight.Fighter;
 
+import common.SQLManager;
 import common.SocketManager;
 import common.World;
 
@@ -21,8 +22,15 @@ public class Percepteur
 	private short _N2 = 0;
 	private byte _inFight = 0;
 	private int _inFightID = -1;
+	private Map<Integer,Objet> _objets = new TreeMap<Integer,Objet>();
+	private long _kamas = 0;
+	private long _xp = 0;
+	private long _LogKamas = 0;
+	private long _LogXP = 0;
+	private String _LogItem = "";
 	
-	public Percepteur(int guid, short map, int cellID, byte orientation, int GuildID, short N1, short N2)
+	public Percepteur(int guid, short map, int cellID, byte orientation, int GuildID, 
+			short N1, short N2, String items, long kamas, long xp)
 	{
 		_guid = guid;
 		_MapID = map;
@@ -31,6 +39,59 @@ public class Percepteur
 		_GuildID = GuildID;
 		_N1 = N1;
 		_N2 = N2;
+		//Mise en place de son inventaire
+		for(String item : items.split("\\|"))
+		{
+			if(item.equals(""))continue;
+			String[] infos = item.split(":");
+			int id = Integer.parseInt(infos[0]);
+			Objet obj = World.getObjet(id);
+			if(obj == null)continue;
+			_objets.put(obj.getGuid(), obj);
+		}
+		_xp = xp;
+		_kamas = kamas;
+	}
+	
+	public long getKamas() 
+	{
+		return _kamas;
+	}
+	
+	public void setKamas(long kamas) 
+	{
+		this._kamas = kamas;
+	}
+	
+	public long getXp() 
+	{
+		return _xp;
+	}
+	
+	public void setXp(long xp) 
+	{
+		this._xp = xp;
+	}
+	
+	public Map<Integer, Objet> getObjets() 
+	{
+		return _objets;
+	}
+	
+	public void removeObjet(int guid)
+	{
+		_objets.remove(guid);
+	}
+	
+	public boolean HaveObjet(int guid)
+	{
+		if(_objets.get(guid) != null)
+		{
+			return true;
+		}else
+		{
+			return false;
+		}
 	}
 	
 	public static String parseGM(Carte map)
@@ -79,10 +140,16 @@ public class Percepteur
 	
 	public void DelPerco(int percoGuid)
 	{
+		for(Objet obj : _objets.values())
+		{
+			//On supprime les objets non ramasser/drop
+			World.removeItem(obj.guid);
+		}
 		_perco.remove(percoGuid);
 	}
 
-	public Map<Integer, Percepteur> get_PercobyID(int id) {
+	public Map<Integer, Percepteur> get_PercobyID(int id) 
+	{
 		_perco.get(id);
 		return _perco;
 	}
@@ -186,6 +253,18 @@ public class Percepteur
 		return 0;
 	}
 	
+	public static Percepteur GetPercoByMapID(short _id) {
+		
+		for(Entry<Integer, Percepteur> perco : _perco.entrySet())
+		{
+			if(perco.getValue().get_mapID() == _id)
+			{
+				return _perco.get(perco.getValue().getGuid());
+			}
+		}
+		return null;
+	}
+	
 	public static int CountPercoGuild(int GuildID) {
 		int i = 0;
 		for(Entry<Integer, Percepteur> perco : _perco.entrySet())
@@ -271,5 +350,129 @@ public class Percepteur
 				}
 		}
 		return str;
+	}
+	
+	public String getItemPercepteurList()
+	{
+		String items = "";
+		for(Objet obj : _objets.values())
+		{
+			items+= "O"+obj.parseItem()+";";
+		}
+		if(_kamas != 0) items += "G"+_kamas;
+		return items;
+	}
+	
+	public String parseItemPercepteur()
+	{
+		String items = "";
+		for(Objet obj : _objets.values())
+		{
+			items+= obj.guid+"|";
+		}
+		return items;
+	}
+	
+	
+	public void removeFromPercepteur(Personnage P, int guid, int qua)
+	{
+		Objet PercoObj = World.getObjet(guid);
+		Objet PersoObj = P.getSimilarItem(PercoObj);
+		
+		int newQua = PercoObj.getQuantity() - qua;
+		
+		if(PersoObj == null)//Si le joueur n'avait aucun item similaire
+		{
+			//S'il ne reste rien
+			if(newQua <= 0)
+			{
+				//On retire l'item
+				removeObjet(guid);
+				//On l'ajoute au joueur
+				P.addObjet(PercoObj);
+				
+				//On envoie les packets
+				SocketManager.GAME_SEND_OAKO_PACKET(P,PercoObj);
+				String str = "O-"+guid;
+				SocketManager.GAME_SEND_EsK_PACKET(P, str);
+				
+			}else //S'il reste des objets
+			{
+				//On crée une copy de l'item
+				PersoObj = Objet.getCloneObjet(PercoObj, qua);
+				//On l'ajoute au monde
+				World.addObjet(PersoObj, true);
+				//On retire X objet
+				PercoObj.setQuantity(newQua);
+				//On l'ajoute au joueur
+				P.addObjet(PersoObj);
+				
+				//On envoie les packets
+				SocketManager.GAME_SEND_OAKO_PACKET(P,PersoObj);
+				String str = "O+"+PercoObj.getGuid()+"|"+PercoObj.getQuantity()+"|"+PercoObj.getTemplate().getID()+"|"+PercoObj.parseStatsString();
+				SocketManager.GAME_SEND_EsK_PACKET(P, str);
+				
+			}
+		}
+		else
+		{
+			//S'il ne reste rien
+			if(newQua <= 0)
+			{
+				//On retire l'item
+				this.removeObjet(guid);
+				World.removeItem(PercoObj.getGuid());
+				//On Modifie la quantité de l'item du sac du joueur
+				PersoObj.setQuantity(PersoObj.getQuantity() + PercoObj.getQuantity());
+				
+				//On envoie les packets
+				SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(P, PersoObj);
+				String str = "O-"+guid;
+				SocketManager.GAME_SEND_EsK_PACKET(P, str);
+				
+			}
+			else//S'il reste des objets
+			{
+				//On retire X objet
+				PercoObj.setQuantity(newQua);
+				//On ajoute X objets
+				PersoObj.setQuantity(PersoObj.getQuantity() + qua);
+				
+				//On envoie les packets
+				SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(P,PersoObj);
+				String str = "O+"+PercoObj.getGuid()+"|"+PercoObj.getQuantity()+"|"+PercoObj.getTemplate().getID()+"|"+PercoObj.parseStatsString();
+				SocketManager.GAME_SEND_EsK_PACKET(P, str);
+				
+			}
+		}
+		SocketManager.GAME_SEND_Ow_PACKET(P);
+		SQLManager.SAVE_PERSONNAGE(P, true);
+	}
+	
+	public void LogPercepteurDrop(long kamas, long Xp, String item)
+	{
+		_LogKamas += kamas;
+		_LogXP += Xp;
+		_LogItem += item;
+	}
+	
+	public long get_LogKamas()
+	{
+		return _LogKamas;
+	}
+	
+	public long get_LogXp()
+	{
+		return _LogXP;
+	}
+	
+	public String get_LogItems()
+	{
+		return _LogItem;
+	}
+	
+	public void addObjet(Objet newObj)
+	{
+		_objets.put(newObj.getGuid(), newObj);
 	}
 }

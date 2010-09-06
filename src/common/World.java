@@ -37,6 +37,7 @@ public class World {
 	private static Map<Integer,ArrayList<Couple<Integer,Integer>>> Crafts = new TreeMap<Integer,ArrayList<Couple<Integer,Integer>>>();
 	private static Map<Integer,ItemSet> ItemSets = new TreeMap<Integer,ItemSet>();
 	private static Map<Integer,Guild> Guildes = new TreeMap<Integer,Guild>();
+	private static Map<Integer,Percepteur> Percepteur = new TreeMap<Integer,Percepteur>();
 	
 	private static int saveTry = 1;
 	
@@ -966,6 +967,12 @@ public class World {
 			{
 				SQLManager.UPDATE_GUILD(guilde);
 			}
+			GameServer.addToLog("Sauvegarde des percepteurs...");
+			for(Percepteur perco : Percepteur.values())
+			{
+				if(perco.get_inFight()>0)continue;
+				SQLManager.UPDATE_PERCO(perco);
+			}
 			GameServer.addToLog("Sauvegarde effectuee !");
 			
 		}catch(ConcurrentModificationException e)
@@ -1175,6 +1182,7 @@ public class World {
 
 	public static void removeGuild(int id)
 	{
+		//TODO : Supression des maisons+enclos
 		Guildes.remove(id);
 		SQLManager.DEL_GUILD(id);
 	}

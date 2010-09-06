@@ -161,7 +161,7 @@ public class Fight
 		public Fighter(Fight f, Personnage perso)
 		{
 			_fight = f;
-			if(perso.isClone)
+			if(perso._isClone)
 			{
 				_type = 10;
 				_double = perso;
@@ -608,7 +608,7 @@ public class Fight
 			if(_type == 2)
 				return _mob.getInit();
 			if(_type == 5)
-				return World.getGuild(_Perco.get_guildID()).get_lvl();//TODO :
+				return World.getGuild(_Perco.get_guildID()).get_lvl();
 			if(_type == 10)
 				return _double.getInitiative();
 			
@@ -2416,12 +2416,12 @@ public class Fight
         		Packet += (winKamas == 0?"":winKamas)+"|";
         	}else
         	{
-        		// Si c'est un neutre, on ne gagne pas de points
-        		// Formule très efficace, mais pas PGM du tout xD
-    			int alli = _init1.getPersonnage().get_align();
-    			int allo = _init0.getPersonnage().get_align();
-				//Calcul honeur
-        		int winH = Formulas.calculHonorWin(TEAM1,TEAM2,i)*alli*allo/2;
+        		// Si c'est un neutre, on ne gagne pas de points FIXME Déso ?
+        		int winH = 0;
+        		if(_init1.getPersonnage().get_align() != 0 || _init0.getPersonnage().get_align() != 0)
+    			{
+        			winH = Formulas.calculHonorWin(TEAM1,TEAM2,i);
+    			}
         		int winD = Formulas.calculDeshonorWin(TEAM1,TEAM2,i);
         		
         		Personnage P = i.getPersonnage();
@@ -2448,10 +2448,12 @@ public class Fight
         		Packet += "0;" + i.getGUID() + ";" + i.getPacketsName() + ";" + i.get_lvl() + ";" + (i.getPDV()==0 ?  "1" : "0" )+";"+i.xpString(";")+";;;;|";
         	else
         	{
-    			int alli = _init1.getPersonnage().get_align();
-    			int allo = _init0.getPersonnage().get_align();
-				//Calcul honeur
-        		int winH = Formulas.calculHonorWin(TEAM1,TEAM2,i)*alli*allo/2;
+        		// Si c'est un neutre, on ne gagne pas de points FIXME Déso ?
+        		int winH = 0;
+        		if(_init1.getPersonnage().get_align() != 0 || _init0.getPersonnage().get_align() != 0)
+    			{
+        			winH = Formulas.calculHonorWin(TEAM1,TEAM2,i);
+    			}
         		int winD = Formulas.calculDeshonorWin(TEAM1,TEAM2,i);
         		
         		Personnage P = i.getPersonnage();
@@ -2472,6 +2474,55 @@ public class Fight
         		Packet += winD;
         		Packet += ";;0;0;0;0;0|";
         	}
+		}
+		if(Percepteur.GetPercoByMapID(_map.get_id()) != null && _type == 4)//On a un percepteur ONLY PVM ?
+		{
+			Percepteur p = Percepteur.GetPercoByMapID(_map.get_id());
+			long winxp 	= (int)Math.floor(Formulas.getXpWinPerco(p,TEAM1,TEAM2,totalXP)/100);
+			long winkamas 	= (int)Math.floor(Formulas.getKamasWinPerco(minkamas,maxkamas)/100);
+			p.setXp(p.getXp()+winxp);
+			p.setKamas(p.getKamas()+winkamas);
+			Packet += "5;" + p.getGuid() + ";" + p.get_N1() + "," + p.get_N2() + ";" + World.getGuild(p.get_guildID()).get_lvl() + ";0;";
+			Guild G = World.getGuild(p.get_guildID());
+			Packet += G.get_lvl()+";";
+			Packet += G.get_xp()+";";
+			Packet += World.getGuildXpMax(G.get_lvl())+";";
+			Packet += ";";//XpGagner
+			Packet += winxp+";";//XpGuilde
+			Packet += ";";//Monture
+			
+			String drops = "";
+    		ArrayList<Drop> temp = new ArrayList<Drop>();
+    		temp.addAll(possibleDrops);
+    		Map<Integer,Integer> itemWon = new TreeMap<Integer,Integer>();
+    		
+    		for(Drop D : temp)
+    		{
+    			int t = (int)(D.get_taux()*100);//Permet de gerer des taux>0.01
+    			int jet = Formulas.getRandomValue(0, 100*100);
+    			if(jet < t)
+    			{
+    				ObjTemplate OT = World.getObjTemplate(D.get_itemID());
+    				if(OT == null)continue;
+    				//on ajoute a la liste
+    				itemWon.put(OT.getID(),(itemWon.get(OT.getID())==null?0:itemWon.get(OT.getID()))+1);
+    				
+    				D.setMax(D.get_max()-1);
+    				if(D.get_max() == 0)possibleDrops.remove(D);
+    			}
+    		}
+    		for(Entry<Integer,Integer> entry : itemWon.entrySet())
+    		{
+    			ObjTemplate OT = World.getObjTemplate(entry.getKey());
+    			if(OT == null)continue;
+    			if(drops.length() >0)drops += ",";
+    			drops += entry.getKey()+"~"+entry.getValue();
+    			Objet obj = OT.createNewItem(entry.getValue(), false);
+    			p.addObjet(obj);
+    			World.addObjet(obj, true);
+    		}
+			Packet += drops+";";//Drop
+			Packet += winkamas+"|";
 		}
         return Packet;
     }
@@ -2501,7 +2552,6 @@ public class Fight
 		}
 		if(team0 || team1 || !verifyStillInFight())
 		{
-			//TODO UNLOAD DOUBLE
 			_state = Constants.FIGHT_STATE_FINISHED;
 			int winner = team0?2:1;
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("L'equipe "+winner+" gagne !");
@@ -2511,10 +2561,20 @@ public class Fight
 			_curPlayer = -1;
 			for(Entry<Integer, Fighter> entry : _team0.entrySet())
 			{
+				if(entry.getValue()._double != null)
+				{
+					System.out.println("UNLOAD");
+					World.deletePerso(entry.getValue()._double);
+				}
 				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_map, entry.getValue().getGUID());
 			}
 			for(Entry<Integer, Fighter> entry : _team1.entrySet())
 			{
+				if(entry.getValue()._double != null)
+				{
+					System.out.println("UNLOAD");
+					World.deletePerso(entry.getValue()._double);
+				}
 				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_map, entry.getValue().getGUID());
 			}
 			this._init0.getPersonnage().get_curCarte().removeFight(this._id);

@@ -1,3 +1,44 @@
+[06/09/2010]
+- Guilde : La supression d'un membre de guilde enleve sa maison de celle-ci.
+
+[03/09/2010]
+- Personnage : Ajout du stuff du double (quelques bug surviennent).
+
+[02/09/2010]
+- Fight : Gestion de l'affichage du drop percepteur en fin de combat.
+- Fight : Le double est décharger de la mémoire a la fin du combat.
+- Percepteur : Supression des items non récoltés/droppés.
+
+[01/09/2010]
+- Percepteur : Ajout d'un système d'information de récolte pour les autres membre de guilde.
+- Fight : Gestion de l'affichage des percepteurs lors de l'affichage des gains en PVM.
+- Fight : Mise en place du système de gain de kamas et d'expérience sur les percepteurs.
+
+[31/08/2010]
+- Percepteur : Mise en place du système de récolte de kamas.
+- Percepteur : Mise en place du système de récolte d'objets.
+- Percepteur : Supression de celui-ci après récolte.
+- BDD : Ajout du patch des potions d'oublie de métier (THX xox1505).
+- Action : Ajout de deux actionsID
+24 : Morph. Argument : morphID
+25 : DeMorph. Sans argument.
+
+[30/08/2010]
+- Percepteur : Début du système de récolte (10%).
+
+[29/08/2010]
+- GameThread : Correction de la limitation de percepteur par guilde (type officiel).
+- GameThread : Mise en place des boosts (propection, sagesse, pods et nombre de percepteur) (50% Il manque les sorts).
+- Guild : Ajout du gain de 5 points de capital par niveau.
+- Percepteur : Début du système de récolte (5%).
+
+[28/08/2010]
+- SocketManager : Correction de certains problèmes de déconnection liés au canal guilde (THX Gui205).
+- Guild : Début de la gestion des boosts du percepteur (10%).
+
+[25/08/2010]
+- Guild : Correction de level max de la guilde (THX snowiiz).
+
 [24/08/2010]
 - SpellEffect/Personnage/Fight : Mise en place du double du sram : 90% (Il manque le stuff).
 - Personnage : Correction de l'alignement du double du sram (affichage des ailes).

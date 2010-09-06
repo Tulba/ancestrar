@@ -104,12 +104,15 @@ public class Personnage {
 	private ArrayList<Short> _zaaps = new ArrayList<Short>();
 	private int _Prospection;
 	//Disponibilité
-	public boolean isAbsent = false;
-	public boolean isInvisible = false;
+	public boolean _isAbsent = false;
+	public boolean _isInvisible = false;
 	//Oublie de sort
-	private boolean isForgetingSpell = false;
+	private boolean _isForgetingSpell = false;
 	//Double
-	public boolean isClone = false;
+	public boolean _isClone = false;
+	//Percepteurs
+	public boolean _isOnPercepteur = false;
+	private int _isOnPercepteurID = 0;
 	
 	public static class Group
 	{
@@ -1616,6 +1619,10 @@ public class Personnage {
 		SocketManager.GAME_SEND_OAKO_PACKET(this,newObj);
 		return true;
 	}
+	public void addObjet(Objet newObj)
+	{
+		_items.put(newObj.getGuid(), newObj);
+	}
 	public Map<Integer,Objet> getItems()
 	{
 		return _items;
@@ -1775,6 +1782,7 @@ public class Personnage {
 		for(Entry<Integer,Objet> entry : _items.entrySet())
 		{
 			Objet obj = entry.getValue();
+			
 			if(obj.getTemplate().getID() == exObj.getTemplate().getID()
 				&& obj.getStats().isSameStats(exObj.getStats())
 				&& obj.getGuid() != exObj.getGuid()
@@ -2481,6 +2489,12 @@ public class Personnage {
 		_isZaaping = false;
 		_inMountPark = null;
 		_onMount = false;
+		_isOnPercepteur = false;
+		_isOnPercepteurID = 0;
+		_isClone = false;
+		_isForgetingSpell = false;
+		_isAbsent = false;
+		_isInvisible = false;
 	}
 	public void addChanel(String chan)
 	{
@@ -2747,19 +2761,19 @@ public class Personnage {
 	}
 	
 	public void setisForgetingSpell(boolean isForgetingSpell) {
-		this.isForgetingSpell = isForgetingSpell;
+		_isForgetingSpell = isForgetingSpell;
 	}
 	
 	public boolean isForgetingSpell() {
-		return isForgetingSpell;
+		return _isForgetingSpell;
 	}
 	
 	public boolean isDispo(Personnage sender)
 	{
-		if(isAbsent)
+		if(_isAbsent)
 			return false;
 		
-		if(isInvisible)
+		if(_isInvisible)
 		{
 			return _compte.isFriendWith(sender.get_compte().get_GUID());
 		}
@@ -2769,12 +2783,32 @@ public class Personnage {
 	
 	public boolean get_isClone()
 	{
-		return isClone;
+		return _isClone;
 	}
 	
-	public void set_isClone(boolean _isClone)
+	public void set_isClone(boolean isClone)
 	{
-		isClone = _isClone;
+		_isClone = isClone;
+	}
+	
+	public boolean get_isOnPercepteur()
+	{
+		return _isOnPercepteur;
+	}
+	
+	public void set_isOnPercepteur(boolean isOnPercepteur)
+	{
+		_isOnPercepteur = isOnPercepteur;
+	}
+	
+	public int get_isOnPercepteurID()
+	{
+		return _isOnPercepteurID;
+	}
+	
+	public void set_isOnPercepteurID(int isOnPercepteurID)
+	{
+		_isOnPercepteurID = isOnPercepteurID;
 	}
 	
 	public static Personnage ClonePerso(Personnage P, int id)
@@ -2821,7 +2855,7 @@ public class Personnage {
 				100, 
 				P.get_gfxID(),
 				stats,
-				"",//FIXME STUFF
+				P.parseObjetsToDB(),
 				100,
 				showWings,
 				mountID,
