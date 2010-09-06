@@ -15,13 +15,13 @@ public class House
 {
 	
 	private static Map<Integer,Boolean> haveRight = new TreeMap<Integer,Boolean>();
-	private static int price;
-	private static int sellerid;
-	public static short CcellID;//Détermine la cell_id de la maison => S'obtient dans le GA packet
-	public static short CcarteID;//Détermine la map ou ce trouve le perso
-	public static short isMapID;//La mapid de la maison
-	public static short isCellID;//La cellid de la maison
-	public static short isGuild;//La guilde de la maison
+	private static int price = -1;
+	private static int sellerid = -1;
+	public static short CcellID = -1;//Détermine la cell_id de la maison => S'obtient dans le GA packet
+	public static short CcarteID = -1;//Détermine la map ou ce trouve le perso
+	public static short isMapID = -1;//La mapid de la maison
+	public static short isCellID = -1;//La cellid de la maison
+	public static short isGuild = -1;//La guilde de la maison
 
 	public static void LoadHouse(Personnage P, int newMapID)//Affichage des maison + Blason
 	{
@@ -435,7 +435,7 @@ public class House
 		}
 	}
 	
-	private static byte HouseOnGuild(int GuildID) 
+	static byte HouseOnGuild(int GuildID) 
 	{
 		byte i = 0;
 		ResultSet RS;

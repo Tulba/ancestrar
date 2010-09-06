@@ -28,6 +28,7 @@ import common.World.ItemSet;
 public class GameThread implements Runnable
 {
 	private long _LastDateFonction = 0;
+	private long _LastDateFonctionMoveObject = 0;
 	private BufferedReader _in;
 	private Thread _t;
 	private PrintWriter _out;
@@ -406,6 +407,43 @@ public class GameThread implements Runnable
 	{
 		switch(packet.charAt(1))
 		{
+			case 'B'://Stats
+				if(_perso.get_guild() == null)return;
+				Guild G = _perso.get_guild();
+				if(!_perso.getGuildMember().canDo(Constants.G_BOOST))return;
+				switch(packet.charAt(2))
+				{
+					case 'p'://Prospec
+						if(G.get_Capital() < 1)return;
+						if(G.get_Stats(176) >= 500)return;
+						G.set_Capital(G.get_Capital()-1);
+						G.upgrade_Stats(176, 1);
+					break;
+					case 'x'://Sagesse
+						if(G.get_Capital() < 1)return;
+						if(G.get_Stats(124) >= 400)return;
+						G.set_Capital(G.get_Capital()-1);
+						G.upgrade_Stats(124, 1);
+					break;
+					case 'o'://Pod
+						if(G.get_Capital() < 1)return;
+						if(G.get_Stats(158) >= 5000)return;
+						G.set_Capital(G.get_Capital()-1);
+						G.upgrade_Stats(158, 20);
+					break;
+					case 'k'://Nb Perco
+						if(G.get_Capital() < 10)return;
+						if(G.get_nbrPerco() >= 50)return;
+						G.set_Capital(G.get_Capital()-10);
+						G.set_nbrPerco(G.get_nbrPerco()+1);
+					break;
+				}
+				SQLManager.UPDATE_GUILD(G);
+				SocketManager.GAME_SEND_gIB_PACKET(_perso, _perso.get_guild().parsePercotoGuild());
+			break;
+			case 'b'://Sorts
+				//TODO : Les sorts percepteurs
+			break;
 			case 'C'://Creation
 				guild_create(packet);
 			break;
@@ -480,7 +518,7 @@ public class GameThread implements Runnable
 		if(_perso.get_kamas() < price) return;//Kamas insuffisants
 		if(Percepteur.GetPercoGuildID(_perso.get_curCarte().get_id()) > 0)return;//La carte possède un perco
 		if(_perso.get_curCarte().get_placesStr().length() < 5)return;//La map ne possède pas de "places"
-		if(((int)Math.floor(_perso.get_guild().get_lvl()/10))-Percepteur.CountPercoGuild(_perso.get_guild().get_id()) < 1) return;
+		if(Percepteur.CountPercoGuild(_perso.get_guild().get_id()) >= _perso.get_guild().get_nbrPerco()) return;//Limite de percepteur
 		//FIXME : Don't Works
 		short lower1 = 1;
 		short higher1 = 129;
@@ -490,7 +528,7 @@ public class GameThread implements Runnable
 		short random2 = (short) ((short)(Math.random() * (higher2-lower2)) + lower2);
 		//Ajout du Perco.
 		int id = SQLManager.GetNewIDPercepteur();
-		Percepteur perco = new Percepteur(id, _perso.get_curCarte().get_id(), _perso.get_curCell().getID(), (byte)3, _perso.get_guild().get_id(), random1, random2);
+		Percepteur perco = new Percepteur(id, _perso.get_curCarte().get_id(), _perso.get_curCell().getID(), (byte)3, _perso.get_guild().get_id(), random1, random2, "", 0, 0);
 		Percepteur.addPerco(perco);
 		SocketManager.GAME_SEND_ADD_PERCO_TO_MAP(_perso.get_curCarte());
 		SQLManager.ADD_PERCO_ON_MAP(id, _perso.get_curCarte().get_id(), _perso.get_guild().get_id(), _perso.get_curCell().getID(), 3, random1, random2);
@@ -759,9 +797,7 @@ public class GameThread implements Runnable
 		switch(c)
 		{
 		case 'B'://Perco
-			String packet = _perso.get_guild().get_lvl()+"|"+Percepteur.CountPercoGuild(_perso.get_guild().get_id())+"|"+100*_perso.get_guild().get_lvl()+"|"+_perso.get_guild().get_lvl()+"|1000|100|0|1|0|"+(1000+(10*_perso.get_guild().get_lvl()))+"|462;0|461;0|460;0|459;0|458;0|457;0|456;0|455;0|454;0|453;0|452;0|451;0";
-			SocketManager.GAME_SEND_gIB_PACKET(_perso, packet);
-			//Percomax|0|100*level|level|perco_add_pods|perco_prospection|perco_sagesse|perco_max|perco_boost|1000+10*level|perco_spells
+			SocketManager.GAME_SEND_gIB_PACKET(_perso, _perso.get_guild().parsePercotoGuild());
 		break;
 		case 'F'://Enclos
 			SocketManager.GAME_SEND_gIF_PACKET(_perso, SQLManager.parseMPtoGuild(_perso.get_guild().get_id()));
@@ -1269,7 +1305,15 @@ public class GameThread implements Runnable
 				Object_drop(packet);
 			break;
 			case 'M'://Bouger un objet (Equiper/déséquiper)
-				Object_move(packet);
+				//Eviter les bug de duplication lors du lag de la console
+				if((System.currentTimeMillis() - _LastDateFonctionMoveObject) < 500)
+				{
+					return;
+				}else
+				{
+					_LastDateFonctionMoveObject = System.currentTimeMillis();
+					Object_move(packet);
+				}
 			break;
 			
 			case 'U'://Utiliser un objet (potions)
@@ -1755,14 +1799,68 @@ public class GameThread implements Runnable
 
 	private void Exchange_onMoveItem(String packet)
 	{
-		//Metier
+		//Percepteur
+		if(_perso.get_isOnPercepteur())
+		{
+			Percepteur perco = Percepteur.GetPerco(_perso.get_isOnPercepteurID());
+			if(perco.get_inFight() > 0)return;
+			switch(packet.charAt(2))
+			{
+			case 'G'://Kamas
+				if(packet.charAt(3) == '-') //On retire
+				{
+					long P_Kamas = Integer.parseInt(packet.substring(4));
+					long P_Retrait = perco.getKamas()-P_Kamas;
+					if(P_Retrait < 0)
+					{
+						P_Retrait = 0;
+						P_Kamas = perco.getKamas();
+					}
+					perco.setKamas(P_Retrait);
+					_perso.addKamas(P_Kamas);
+					perco.LogPercepteurDrop(P_Kamas, 0, "");
+					SocketManager.GAME_SEND_STATS_PACKET(_perso);
+					SocketManager.GAME_SEND_EsK_PACKET(_perso,"G"+perco.getKamas());
+				}
+			break;
+			case 'O'://Objets
+				if(packet.charAt(3) == '-') //On retire
+				{
+					String[] infos = packet.substring(4).split("\\|");
+					int guid = 0;
+					int qua = 0;
+					try
+					{
+						guid = Integer.parseInt(infos[0]);
+						qua  = Integer.parseInt(infos[1]);
+					}catch(NumberFormatException e){};
+					
+					System.out.println(guid+" : "+qua);
+					if(guid <= 0 || qua <= 0) return;
+					
+					Objet obj = World.getObjet(guid);
+					if(obj == null)return;
+
+					if(perco.HaveObjet(guid))
+					{
+						perco.removeFromPercepteur(_perso, guid, qua);
+					}
+					perco.LogPercepteurDrop(0, 0, "x"+obj.getQuantity()+"\n");
+				}
+			break;
+			}
+			_perso.get_guild().addXp(perco.getXp());
+			perco.LogPercepteurDrop(0, perco.getXp(), "");
+			perco.setXp(0);
+			SQLManager.UPDATE_GUILD(_perso.get_guild());
+		}
+		//HDV
 		if(HDV._isHdv)
 		{
 			if(packet.charAt(2) == 'O')//Ajout d'objet
 			{
 				if(packet.charAt(3) == '+')
 				{
-					//FIXME gerer les packets du genre  EMO+173|5+171|5+172|5 (split sur '+' ?:/)
 					String[] infos = packet.substring(4).split("\\|");
 					try
 					{
@@ -1795,6 +1893,7 @@ public class GameThread implements Runnable
 			
 			}
 		}
+		//Metier
 		if(_perso.getCurJobAction() != null)
 		{
 			//Si pas action de craft, on s'arrete la
@@ -2073,6 +2172,27 @@ public class GameThread implements Runnable
 		{
 			HDV._isHdv = false;
 		}
+		if(_perso.get_isOnPercepteur())
+		{
+			Percepteur perco = Percepteur.GetPerco(_perso.get_isOnPercepteurID());
+			//On actualise la guilde+Message de récolte FIXME
+			for(Personnage z : World.getGuild(perco.get_guildID()).getMembers())
+			{
+				if(z.isOnline())
+				{
+					SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
+					SocketManager.GAME_SEND_MESSAGE(z, "Un percepteur vient d'etre recolte par "+_perso.get_name()+".", Ancestra.CONFIG_MOTD_COLOR);
+					//TODO : ITEMS ?
+					SocketManager.GAME_SEND_MESSAGE(z, "Gains : \n-Kamas : "+perco.get_LogKamas()+"\n-Xp : "+perco.get_LogXp()+".", Ancestra.CONFIG_MOTD_COLOR);
+				}
+			}
+			_perso.get_curCarte().RemoveNPC(perco.getGuid());
+			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_perso.get_curCarte(), perco.getGuid());
+			perco.DelPerco(perco.getGuid());
+			SQLManager.DELETE_PERCO(perco.getGuid());
+			_perso.set_isOnPercepteur(false);
+			_perso.set_isOnPercepteurID(0);
+		}
 		
 		SQLManager.SAVE_PERSONNAGE(_perso,true);
 		SocketManager.GAME_SEND_EV_PACKET(_out);
@@ -2099,6 +2219,19 @@ public class GameThread implements Runnable
 			break;
 			case '1'://Si joueur
 				Exchange_more(packet);
+			break;
+			case '8'://Si Percepteur
+				try
+				{
+					int PercepteurID = Integer.parseInt(packet.substring(4));
+					Percepteur perco = Percepteur.GetPerco(PercepteurID);
+					if(perco == null)return;
+					SocketManager.GAME_SEND_ECK_PACKET(_out, 8, perco.getGuid()+"");
+					SocketManager.GAME_SEND_ITEM_LIST_PACKET_PERCEPTEUR(_out, perco);
+					_perso.set_isTradingWith(perco.getGuid());
+					_perso.set_isOnPercepteur(true);
+					_perso.set_isOnPercepteurID(perco.getGuid());
+				}catch(NumberFormatException e){};
 			break;
 		}
 	}
@@ -2346,30 +2479,30 @@ public class GameThread implements Runnable
 		switch(packet.charAt(2))
 		{
 			case 'A': //Absent
-				if(_perso.isAbsent)
+				if(_perso._isAbsent)
 				{
 
 					SocketManager.GAME_SEND_Im_PACKET(_perso, "038");
 
-					_perso.isAbsent = false;
+					_perso._isAbsent = false;
 				}
 				else
 
 				{
 					SocketManager.GAME_SEND_Im_PACKET(_perso, "037");
-					_perso.isAbsent = true;
+					_perso._isAbsent = true;
 				}
 			break;
 			case 'I': //Invisible
-				if(_perso.isInvisible)
+				if(_perso._isInvisible)
 				{
 					SocketManager.GAME_SEND_Im_PACKET(_perso, "051");
-					_perso.isInvisible = false;
+					_perso._isInvisible = false;
 				}
 				else
 				{
 					SocketManager.GAME_SEND_Im_PACKET(_perso, "050");
-					_perso.isInvisible = true;
+					_perso._isInvisible = true;
 				}
 			break;
 		}

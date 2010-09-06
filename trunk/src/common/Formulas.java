@@ -389,7 +389,75 @@ public class Formulas {
 		}
 		return retrait;
 	}
+	
+	public static long getXpWinPerco(Percepteur perco, ArrayList<Fighter> winners,ArrayList<Fighter> loosers,long groupXP)
+	{
+			Guild G = World.getGuild(perco.get_guildID());
+			float sag = G.get_Stats(Constants.STATS_ADD_SAGE);
+			float coef = (sag + 100)/100;
+			int taux = Ancestra.XP_PVM;
+			long xpWin = 0;
+			int lvlmax = 0;
+			for(Fighter entry : winners)
+			{
+				if(entry.get_lvl() > lvlmax)
+					lvlmax = entry.get_lvl();
+			}
+			int nbbonus = 0;
+			for(Fighter entry : winners)
+			{
+				if(entry.get_lvl() > (lvlmax / 3))
+					nbbonus += 1;				
+			}
+			
+			double bonus = 1;
+			if(nbbonus == 2)
+				bonus = 1.1;
+			if(nbbonus == 3)
+				bonus = 1.3;
+			if(nbbonus == 4)
+				bonus = 2.2;
+			if(nbbonus == 5)
+				bonus = 2.5;
+			if(nbbonus == 6)
+				bonus = 2.8;
+			if(nbbonus == 7)
+				bonus = 3.1;
+			if(nbbonus >= 8)
+				bonus = 3.5;
+			
+			int lvlLoosers = 0;
+			for(Fighter entry : loosers)
+				lvlLoosers += entry.get_lvl();
+			int lvlWinners = 0;
+			for(Fighter entry : winners)
+				lvlWinners += entry.get_lvl();
+			double rapport = 1+((double)lvlLoosers/(double)lvlWinners);
+			if (rapport <= 1.3)
+				rapport = 1.3;
+			/*
+			if (rapport > 5)
+				rapport = 5;
+			//*/
+			int lvl = G.get_lvl();
+			double rapport2 = 1 + ((double)lvl / (double)lvlWinners);
 
+			xpWin = (long) (groupXP * rapport * bonus * taux *coef * rapport2);
+			
+			/*/ DEBUG XP
+			System.out.println("=========");
+			System.out.println("groupXP: "+groupXP);
+			System.out.println("rapport1: "+rapport);
+			System.out.println("bonus: "+bonus);
+			System.out.println("taux: "+taux);
+			System.out.println("coef: "+coef);
+			System.out.println("rapport2: "+rapport2);
+			System.out.println("xpWin: "+xpWin);
+			System.out.println("=========");
+			//*/
+			return xpWin;	
+	}
+	
 	public static long getXpWinPvm2(Fighter perso, ArrayList<Fighter> winners,ArrayList<Fighter> loosers,long groupXP)
 	{
 		if(perso.getPersonnage()== null)return 0;
@@ -591,6 +659,13 @@ public class Formulas {
 	}
 
 	public static int getKamasWin(Fighter i, ArrayList<Fighter> winners, int maxk, int mink)
+	{
+		maxk++;
+		int rkamas = (int)(Math.random() * (maxk-mink)) + mink;
+		return rkamas*Ancestra.KAMAS;
+	}
+	
+	public static int getKamasWinPerco(int maxk, int mink)
 	{
 		maxk++;
 		int rkamas = (int)(Math.random() * (maxk-mink)) + mink;

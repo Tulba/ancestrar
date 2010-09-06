@@ -424,6 +424,19 @@ public class Action {
 				SocketManager.GAME_SEND_STATS_PACKET(perso);
 				SQLManager.SAVE_PERSONNAGE(perso, false);
 			break;
+			case 24://SimpleMorph
+				int morphID = Integer.parseInt(args);
+				if(morphID < 0)return;
+				perso.set_gfxID(morphID);
+				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(perso.get_curCarte(), perso.get_GUID());
+				SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(perso.get_curCarte(), perso);
+			break;
+			case 25://SimpleUnMorph
+				int UnMorphID = perso.get_classe()*10 + perso.get_sexe();
+				perso.set_gfxID(UnMorphID);
+				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(perso.get_curCarte(), perso.get_GUID());
+				SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(perso.get_curCarte(), perso);
+			break;
 			default:
 				GameServer.addToLog("Action ID="+ID+" non implantée");
 			break;

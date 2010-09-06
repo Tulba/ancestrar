@@ -1218,7 +1218,11 @@ public class SocketManager {
 	public static void GAME_SEND_cMK_PACKET_TO_GUILD(Guild g,String suffix,int guid,String name,String msg)
 	{
 		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
-		for(Personnage perso : g.getMembers())if(perso.isOnline())if(perso.get_compte() != null)send(perso,packet);
+		for(Personnage perso : g.getMembers())
+		{
+			if(perso == null || !perso.isOnline())continue;
+					send(perso,packet);
+		}
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: ALL("+World.getOnlinePersos().size()+"): Send>>"+packet);
 	}
@@ -1337,6 +1341,14 @@ public class SocketManager {
 	public static void GAME_SEND_ITEM_VENDOR_LIST_PACKET(PrintWriter out, NPC npc)
 	{
 		String packet = "EL"+npc.get_template().getItemVendorList();
+		send(out,packet);
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet);	
+	}
+	
+	public static void GAME_SEND_ITEM_LIST_PACKET_PERCEPTEUR(PrintWriter out, Percepteur perco)
+	{
+		String packet = "EL"+perco.getItemPercepteurList();
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);	
