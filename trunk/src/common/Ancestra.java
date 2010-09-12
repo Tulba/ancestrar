@@ -24,7 +24,7 @@ public class Ancestra {
 	public static String DB_PASS;
 	public static String STATIC_DB_NAME;
 	public static String OTHER_DB_NAME;
-	public static long FLOOD_TIME = 3000;
+	public static long FLOOD_TIME = 60000;
 	public static String GAMESERVER_IP;
 	public static String CONFIG_MOTD = "";
 	public static String CONFIG_MOTD_COLOR = "";
@@ -49,6 +49,7 @@ public class Ancestra {
 	public static boolean CONFIG_IP_LOOPBACK = true;
 	public static int XP_PVP = 10;
 	public static int LVL_PVP = 15;
+	public static boolean ALLOW_MULE_PVP = false;
 	public static int XP_PVM = 1;
 	public static int KAMAS = 1;
 	public static int HONOR = 1;
@@ -296,6 +297,9 @@ public class Ancestra {
 				}else if (param.equalsIgnoreCase("AURA_SYSTEM"))
 				{
 					Ancestra.AURA_SYSTEM = value.equalsIgnoreCase("true");
+				}else if (param.equalsIgnoreCase("ALLOW_MULE_PVP"))
+				{
+					Ancestra.ALLOW_MULE_PVP = value.equalsIgnoreCase("true");
 				}
 			}
 			if(STATIC_DB_NAME == null || OTHER_DB_NAME == null || DB_HOST == null || DB_PASS == null || DB_USER == null)

@@ -1,3 +1,23 @@
+[12/09/2010]
+- Fight/SocketManager : Correction de l'option expulser.
+
+[09/09/2010]
+- SpellEffect : Ajout du sort "Laisse spirituel" de Sylarman.
+
+[08/09/2010]
+- GameThread : Localisation des membres du groupe fonctionnel.
+- SpellEffect : Correction du sort "sacrifice" par Sylarman.
+- Guilde : La supression d'une guilde, retire les maisons de guildes associés.
+- Fight : Correction de quelques bugs liés a la fonction annuler.
+- Fight : Correction de l'affichage des épées dans le mode spectateur.
+
+[07/09/2010]
+- Personnage/SQLManager : Ajout d'un vérification, qui retire les items qui occupe une même position (Exemple : Porter deux coiffes).
+- Ancestra : Ré-hausse de la limite de flood a 60 secondes.
+- SpellEffect : Correction du sort Ronce apaisante (Sadi).
+- GameThread : Le nom du personnage a sa création ne peux plus que comporter qu'un tiret et qu'un suite de deux même caractères.
+- Fight : L'agression d'un personnage possèdant la même IP que la sienne ne fait plus gagner de point d'honneur (Configurable avec l'option ALLOW_MULE_PVP).
+
 [06/09/2010]
 - Guilde : La supression d'un membre de guilde enleve sa maison de celle-ci.
 

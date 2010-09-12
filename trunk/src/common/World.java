@@ -1182,7 +1182,7 @@ public class World {
 
 	public static void removeGuild(int id)
 	{
-		//TODO : Supression des maisons+enclos
+		SQLManager.HOUSE_GUILD_REMOVE(id);
 		Guildes.remove(id);
 		SQLManager.DEL_GUILD(id);
 	}

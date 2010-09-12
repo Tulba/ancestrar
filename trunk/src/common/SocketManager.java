@@ -484,13 +484,25 @@ public class SocketManager {
 		String packet = "GM|-"+guid;
 		for(int z=0;z < f.getFighters(1).size();z++)
 		{
-			if(f.getFighters(2).get(z).getPersonnage().get_compte().getGameThread() == null)continue;
+			if(f.getFighters(1).get(z).getPersonnage().get_compte().getGameThread() == null)continue;
 			send(f.getFighters(1).get(z).getPersonnage().get_compte().getGameThread().get_out(),packet);
 		}
 		for(int z=0;z < f.getFighters(2).size();z++)
 		{
 			if(f.getFighters(2).get(z).getPersonnage().get_compte().getGameThread() == null)continue;
 			send(f.getFighters(2).get(z).getPersonnage().get_compte().getGameThread().get_out(),packet);
+		}
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Fighter ID "+f.get_id()+": Send>>"+packet);
+	}
+	
+	public static void GAME_SEND_ON_FIGHTER_KICK(Fight f, int guid, int team)
+	{
+		String packet = "GM|-"+guid;
+		for(Fighter F : f.getFighters(team))
+		{
+			if(F.getPersonnage().get_compte().getGameThread() == null || F.getPersonnage().get_GUID() == guid)continue;
+			send(F.getPersonnage().get_compte().getGameThread().get_out(),packet);
 		}
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fighter ID "+f.get_id()+": Send>>"+packet);
@@ -2310,6 +2322,13 @@ public class SocketManager {
 	public static void GAME_SEND_gITP_PACKET(Personnage perso, String str)
 	{
 		String packet = "gITP"+str;
+		send(perso, packet);
+		if (Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>" + packet);
+	}
+	public static void GAME_SEND_IH_PACKET(Personnage perso, String str)
+	{
+		String packet = "IH"+str;
 		send(perso, packet);
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
