@@ -342,7 +342,7 @@ public class Compte {
 			if(P.getGroup() != null)P.getGroup().leave(P);
 			
 			//Si en combat
-			if(P.get_fight() != null)P.get_fight().leftFight(P);
+			if(P.get_fight() != null)P.get_fight().leftFight(P, null);
 			else//Si hors combat
 			{
 				P.get_curCell().removePlayer(P.get_GUID());

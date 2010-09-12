@@ -2870,4 +2870,204 @@ public class Personnage {
 		}
 		return Clone;
 	}
+	
+	public void VerifAndChangeItemPlace()
+	{
+		boolean isFirstAM = true;
+		boolean isFirstAN = true;
+		boolean isFirstANb = true;
+		boolean isFirstAR = true;
+		boolean isFirstBO = true;
+		boolean isFirstBOb = true;
+		boolean isFirstCA = true;
+		boolean isFirstCE = true;
+		boolean isFirstCO = true;
+		boolean isFirstDa = true;
+		boolean isFirstDb = true;
+		boolean isFirstDc = true;
+		boolean isFirstDd = true;
+		boolean isFirstDe = true;
+		boolean isFirstDf = true;
+		boolean isFirstFA = true;
+		for(Objet obj : _items.values())
+		{
+			if(obj.getPosition() == Constants.ITEM_POS_NO_EQUIPED)continue;
+			if(obj.getPosition() == Constants.ITEM_POS_AMULETTE)
+			{
+				if(isFirstAM)
+				{
+					isFirstAM = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_ANNEAU1)
+			{
+				if(isFirstAN)
+				{
+					isFirstAN = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_ANNEAU2)
+			{
+				if(isFirstANb)
+				{
+					isFirstANb = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_ARME)
+			{
+				if(isFirstAR)
+				{
+					isFirstAR = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_BOTTES)
+			{
+				if(isFirstBO)
+				{
+					isFirstBO = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_BOUCLIER)
+			{
+				if(isFirstBOb)
+				{
+					isFirstBOb = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_CAPE)
+			{
+				if(isFirstCA)
+				{
+					isFirstCA = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_CEINTURE)
+			{
+				if(isFirstCE)
+				{
+					isFirstCE = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_COIFFE)
+			{
+				if(isFirstCO)
+				{
+					isFirstCO = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_DOFUS1)
+			{
+				if(isFirstDa)
+				{
+					isFirstDa = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_DOFUS2)
+			{
+				if(isFirstDb)
+				{
+					isFirstDb = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_DOFUS3)
+			{
+				if(isFirstDc)
+				{
+					isFirstDc = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_DOFUS4)
+			{
+				if(isFirstDd)
+				{
+					isFirstDd = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_DOFUS5)
+			{
+				if(isFirstDe)
+				{
+					isFirstDe = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_DOFUS6)
+			{
+				if(isFirstDf)
+				{
+					isFirstDf = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+			else if(obj.getPosition() == Constants.ITEM_POS_FAMILIER)
+			{
+				if(isFirstFA)
+				{
+					isFirstFA = false;
+				}else
+				{
+					obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				}
+				continue;
+			}
+		}
+	}
 }

@@ -43,6 +43,7 @@ START_KAMAS = 0
 ZAAP_ANK = false
 ZAAP_INC = false
 LVL_PVP = 15
+ALLOW_MULE_PVP = false
 AURA_SYSTEM = true
 
 # Arenes

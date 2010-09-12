@@ -1202,9 +1202,28 @@ public class GameThread implements Runnable
 			case 'V'://Quitter
 				group_quit(packet);
 			break;
+			case 'W'://Localisation du groupe
+				group_locate();
+			break;
 		}
 	}
-
+	
+	private void group_locate()
+	{
+		if(_perso == null)return;
+		Group g = _perso.getGroup();
+		if(g == null)return;
+		String str = "";
+		boolean isFirst = true;
+		for(Personnage GroupP : _perso.getGroup().getPersos())
+		{
+			if(!isFirst) str += "|";
+			str += GroupP.get_curCarte().getX()+";"+GroupP.get_curCarte().getY()+";"+GroupP.get_curCarte().get_id()+";2;"+GroupP.get_GUID()+";"+GroupP.get_name();
+			isFirst = false;
+		}
+		SocketManager.GAME_SEND_IH_PACKET(_perso, str);
+	}
+	
 	private void group_quit(String packet)
 	{
 		if(_perso == null)return;
@@ -1214,6 +1233,7 @@ public class GameThread implements Runnable
 		{
 			 g.leave(_perso);
 			 SocketManager.GAME_SEND_PV_PACKET(_out,"");
+			SocketManager.GAME_SEND_IH_PACKET(_perso, "");
 		}else if(g.isChief(_perso.get_GUID()))//Sinon, c'est qu'il kick un joueur du groupe
 		{
 			int guid = -1;
@@ -1225,6 +1245,7 @@ public class GameThread implements Runnable
 			Personnage t = World.getPersonnage(guid);
 			g.leave(t);
 			SocketManager.GAME_SEND_PV_PACKET(t.get_compte().getGameThread().get_out(),""+_perso.get_GUID());
+			SocketManager.GAME_SEND_IH_PACKET(t, "");
 		}
 	}
 
@@ -4468,7 +4489,7 @@ public class GameThread implements Runnable
 				Game_on_ChangePlace_packet(packet);
 			break;
 			case 'Q':
-				Game_onLeftFight();
+				Game_onLeftFight(packet);
 			break;
 			case 'R':
 				Game_on_Ready(packet);
@@ -4481,10 +4502,24 @@ public class GameThread implements Runnable
 	}
 
 	
-	private void Game_onLeftFight()
+	private void Game_onLeftFight(String packet)
 	{
+		int targetID = -1;
+		if(!packet.substring(2).isEmpty())
+		{
+			targetID = Integer.parseInt(packet.substring(2));
+		}
 		if(_perso.get_fight() == null)return;
-		_perso.get_fight().leftFight(_perso);
+		if(targetID > 0)
+		{
+			Personnage target = World.getPersonnage(targetID);
+			if(target == null || target.get_fight() == null)return;
+			_perso.get_fight().leftFight(_perso, target);
+			
+		}else
+		{
+			_perso.get_fight().leftFight(_perso, null);
+		}
 	}
 
 	private void Game_on_showCase(String packet)
@@ -4969,17 +5004,28 @@ public class GameThread implements Runnable
 				if(isValid)
 				{
 					int tiretCount = 0;
+					char exLetterA = ' ';
+					char exLetterB = ' ';
 					for(char curLetter : name.toCharArray())
 					{
-						if(!(	(curLetter >= 'a' && curLetter <= 'z')
-								|| curLetter == '-'))
+						if(!((curLetter >= 'a' && curLetter <= 'z') || curLetter == '-'))
 						{
 							isValid = false;
 							break;
 						}
+						if(curLetter == exLetterA && curLetter == exLetterB)
+						{
+							isValid = false;
+							break;
+						}
+						if(curLetter >= 'a' && curLetter <= 'z')
+						{
+							exLetterA = exLetterB;
+							exLetterB = curLetter;
+						}
 						if(curLetter == '-')
 						{
-							if(tiretCount >= 2)
+							if(tiretCount >= 1)
 							{
 								isValid = false;
 								break;

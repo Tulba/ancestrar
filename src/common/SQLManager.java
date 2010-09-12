@@ -659,6 +659,8 @@ public class SQLManager {
 						RS.getInt("alvl"),
 						RS.getString("zaaps")
 						);
+				//Vérifications pré-connexion
+				perso.VerifAndChangeItemPlace();
 				World.addPersonnage(perso);
 				int guildId = isPersoInGuild(RS.getInt("guid"));
 				if(guildId >= 0)
@@ -2564,6 +2566,18 @@ public class SQLManager {
 		{	
 			PreparedStatement p;
 			String query = "UPDATE `houses` SET `guild_rights`='"+GuildRights+"' WHERE `map_id`='"+House.CcarteID+"' AND `cell_id`='"+House.CcellID+"' AND owner_id='"+P.getAccID()+"';";
+			try {
+				p = newTransact(query, othCon);
+				p.execute();
+			} catch (SQLException e) {
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				GameServer.addToLog("Game: Query: "+query);
+			}
+		}
+		public static void HOUSE_GUILD_REMOVE(int GuildID) 
+		{	
+			PreparedStatement p;
+			String query = "UPDATE `houses` SET `guild_rights`='0', `guild_id`='0' WHERE `guild_id`='"+GuildID+"';";
 			try {
 				p = newTransact(query, othCon);
 				p.execute();
