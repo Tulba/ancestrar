@@ -1,5 +1,7 @@
 [12/09/2010]
 - Fight/SocketManager : Correction de l'option expulser.
+- Fight : Sauvegarde du percepteur à chaque fin de combat.
+- SQLManager : Correction de la sauvegarde des nouvelles guildes.
 
 [09/09/2010]
 - SpellEffect : Ajout du sort "Laisse spirituel" de Sylarman.

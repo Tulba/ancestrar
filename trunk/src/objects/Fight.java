@@ -2543,6 +2543,8 @@ public class Fight
     		}
 			Packet += drops+";";//Drop
 			Packet += winkamas+"|";
+			
+			SQLManager.UPDATE_PERCO(p);
 		}
         return Packet;
     }
