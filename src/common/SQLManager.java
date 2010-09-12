@@ -1987,12 +1987,14 @@ public class SQLManager {
 	public static void SAVE_NEWGUILD(Guild g)
 	{
 		String baseQuery = "INSERT INTO `guilds` " +
-				"VALUES (?,?,?,1,0);";
+				"VALUES (?,?,?,1,0,0,0,?,?);";
 		try {
 			PreparedStatement p = newTransact(baseQuery, othCon);
 			p.setInt(1, g.get_id());
 			p.setString(2, g.get_name());
 			p.setString(3, g.get_emblem());
+			p.setString(4, "462;0|461;0|460;0|459;0|458;0|457;0|456;0|455;0|454;0|453;0|452;0|451;0|");
+			p.setString(5, "176;100|158;1000|124;100|");
 			
 			p.execute();
 			closePreparedStatement(p);
