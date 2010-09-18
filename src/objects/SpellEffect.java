@@ -659,7 +659,7 @@ public class SpellEffect
 		private void applyEffect_782(ArrayList<Fighter> cibles, Fight fight) 
 		{
 			// TODO : Brokle ?
-			caster.addBuff(effectID, value, turns, 1, true, spell, args, caster);
+			caster.addBuff(effectID, value, turns, 1, debuffable, spell, args, caster);
 			
 		}
 
@@ -1204,7 +1204,7 @@ public class SpellEffect
 			}
 			for(Fighter target : cibles)
 			{
-				target.addBuff(effectID, val, turns, 1, false, spell, args, caster);
+					target.addBuff(effectID, val, turns, 1, false, spell, args, caster);
 			}
 		}
 
@@ -1897,7 +1897,13 @@ public class SpellEffect
 			{
 				for(Fighter target : cibles)
 				{
-					target.addBuff(effectID, value, 1, 1, false, spell, args, caster);
+					if(spell == 197)
+					{
+						target.addBuff(effectID, value, turns, turns, false, spell, args, caster);
+					}else
+					{
+						target.addBuff(effectID, value, 1, 1, false, spell, args, caster);
+					}
 					if(turns <= 1 || duration <= 1)
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 168,target.getGUID()+"",target.getGUID()+",-"+value);
 				}
@@ -1919,8 +1925,13 @@ public class SpellEffect
 				{
 					if(spell == 192)//Ronce apaisante
 					{
-						target.addBuff(effectID, value, turns, 0, false, spell, args, caster);
-					}else
+						target.addBuff(effectID, value, turns, 0, debuffable, spell, args, caster);
+					}
+					else if(spell == 197)
+					{
+						target.addBuff(effectID, value, turns, turns, false, spell, args, caster);
+					}
+					else
 					{
 						target.addBuff(effectID, value, 1, 1, false, spell, args, caster);
 					}

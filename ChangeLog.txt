@@ -1,3 +1,23 @@
+[18/09/2010]
+- Fight : Débug les cooldowns par nami-doc.
+- GameThread/Percepteur : Il est impossible de combattre un percepteur en train d'être récolté.
+- GameThread/Percepteur : On ne peut plus récolter un percepteur si une personne est en train de le récolter.
+
+[16/09/2010]
+- GameThread : Correction de l'expulsion de guilde si le personnage est déconnecté.
+
+[15/09/2010]
+- SpellEffect : Les sorts immunité, dévouement, mot stimulant, odorat, renvoi de sort, 
+armures terrestres/aqueuse/venteuse/incandescente et bouclier féca sont désormais débuffables.
+- SpellEffect : Correction de la perte de PA/PM du sort Puissance sylvestre.
+- Fight : L'EC des mobs ne fait plus passer le tour du joueurs.
+- Fight : Correction de la fonction : ALLOW_MULE_PVP (true pour autoriser les mule, false pour les interdire).
+
+[13/09/2010]
+- SpellEffect : Le sort Ronce apaisante et désormais débuffable.
+- SpellEffect : Le sort trêve et désormais débuffable.
+- SpellEffect : Le sort Mot de Prévention et désormais débuffable.
+
 [12/09/2010]
 - Fight/SocketManager : Correction de l'option expulser.
 - Fight : Sauvegarde du percepteur à chaque fin de combat.

@@ -670,7 +670,6 @@ public class GameThread implements Runnable
 		int guid = -1,guildId = -1;
 		Guild toRemGuild;
 		GuildMember toRemMember;
-		
 		if(P == null)
 		{
 			int infos[] = SQLManager.isPersoInGuild(name);
@@ -683,7 +682,13 @@ public class GameThread implements Runnable
 		else
 		{
 			toRemGuild = P.get_guild();
+			if(toRemGuild == null)//La guilde du personnage n'est pas charger ?
+			{
+					toRemGuild = World.getGuild(_perso.get_guild().get_id());//On prend la guilde du perso qui l'éjecte
+			}
 			toRemMember = toRemGuild.getMember(P.get_GUID());
+			if(toRemMember == null) return;//Si le membre n'est pas dans la guilde.
+			if(toRemMember.getGuild().get_id() != _perso.get_guild().get_id()) return;//Si guilde différente
 		}
 		//si pas la meme guilde
 		if(toRemGuild.get_id() != _perso.get_guild().get_id())
@@ -2247,6 +2252,9 @@ public class GameThread implements Runnable
 					int PercepteurID = Integer.parseInt(packet.substring(4));
 					Percepteur perco = Percepteur.GetPerco(PercepteurID);
 					if(perco == null)return;
+					if(perco.get_inFight() > 0)return;
+					if(perco.get_Exchange())return;
+					perco.set_Exchange(true);
 					SocketManager.GAME_SEND_ECK_PACKET(_out, 8, perco.getGuid()+"");
 					SocketManager.GAME_SEND_ITEM_LIST_PACKET_PERCEPTEUR(_out, perco);
 					_perso.set_isTradingWith(perco.getGuid());
@@ -4752,6 +4760,12 @@ public class GameThread implements Runnable
 			int id = Integer.parseInt(packet.substring(5));
 			Percepteur target = Percepteur.GetPerco(id);
 			if(target.get_inFight() > 0) return;
+			if(target.get_Exchange())
+			{
+				
+				SocketManager.GAME_SEND_Im_PACKET(_perso, "1180");
+				return;
+			}
 			SocketManager.GAME_SEND_GA_PACKET_TO_MAP(_perso.get_curCarte(),"", 909, _perso.get_GUID()+"", id+"");
 			_perso.get_curCarte().startFigthVersusPercepteur(_perso, target);
 		}catch(Exception e){};
