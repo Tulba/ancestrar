@@ -147,6 +147,26 @@ public class Fight
 		private Percepteur _Perco = null;
 		private Personnage _double = null;
 		
+		
+		
+		/**CoolDowns by Nami-Doc*/
+		private Map<Integer, Couple<Integer, SortStats>> Cooldowns = new TreeMap<Integer, Couple<Integer, SortStats>>();
+		public boolean finishedCooldown(SortStats ss) {
+			if(Cooldowns.get(ss.getSpellID()) == null)
+				return true;
+			return false;
+		}
+		public void passCooldowns() {
+			for(Entry<Integer, Couple<Integer, SortStats>> entry : Cooldowns.entrySet()) {
+				entry.getValue().first -= 1;
+				if(entry.getValue().first <= 0)
+					Cooldowns.remove(entry.getKey());
+			}
+		}
+		public void startCooldown(SortStats ss) {
+			Cooldowns.put(ss.getSpellID(), new Couple<Integer, SortStats>(ss.getCoolDown(), ss));
+		}
+		
 		public Fighter(Fight f, MobGrade mob)
 		{
 			_fight = f;
@@ -548,14 +568,40 @@ public class Fight
 		
 		public void addBuff(int id,int val,int duration,int turns,boolean debuff,int spellID,String args,Fighter caster)
 		{
-			//Si c'est le jouer actif qui s'autoBuff, on ajoute 1 a la durée
-			if(spellID == 99)//Momification
+			if(spellID == 99 || 
+			   spellID == 5 || 
+			   spellID == 20 || 
+			   spellID == 127 ||
+			   spellID == 89 ||
+			   spellID == 126 ||
+			   spellID == 115 ||
+			   spellID == 192 ||
+			   spellID == 4 ||
+			   spellID == 1 ||
+			   spellID == 6 ||
+			   spellID == 14 ||
+			   spellID == 18 ||
+			   spellID == 7
+			   )
 			{
-			_fightBuffs.add(new SpellEffect(id,val,(_canPlay?duration+1:duration),turns,true,caster,args,spellID));	
-			}else
-			{
-			_fightBuffs.add(new SpellEffect(id,val,(_canPlay?duration+1:duration),turns,debuff,caster,args,spellID));
+				//Trêve
+				//Immu
+				//Prévention
+				//Momification
+				//Dévouement
+				//Mot stimulant
+				//Odorat
+				//Ronce Apaisante
+				//Renvoi de sort
+				//Armure Incandescente
+				//Armure Terrestre
+				//Armure Venteuse
+				//Armure Aqueuse
+				//Bouclier Féca
+				debuff = true;
 			}
+			//Si c'est le jouer actif qui s'autoBuff, on ajoute 1 a la durée
+			_fightBuffs.add(new SpellEffect(id,val,(_canPlay?duration+1:duration),turns,debuff,caster,args,spellID));
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Ajout du Buff "+id+" sur le personnage Fighter ID = "+this.getGUID()+" val : "+val+" duration : "+duration+" turns : "+turns+" debuff : "+debuff+" spellid : "+spellID+" args : "+args);
 			
 				
@@ -1487,9 +1533,13 @@ public class Fight
 			return;
 		}
 		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Début du tour de Fighter ID= "+_ordreJeu.get(_curPlayer).getGUID());
-		_ordreJeu.get(_curPlayer).setCanPlay(true);
 		SocketManager.GAME_SEND_GAMETURNSTART_PACKET_TO_FIGHT(this,7,_ordreJeu.get(_curPlayer).getGUID(),Constants.TIME_BY_TURN);
 		_turnTimer.restart();
+		
+		try {
+			Thread.sleep(650);
+		} catch (InterruptedException e1) {e1.printStackTrace();}
+		_ordreJeu.get(_curPlayer).setCanPlay(true);
 		
 		if(_ordreJeu.get(_curPlayer).getPersonnage() == null || _ordreJeu.get(_curPlayer)._double != null)//Si ce n'est pas un joueur
 		{
@@ -2165,8 +2215,14 @@ public class Fight
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop éloignée Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
 			return false;
 		}
-		
-		/* TODO: COOLDOWN */
+        if (!fighter.finishedCooldown(spell)) 
+        {
+               SocketManager.GAME_SEND_Im_PACKET(_ordreJeu.get(_curPlayer).getPersonnage(), "1175");
+                return false;
+        }
+        fighter.passCooldowns(); //1 turn finished
+        fighter.startCooldown(spell); //start new cooldown
+        //after passing others
 		
 		return true;
 	}
@@ -2355,7 +2411,7 @@ public class Fight
 	    //Fin Capture
 	    for(Fighter i : TEAM1)
 		{
-	    	if(i._hasLeft) continue;//Si il abandonne, il ne gagne pas d'xp
+	    	if(i.hasLeft()) continue;//Si il abandonne, il ne gagne pas d'xp
 	    	if(i._double != null)continue;//Pas de double dans les gains
         	if(type == Constants.FIGHT_TYPE_CHALLENGE)
         	{
@@ -2434,7 +2490,7 @@ public class Fight
         		int winH = 0;
         		if(_init1.getPersonnage().get_align() != 0 || _init0.getPersonnage().get_align() != 0)
     			{
-        			if(_init1.getPersonnage().get_compte().get_curIP().compareTo(_init0.getPersonnage().get_compte().get_curIP()) == 1 && !Ancestra.ALLOW_MULE_PVP)
+        			if(_init1.getPersonnage().get_compte().get_curIP().compareTo(_init0.getPersonnage().get_compte().get_curIP()) != 0 || Ancestra.ALLOW_MULE_PVP)
         			{
             			winH = Formulas.calculHonorWin(TEAM1,TEAM2,i);
         			}
@@ -2469,8 +2525,8 @@ public class Fight
         		int winH = 0;
         		if(_init1.getPersonnage().get_align() != 0 || _init0.getPersonnage().get_align() != 0)
     			{
-        			if(_init1.getPersonnage().get_compte().get_curIP().compareTo(_init0.getPersonnage().get_compte().get_curIP()) == 1 && !Ancestra.ALLOW_MULE_PVP)
-        			{
+        			if(_init1.getPersonnage().get_compte().get_curIP().compareTo(_init0.getPersonnage().get_compte().get_curIP()) != 0 || Ancestra.ALLOW_MULE_PVP)
+            		{
             			winH = Formulas.calculHonorWin(TEAM1,TEAM2,i);
         			}
     			}
@@ -2585,7 +2641,6 @@ public class Fight
 			{
 				if(entry.getValue()._double != null)
 				{
-					System.out.println("UNLOAD");
 					World.deletePerso(entry.getValue()._double);
 				}
 				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_map, entry.getValue().getGUID());
@@ -2594,7 +2649,6 @@ public class Fight
 			{
 				if(entry.getValue()._double != null)
 				{
-					System.out.println("UNLOAD");
 					World.deletePerso(entry.getValue()._double);
 				}
 				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_map, entry.getValue().getGUID());
@@ -2752,7 +2806,7 @@ public class Fight
 	public void onFighterDie(Fighter target) 
 	{
 		target.setIsDead(true);
-		if(!target._hasLeft) deadList.put(target.getGUID(), target);//on ajoute le joueur à la liste des cadavres ;)
+		if(!target.hasLeft()) deadList.put(target.getGUID(), target);//on ajoute le joueur à la liste des cadavres ;)
 		SocketManager.GAME_SEND_FIGHT_PLAYER_DIE_TO_FIGHT(this,7,target.getGUID());
 		target.get_fightCell().getFighters().clear();
 		if(target.getTeam() == 0)
@@ -3029,7 +3083,6 @@ public class Fight
 				onFighterDie(F);
 				verifIfTeamAllDead();
 				F.setLeft(true);
-				
 				//si le combat n'est pas terminé
 				if(_state == Constants.FIGHT_STATE_ACTIVE)
 				{
@@ -3038,7 +3091,7 @@ public class Fight
 					{
 						//TODO : Perte d'énergie
 						F.getPersonnage().warpToSavePos();
-						F.getPersonnage().set_PDV(1);
+						F.getPersonnage().set_PDV(1);	
 						SocketManager.GAME_SEND_GV_PACKET(perso);
 					}
 					//si c'était a son tour de jouer
@@ -3056,12 +3109,12 @@ public class Fight
 					leftStatePlace(F, perso);
 				}else//Ce n'est pas un défis, donc du leave contre mob/perco/aggros
 				{
-					if(_state == Constants.FIGHT_STATE_PLACE)
+					if(_state == Constants.FIGHT_STATE_PLACE && _type != Constants.FIGHT_TYPE_AGRESSION)//mob/perco
 					{
 						if(F.getPersonnage().get_GUID() == _init0.getPersonnage().get_GUID())
 						{
 							if(T == null)return;
-							if(T.getTeam() == F.getTeam())
+							if((T.getTeam() == F.getTeam()) && (T.getGUID() != F.getGUID()))
 							{
 								if(Ancestra.CONFIG_DEBUG) System.out.println("EXULSION DE : "+T.getPersonnage().get_name());
 								SocketManager.GAME_SEND_GV_PACKET(T.getPersonnage());
@@ -3081,11 +3134,10 @@ public class Fight
 								SocketManager.GAME_SEND_GV_PACKET(T.getPersonnage());
 								SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(_mapOld, T.getPersonnage());
 								perso.get_curCell().addPerso(T.getPersonnage());
-								
 							}
 						}
 						return;
-					}else
+					}else//C'est une agression, il left pendant une mise en place
 					{
 						F.setLeft(true);
 					}

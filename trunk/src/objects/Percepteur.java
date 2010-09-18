@@ -28,6 +28,7 @@ public class Percepteur
 	private long _LogKamas = 0;
 	private long _LogXP = 0;
 	private String _LogItem = "";
+	private boolean _inExchange = false;
 	
 	public Percepteur(int guid, short map, int cellID, byte orientation, int GuildID, 
 			short N1, short N2, String items, long kamas, long xp)
@@ -474,5 +475,15 @@ public class Percepteur
 	public void addObjet(Objet newObj)
 	{
 		_objets.put(newObj.getGuid(), newObj);
+	}
+	
+	public void set_Exchange(boolean Exchange)
+	{
+		_inExchange = Exchange;
+	}
+	
+	public boolean get_Exchange()
+	{
+		return _inExchange;
 	}
 }
