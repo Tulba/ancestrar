@@ -548,6 +548,42 @@ public class SQLManager {
 		}
 		return nbr;
 	}
+	public static int LOAD_HOUSES()
+	{
+		int nbr = 0;
+		try
+		{
+			ResultSet RS = SQLManager.executeQuery("SELECT * from houses;",Ancestra.OTHER_DB_NAME);
+			while(RS.next())
+			{
+				Carte map = World.getCarte(RS.getShort("map_id"));
+				if(map == null)continue;
+				
+				House.addHouse(
+						new House(
+						RS.getInt("id"),
+						RS.getShort("map_id"),
+						RS.getInt("cell_id"),
+						RS.getInt("owner_id"),
+						RS.getInt("sale"),
+						RS.getInt("guild_id"),
+						RS.getInt("access"),
+						RS.getString("key"),
+						RS.getInt("guild_rights"),
+						RS.getInt("mapid"),
+						RS.getInt("caseid")
+						));
+				nbr ++;
+			}
+			closeResultSet(RS);
+		}catch(SQLException e)
+		{
+			RealmServer.addToLog("SQL ERROR: "+e.getMessage());
+			e.printStackTrace();
+			nbr = 0;
+		}
+		return nbr;
+	}
 	public static void LOAD_COMPTES()
 	{
 		try
@@ -2516,10 +2552,31 @@ public class SQLManager {
 			}
 		}
 		
-		public static void HOUSE_BUY(Personnage P) 
+		public static void HOUSE_BUY(Personnage P, House h) 
 		{	
+			
 			PreparedStatement p;
-			String query = "UPDATE `houses` SET `sale`='0', `owner_id`='"+P.getAccID()+"', `guild_id`='0', `access`='0', `key`='-', `guild_rights`='0' WHERE `map_id`='"+House.CcarteID+"' AND `cell_id`='"+House.CcellID+"';";
+			String query = "UPDATE `houses` SET `sale`='0', `owner_id`='"+P.getAccID()+"', `guild_id`='0', `access`='0', `key`='-', `guild_rights`='0' WHERE `id`='"+h.get_id()+"';";
+			try {
+				p = newTransact(query, othCon);
+				p.execute();
+				h.set_sale(0);
+				h.set_owner_id(P.getAccID());
+				h.set_guild_id(0);
+				h.set_access(0);
+				h.set_key("-");
+				h.set_guild_rights(0);
+			} catch (SQLException e) {
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				GameServer.addToLog("Game: Query: "+query);
+			}
+		}
+		public static void HOUSE_SELL(House h, int price) 
+		{	
+			h.set_sale(price);
+			
+			PreparedStatement p;
+			String query = "UPDATE `houses` SET `sale`='"+price+"' WHERE `id`='"+h.get_id()+"';";
 			try {
 				p = newTransact(query, othCon);
 				p.execute();
@@ -2528,49 +2585,28 @@ public class SQLManager {
 				GameServer.addToLog("Game: Query: "+query);
 			}
 		}
-		public static void HOUSE_SELL(Personnage P, int price) 
+		public static void HOUSE_CODE(Personnage P, House h, String packet) 
 		{	
 			PreparedStatement p;
-			String query = "UPDATE `houses` SET `sale`='"+price+"' WHERE `map_id`='"+House.CcarteID+"' AND `cell_id`='"+House.CcellID+"' AND owner_id='"+P.getAccID()+"';";
+			String query = "UPDATE `houses` SET `key`='"+packet+"' WHERE `id`='"+h.get_id()+"' AND owner_id='"+P.getAccID()+"';";
 			try {
 				p = newTransact(query, othCon);
 				p.execute();
+				h.set_key(packet);
 			} catch (SQLException e) {
 				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 				GameServer.addToLog("Game: Query: "+query);
 			}
 		}
-		public static void HOUSE_CODE(Personnage P, String packet) 
+		public static void HOUSE_GUILD(House h, int GuildID, int GuildRights) 
 		{	
 			PreparedStatement p;
-			String query = "UPDATE `houses` SET `key`='"+packet+"' WHERE `map_id`='"+House.CcarteID+"' AND `cell_id`='"+House.CcellID+"' AND owner_id='"+P.getAccID()+"';";
+			String query = "UPDATE `houses` SET `guild_id`='"+GuildID+"', `guild_rights`='"+GuildRights+"' WHERE `id`='"+h.get_id()+"';";
 			try {
 				p = newTransact(query, othCon);
 				p.execute();
-			} catch (SQLException e) {
-				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
-				GameServer.addToLog("Game: Query: "+query);
-			}
-		}
-		public static void HOUSE_GUILD(Personnage P, int GuildID) 
-		{	
-			PreparedStatement p;
-			String query = "UPDATE `houses` SET `guild_id`='"+GuildID+"' WHERE `map_id`='"+House.CcarteID+"' AND `cell_id`='"+House.CcellID+"' AND owner_id='"+P.getAccID()+"';";
-			try {
-				p = newTransact(query, othCon);
-				p.execute();
-			} catch (SQLException e) {
-				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
-				GameServer.addToLog("Game: Query: "+query);
-			}
-		}
-		public static void HOUSE_GUILD_RIGHTS(Personnage P, int GuildRights) 
-		{	
-			PreparedStatement p;
-			String query = "UPDATE `houses` SET `guild_rights`='"+GuildRights+"' WHERE `map_id`='"+House.CcarteID+"' AND `cell_id`='"+House.CcellID+"' AND owner_id='"+P.getAccID()+"';";
-			try {
-				p = newTransact(query, othCon);
-				p.execute();
+				h.set_guild_id(GuildID);
+				h.set_guild_rights(GuildRights);
 			} catch (SQLException e) {
 				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 				GameServer.addToLog("Game: Query: "+query);
@@ -2586,6 +2622,34 @@ public class SQLManager {
 			} catch (SQLException e) {
 				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 				GameServer.addToLog("Game: Query: "+query);
+			}
+		}
+		public static void UPDATE_HOUSE(House h)
+		{
+			String baseQuery = "UPDATE `houses` SET "+
+			"`owner_id` = ?,"+
+			"`sale` = ?," +
+			"`guild_id` = ?" +
+			"`access` = ?" +
+			"`key` = ?" +
+			"`guild_rights` = ?" +
+			" WHERE id = ?;";
+			
+			try {
+				PreparedStatement p = newTransact(baseQuery, othCon);
+				p.setInt(1, h.get_owner_id());
+				p.setInt(2, h.get_sale());
+				p.setInt(3, h.get_guild_id());
+				p.setInt(4, h.get_access());
+				p.setString(5, h.get_key());
+				p.setInt(6, h.get_guild_rights());
+				p.setInt(7, h.get_id());
+				
+				p.execute();
+				closePreparedStatement(p);
+			} catch (SQLException e) {
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				GameServer.addToLog("Game: Query: "+baseQuery);
 			}
 		}
 		public static String parseMPtoGuild(int getId) 

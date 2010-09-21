@@ -386,15 +386,12 @@ public class Guild {
 			if(newMeneur != null)
 				newMeneur.setRank(1);
 		}*/
-		House.HouseCoordByPerso(World.getPersonnage(guid));
-		if(House.isMapID > 0)
+		House h = House.get_HouseByPerso(World.getPersonnage(guid));
+		if(h != null)
 		{
 			if(House.HouseOnGuild(_id) > 0)
 			{
-				House.CcarteID = House.isMapID;
-				House.CcellID = House.isCellID;
-				SQLManager.HOUSE_GUILD(World.getPersonnage(guid), _id);
-				SQLManager.HOUSE_GUILD_RIGHTS(World.getPersonnage(guid), 0);
+				SQLManager.HOUSE_GUILD(h, 0, 0);
 			}
 		}
 		_members.remove(guid);

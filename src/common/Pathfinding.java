@@ -90,6 +90,14 @@ public class Pathfinding {
 		return null;
 	}
 
+	public static boolean isNextTo (int cell1, int cell2)
+	{
+		if(cell1 + 14 == cell2 || cell1 + 15 == cell2 || cell1 - 14 == cell2 || cell1 -15 ==cell2)
+			return true;
+		else
+			return false;
+	}
+	
 	public static String ValidSinglePath(int CurrentPos, String Path, Carte map, Fight fight)
 	{
 		_nSteps = 0;
@@ -421,9 +429,28 @@ public class Pathfinding {
 		return (loc5 - loc7);
 	}
 	
-	public static boolean checkLoS(Carte map, int cell1, int cell2)
+	public static boolean checkLoS(Carte map, int cell1, int cell2,Fighter fighter)
 	{
-		//TODO: =)
+		if(fighter.getPersonnage() != null)return true;
+		int dist = getDistanceBetween(map,cell1,cell2);
+		ArrayList <Integer> los = new ArrayList <Integer>();
+		if(dist > 2)
+			los = getLoS(cell1,cell2);
+		if(los != null && dist > 2)
+		{
+			for(int i : los)
+			{
+				if(i != cell1 && i != cell2 && !map.getCase(i).blockLoS() )
+					return false;
+			}
+		}
+		if(dist > 2)
+		{
+			int cell = getNearestCellAround(map,cell2,cell1,null);
+			if(cell != -1 && !map.getCase(cell).blockLoS())
+				return false;
+		}
+		
 		return true;
 	}
 
@@ -448,8 +475,9 @@ public class Pathfinding {
 		return cellID==startCell?-1:cellID;
 	}
 	public static ArrayList<Case> getShortestPathBetween(Carte map, int start, int dest, int distMax)
-	{
+	{	
 		ArrayList<Case> curPath = new ArrayList<Case>();
+		ArrayList<Case> curPath2 = new ArrayList<Case>();
 		ArrayList<Case> closeCells = new ArrayList<Case>();
 		int limit = 1000;
 		//int oldCaseID = start;
@@ -457,77 +485,353 @@ public class Pathfinding {
 		int stepNum = 0;
 		boolean stop = false;
 		
-		//Start
-		
 		while(!stop && stepNum++ <= limit)
 		{
-			//*
+			
 			int nearestCell = getNearestCellAround(map,curCase.getID(),dest,closeCells);
-			//Si pas trouvé : En cas de sans issus
 			if(nearestCell == -1)
 			{
-				//On ajoute la case sans issus a la liste des interdites
 				closeCells.add(curCase);
-				//Si il ya une case avant
 				if(curPath.size() > 0)
 				{
-					//on supprime le dernier element = curCase normalement
-					curPath.remove(curPath.size()-1);
-					//on prend la derniere case du chemin
-					if(curPath.size()>0)curCase = curPath.get(curPath.size()-1);
-					else curCase = map.getCase(start);
-				}
-				else//Si retour a zero
-				{
-					curCase = map.getCase(start);
-				}
-			}else if(distMax == 0 && nearestCell == dest)
-			{
-				curPath.add(map.getCase(dest));
-				return curPath;
-			}else if(distMax > Pathfinding.getDistanceBetween(map, nearestCell, dest))
-			{
-				curPath.add(map.getCase(dest));
-				return curPath;
+				 	curPath.remove(curPath.size()-1);
+				 	if(curPath.size()>0)curCase = curPath.get(curPath.size()-1);
+				 	else curCase = map.getCase(start);
+				 	}
+				 	else
+				 	{
+				 	curCase = map.getCase(start);
+				 }
+			 }else if(distMax == 0 && nearestCell == dest)
+			 	{
+			 	curPath.add(map.getCase(dest));
+			 	break;
+			 	}else if(distMax > Pathfinding.getDistanceBetween(map, nearestCell, dest))
+			 	{
+			 	curPath.add(map.getCase(dest));
+			 	break; 
 			}else//on continue
 			{
 				curCase = map.getCase(nearestCell);
+				closeCells.add(curCase);
 				curPath.add(curCase);
 			}
-			// fin new IA */
+		}
+		
+		curCase = map.getCase(start);
+		closeCells.clear();
+		closeCells.add(curPath.get(0));
+		
+		while(!stop && stepNum++ <= limit)
+		{
 			
-			/* Ex code
-			int nextID = getNearestCellAround(map,dest,curCase.getID(),closeCells);
-			if(nextID == curCase.getID() || nextID == oldCaseID)//Si c'est un sans issus
+			int nearestCell = getNearestCellAround(map,curCase.getID(),dest,closeCells);
+			if(nearestCell == -1)
 			{
-				if(curPath.size() == 0)//Si il n'y a pas de cells avant
+				closeCells.add(curCase);
+				if(curPath2.size() > 0)
 				{
-					stop = true;//on arrete la boucle => return null;
-				}
-				else
-				{
-					closeCells.add(curCase);//on ajoute la case courante a la liste des cases interdites
-					curPath.remove(curPath.size()-1);//On remonte d'une case
-					curCase = curPath.get(curPath.size()-1);
-					if(curPath.size() >1)
-						oldCaseID = curPath.get(curPath.size()-1).getID();
-					else
-						oldCaseID = start;
-				}
-			}else if(nextID == dest)//Si Path trouvé
+				 	curPath2.remove(curPath2.size()-1);
+				 	if(curPath2.size()>0)curCase = curPath2.get(curPath2.size()-1);
+				 	else curCase = map.getCase(start);
+				 	}
+				 	else//Si retour a zero
+				 	{
+				 	curCase = map.getCase(start);
+				 }
+			 }else if(distMax == 0 && nearestCell == dest)
+			 	{
+			 	curPath2.add(map.getCase(dest));
+			 	break;
+			 	}else if(distMax > Pathfinding.getDistanceBetween(map, nearestCell, dest))
+			 	{
+			 	curPath2.add(map.getCase(dest));
+			 	break; 
+			}else//on continue
 			{
-				curCase = map.getCase(nextID);
-				curPath.add(curCase);
-				return curPath;
-			}else //Sinon, on continue
-			{
-				oldCaseID = curCase.getID();
-				curCase = map.getCase(nextID);
-				curPath.add(curCase);
+				curCase = map.getCase(nearestCell);
+				closeCells.add(curCase);
+				curPath2.add(curCase);
 			}
-			//*/
-			
+		}
+		if((curPath2.size() < curPath.size() && curPath2.size() > 0) || curPath.size() == 0)
+			curPath = curPath2;
+		
+		return curPath;
+	}
+	
+	public static ArrayList<Integer> getListCaseFromFighter(Fight fight, Fighter fighter)
+	{
+		ArrayList<Integer> cells = new ArrayList<Integer>();
+		int start = fighter.get_fightCell().getID();
+		int[] curPath;
+		int i = 0;
+		if(fighter.getCurPM(fight) > 0)
+			curPath = new int[fighter.getCurPM(fight)];
+		else
+			return null;
+		if(curPath.length == 0)
+			return null;
+		while(curPath[0] != 5)
+		{
+			curPath[i]++;
+			if(curPath[i] == 5 && i != 0)
+			{
+				curPath[i] = 0;
+				i--;
+			}
+			else 
+			{
+				int curCell = getCellFromPath(start,curPath);
+				if(fight.get_map().getCase(curCell).isWalkable(true) && fight.get_map().getCase(curCell).getFirstFighter() == null)
+				{
+					if(!cells.contains(curCell))
+					{
+						cells.add(curCell);
+						if(i < curPath.length - 1)
+							i++;
+					}
+				}
+			}
+		}
+		
+		return triCellList(fight, fighter,cells);
+	}
+	
+	public static int getCellFromPath(int start,int[] path)
+	{
+		int cell = start,i = 0;
+		while(i < path.length)
+		{
+			if(path[i] == 1)
+				cell -= 15;
+			if(path[i] == 2)
+				cell -= 14;
+			if(path[i] == 3)
+				cell += 15;
+			if(path[i] == 4)
+				cell += 14;
+			i++;
+		}
+		return cell;
+	}
+	
+	public static ArrayList<Integer> triCellList(Fight fight, Fighter fighter, ArrayList<Integer> cells)
+	{
+		ArrayList<Integer> Fcells = new ArrayList<Integer>();
+		ArrayList<Integer> copie = cells;
+		int dist = 100;
+		int curCell = 0;
+		int curIndex = 0;
+		while(copie.size() > 0)
+		{
+			dist = 100;
+			for(int i : copie)
+			{
+				int d = getDistanceBetween(fight.get_map(), fighter.get_fightCell().getID(), i);
+				if(dist > d)
+				{
+					dist = d;
+					curCell = i;
+					curIndex = copie.indexOf(i);
+				}
+			}
+			Fcells.add(curCell);
+			copie.remove(curIndex);
+		}
+		
+		return Fcells;
+	}
+	
+	/*public static ArrayList<Integer> getLoS(param1:IDataMapProvider, param2:Vector.<uint>, param3:MapPoint) 
+    {
+        int _loc_5;
+        Array _loc_8;
+        boolean _loc_9;
+        string _loc_10;
+        var _loc_11:MapPoint;
+        int _loc_13;
+        Array _loc_4 = new Array();
+        var _loc_6:MapPoint;
+        _loc_5 = 0;
+        while (_loc_5++ < param2.length)
+        {
+            
+            _loc_6 = MapPoint.fromCellId(param2[_loc_5]);
+            _loc_4.push({p:_loc_6, dist:param3.distanceToCell(_loc_6)});
+        }
+        _loc_4.sortOn("dist", Array.DESCENDING | Array.NUMERIC);
+        Object _loc_7 = new Object();
+        ArrayList<Integer> _loc_12 = new ArrayList<Integer>();
+        _loc_5 = 0;
+        while (_loc_5++ < _loc_4.length)
+        {
+            
+            _loc_11 = MapPoint(_loc_4[_loc_5].p);
+            if (_loc_7[_loc_11.x + "_" + _loc_11.y] != null && param3.x + param3.y != _loc_11.x + _loc_11.y && param3.x - param3.y != _loc_11.x - _loc_11.y)
+            {
+                continue;
+            }
+            _loc_8 = Dofus1Line.getLine(param3.x, param3.y, 0, _loc_11.x, _loc_11.y, 0);
+            if (_loc_8.length == 0)
+            {
+                _loc_12.push(_loc_11.cellId);
+                continue;
+            }
+            _loc_9 = true;
+            _loc_13 = 0;
+            while (_loc_13 < _loc_8.length)
+            {
+                
+                _loc_10 = Math.floor(_loc_8[_loc_13].x) + "_" + Math.floor(_loc_8[_loc_13].y);
+                if (!MapPoint.isInMap(_loc_8[_loc_13].x, _loc_8[_loc_13].y))
+                {
+                }
+                else if (_loc_13 > 0 && param1.hasEntity(Math.floor(_loc_8[_loc_13--].x), Math.floor(_loc_8[_loc_13--].y)))
+                {
+                    _loc_9 = false;
+                }
+                else if (_loc_8[_loc_13].x + _loc_8[_loc_13].y == param3.x + param3.y || _loc_8[_loc_13].x - _loc_8[_loc_13].y == param3.x - param3.y)
+                {
+                    if (_loc_9)
+                    {
+                    }
+                    _loc_9 = param1.pointLos(Math.floor(_loc_8[_loc_13].x), Math.floor(_loc_8[_loc_13].y), true);
+                }
+                else if (_loc_7[_loc_10] == null)
+                {
+                    if (_loc_9)
+                    {
+                    }
+                    _loc_9 = param1.pointLos(Math.floor(_loc_8[_loc_13].x), Math.floor(_loc_8[_loc_13].y), true);
+                }
+                else
+                {
+                    if (_loc_9)
+                    {
+                    }
+                    _loc_9 = _loc_7[_loc_10];
+                }
+                _loc_13++;
+            }
+            _loc_7[_loc_10] = _loc_9;
+        }
+        _loc_5 = 0;
+        while (_loc_5++ < param2.length)
+        {
+            
+            _loc_6 = MapPoint.fromCellId(param2[_loc_5]);
+            if (_loc_7[_loc_6.x + "_" + _loc_6.y])
+            {
+                _loc_12.push(_loc_6.cellId);
+            }
+        }
+        return _loc_12;
+    }*/
+	
+	public static boolean isBord1(int id)
+	{
+		int[] bords = {1,30,59,88,117,146,175,204,233,262,291,320,349,378,407,436,465,15,44,73,102,131,160,189,218,247,276,305,334,363,392,421,450,479};
+		ArrayList <Integer> test = new ArrayList <Integer>();
+		for(int i : bords)
+		{
+			test.add(i);
+		}
+		
+		if(test.contains(id))
+			return true;
+		else 
+			return false;
+	}
+	
+	public static boolean isBord2(int id)
+	{
+		int[] bords = {16,45,74,103,132,161,190,219,248,277,306,335,364,393,422,451,29,58,87,116,145,174,203,232,261,290,319,348,377,406,435,464};
+		ArrayList <Integer> test = new ArrayList <Integer>();
+		for(int i : bords)
+		{
+			test.add(i);
+		}
+		
+		if(test.contains(id))
+			return true;
+		else 
+			return false;
+	}
+	
+	public static ArrayList<Integer> getLoS (int cell1, int cell2)
+	{
+		ArrayList<Integer> Los = new ArrayList<Integer>();
+		int cell = cell1;
+		boolean next = false;
+		int[] dir1 = {1,-1,29,-29,15,14,-15,-14};
+		
+		for(int i : dir1)
+		{
+			Los.clear();
+			cell = cell1;
+			Los.add(cell);
+			next = false;
+			while(!next)
+			{
+				cell += i;
+				Los.add(cell);
+				if(isBord2(cell) || isBord1(cell) || cell <= 0 || cell >= 480)
+					next=true;
+				if(cell == cell2)
+				{
+					return Los;
+				}
+			}
 		}
 		return null;
 	}
+	
+	public static ArrayList<Integer> getLoS2 (Carte map,int cell1, int cell2)
+	{
+		System.out.println("GET LOS 2 !!!");
+		ArrayList<Integer> Los = new ArrayList<Integer>();
+		int min = 0, max = 0;
+		if(cell1 > cell2)
+		{
+			max = cell1;
+			min = cell2;
+		}
+		else
+		{
+			max = cell2;
+			min = cell1;
+		}
+		System.out.println("test min = " + min + " ,max = "+ max);
+		double x1 = getCellXCoord(map, cell1), x2 = getCellXCoord(map, cell2);
+		double y1 = getCellYCoord(map, cell1), y2 = getCellYCoord(map, cell2);
+		System.out.println("test coordonnés , x1 = " + x1 + " ,y1 = " + y1 + " ,x2 = "+x2+" ,y2 ="+y2);
+		double a = (y2 - y1)/(x2-x1);
+		System.out.println("test division : (y2-y1) = " + (y2-y1) + ", (x2-x1) = " + (x2-x1));
+		double b = y2 - (x2 * a);
+		System.out.println("test équation : y = "+ a + " x + "+b + "      (x1 * a) = " + (x2 *a));
+		
+		int i = 0;
+		while (i <= 479)
+		{
+			i++;
+			//System.out.println("test boucle");
+			if(i <= min || i >= max)
+				continue;
+			double x = getCellXCoord(map, i), y = getCellYCoord(map, i);
+			System.out.println( i + " --> test y = ax + b : " + y + " = " +((a*x)+b));
+			if(y == ((a*x) + b))
+				Los.add(i);
+		}
+		System.out.println("TEST GETLOS 2 !");
+		for(int e : Los)
+			System.out.println("cell = " + e);
+		
+		
+		return Los;
+	}
+	
+	
+	
+	
 }

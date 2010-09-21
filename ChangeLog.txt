@@ -1,3 +1,12 @@
+[21/09/2010]
+- House : Refonte du système de gestion des maisons.
+
+[20/09/2010]
+- IA/Fight : Ajout de l'IA modifier par Sylarman.
+
+[19/09/2010]
+- Fight : Rajout des Im packet pour les cooldowns (THX nami-doc).
+
 [18/09/2010]
 - Fight : Débug les cooldowns par nami-doc.
 - GameThread/Percepteur : Il est impossible de combattre un percepteur en train d'être récolté.

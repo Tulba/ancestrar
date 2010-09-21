@@ -146,26 +146,7 @@ public class Fight
 		private Fighter _holdedBy;
 		private Percepteur _Perco = null;
 		private Personnage _double = null;
-		
-		
-		
-		/**CoolDowns by Nami-Doc*/
-		private Map<Integer, Couple<Integer, SortStats>> Cooldowns = new TreeMap<Integer, Couple<Integer, SortStats>>();
-		public boolean finishedCooldown(SortStats ss) {
-			if(Cooldowns.get(ss.getSpellID()) == null)
-				return true;
-			return false;
-		}
-		public void passCooldowns() {
-			for(Entry<Integer, Couple<Integer, SortStats>> entry : Cooldowns.entrySet()) {
-				entry.getValue().first -= 1;
-				if(entry.getValue().first <= 0)
-					Cooldowns.remove(entry.getKey());
-			}
-		}
-		public void startCooldown(SortStats ss) {
-			Cooldowns.put(ss.getSpellID(), new Couple<Integer, SortStats>(ss.getCoolDown(), ss));
-		}
+		private ArrayList<LaunchedSort> _launchedSort = new ArrayList<LaunchedSort>();
 		
 		public Fighter(Fight f, MobGrade mob)
 		{
@@ -206,6 +187,34 @@ public class Fight
 			_gfxID = 6000;
 		}
 
+		public ArrayList<LaunchedSort> getLaunchedSorts()
+		{
+			return _launchedSort;
+		}
+		
+		public void ActualiseLaunchedSort()
+		{
+			ArrayList<LaunchedSort> copie = new ArrayList<LaunchedSort>();
+			copie.addAll(_launchedSort);
+			int i = 0;
+			for(LaunchedSort S : copie)
+			{
+				S.ActuCooldown();
+				if(S.getCooldown() <= 0)
+				{
+					_launchedSort.remove(i);
+					i--;
+				}
+				i++;
+			}
+		}
+		
+		public void addLaunchedSort(Fighter target,SortStats sort)
+		{
+			LaunchedSort launched = new LaunchedSort(target,sort);
+			_launchedSort.add(launched);
+		}
+		
 		public int getGUID()
 		{
 			return _id;
@@ -485,6 +494,18 @@ public class Fight
 			}
 		}
 
+		public SpellEffect getBuff(int id)
+		{
+			for(SpellEffect entry : _fightBuffs)
+			{
+				if(entry.getEffectID() == id && entry.getDuration() >0)
+				{
+					return entry;
+				}
+			}
+			return null;
+		}
+		
 		public boolean hasBuff(int id)
 		{
 			for(SpellEffect entry : _fightBuffs)
@@ -711,6 +732,10 @@ public class Fight
 		{
 			return _team;
 		}
+		public int getTeam2()
+		{
+			return _fight.getTeamID(_id);
+		}
 		
 		public boolean canPlay()
 		{
@@ -764,7 +789,15 @@ public class Fight
 			
 			return 0;
 		}
+		public int getCurPA(Fight fight)
+		{
+			return fight._curFighterPA;
+		}
 		
+		public int getCurPM(Fight fight)
+		{
+			return fight._curFighterPM;
+		}
 		public void setInvocator(Fighter caster)
 		{
 			_invocator = caster;
@@ -856,18 +889,6 @@ public class Fight
 			return 0;
 		}
 
-		public SpellEffect getBuff(int id)
-		{
-			for(SpellEffect entry : _fightBuffs)
-			{
-				if(entry.getEffectID() == id && entry.getDuration() >0)
-				{
-					return entry;
-				}
-			}
-			return null;
-		}
-
 	}
 	
 	public static class Glyphe
@@ -933,6 +954,76 @@ public class Fight
 		{
 			return _color;
 		}
+	}
+	
+	public static class LaunchedSort
+	{
+		private int _spellId = 0;
+		private int _cooldown = 0;
+		private Fighter _target = null;
+		
+		public LaunchedSort(Fighter t,SortStats SS)
+		{
+			_target = t;
+			_spellId = SS.getSpellID();
+			_cooldown = SS.getCoolDown();
+		}
+		
+		public void ActuCooldown()
+		{
+			_cooldown--;
+		}
+		
+		public int getCooldown()
+		{
+			return _cooldown;
+		}
+		
+		public int getId()
+		{
+			return _spellId;
+		}
+		
+		public Fighter getTarget()
+		{
+			return _target;
+		}
+		
+		public static boolean coolDownGood(Fighter fighter,int id)
+		{
+			
+			for(LaunchedSort S : fighter.getLaunchedSorts())
+			{
+				if(S._spellId == id && S.getCooldown() > 0)
+					return false;
+			}
+			return true;
+		}
+		
+		public static int getNbLaunch(Fighter fighter,int id)
+		{
+			int nb = 0;
+			for(LaunchedSort S : fighter.getLaunchedSorts())
+			{
+				if(S._spellId == id)
+					nb++;
+			}
+			return nb;
+		}
+		
+		public static int getNbLaunchTarget(Fighter fighter,Fighter target,int id)
+		{
+			int nb = 0;
+			for(LaunchedSort S : fighter.getLaunchedSorts())
+			{
+				if(S._target == null || target == null)
+					continue;
+				if(S._spellId == id && S._target.getGUID() == target.getGUID())
+					nb++;
+			}
+			return nb;
+		}
+		
 	}
 	
 	private int _id;
@@ -2111,7 +2202,7 @@ public class Fight
 		
 		Case Cell = _map.getCase(caseID);
 		_curAction = "casting";
-		if(CanCastSpell(fighter,Spell,Cell))
+		if(CanCastSpell(fighter,Spell,Cell) || fighter.getPersonnage() != null)
 		{
 			if(fighter.getPersonnage() != null)
 				SocketManager.GAME_SEND_STATS_PACKET(fighter.getPersonnage());
@@ -2143,7 +2234,8 @@ public class Fight
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 102,fighter.getGUID()+"",fighter.getGUID()+",-"+Spell.getPACost());
 			SocketManager.GAME_SEND_GAF_PACKET_TO_FIGHT(this, 7, 0, fighter.getGUID());
 			//Refresh des Stats
-			refreshCurPlayerInfos();
+			//refreshCurPlayerInfos();
+			fighter.addLaunchedSort(Cell.getFirstFighter(),Spell);
 			
 			try {
 				Thread.sleep(500);
@@ -2167,6 +2259,103 @@ public class Fight
 	}
 
 	public boolean CanCastSpell(Fighter fighter, SortStats spell, Case cell)
+	{
+		Fighter f = _ordreJeu.get(_curPlayer);
+		Personnage perso = fighter.getPersonnage();
+		//Si le sort n'est pas existant
+		if(spell == null)
+		{
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Sort non existant");
+			if(perso != null)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(perso, "1169");
+			}
+			return false;
+		}
+		//Si ce n'est pas au joueur de jouer
+		if (f == null || f.getGUID() != fighter.getGUID()) 
+		{
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Ce n'est pas au joueur de jouer");
+			if(perso != null)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(perso, "1175");
+			}
+			return false;	
+		}
+		//Si le joueur n'a pas assez de PA
+		if(_curFighterPA < spell.getPACost())
+		{
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le joueur n'a pas assez de PA ("+_curFighterPA+"/"+spell.getPACost()+")");
+			if(perso != null)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(perso, "1170;" + _curFighterPA + "~" + spell.getPACost());
+			}
+			return false;
+		}
+		//Si la cellule visée n'existe pas
+		if(cell == null)
+		{
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La cellule visée n'existe pas");
+			if(perso != null)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(perso, "1172");
+			}
+			return false;
+		}
+		//Si la cellule visée n'est pas alignée avec le joueur alors que le sort le demande
+		if(spell.isLineLaunch() && !Pathfinding.casesAreInSameLine(_map, fighter.get_fightCell().getID(), cell.getID(), 'z'))
+		{
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande un lancer en ligne, or la case n'est pas alignée avec le joueur");
+			if(perso != null)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(perso, "1173");
+			}
+			return false;
+		}
+		//Si le sort demande une ligne de vue et que la case demandée n'en fait pas partie
+		if(spell.hasLDV() && !Pathfinding.checkLoS(_map,fighter.get_fightCell().getID(),cell.getID(),fighter))
+		{
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande une ligne de vue, mais la case visée n'est pas visible pour le joueur");
+			if(perso != null)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(perso, "1174");
+			}
+			return false;
+		}
+		int dist = Pathfinding.getDistanceBetween(_map, fighter.get_fightCell().getID(), cell.getID());
+		int MaxPO = spell.getMaxPO();
+		if(spell.isModifPO())
+			MaxPO += fighter.getTotalStats().getEffect(Constants.STATS_ADD_PO);
+		//Vérification Portée mini / maxi
+		if(dist < spell.getMinPO() || dist > MaxPO)
+		{
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop éloignée Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
+			if(perso != null)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(perso, "1171;" + spell.getMinPO() + "~" + spell.getMaxPO() + "~" + dist);
+			}
+			return false;
+		}
+		
+		//vérification cooldown
+		if(!LaunchedSort.coolDownGood(fighter,spell.getSpellID()))
+			return false;
+		//vérification nombre de lancer par tour
+		int nbLancer = spell.getMaxLaunchbyTurn();
+		if(nbLancer - LaunchedSort.getNbLaunch(fighter, spell.getSpellID()) <= 0 && nbLancer > 0)
+			return false;
+		
+		//vérification nombre de lancer par cible
+		Fighter target = cell.getFirstFighter();
+		int nbLancerT = spell.getMaxLaunchbyByTarget();
+		if(nbLancerT - LaunchedSort.getNbLaunchTarget(fighter, target, spell.getSpellID()) <= 0 && nbLancerT > 0)
+			return false;
+		
+		return true;
+	}
+	
+	//Utiliser depuis la nouvelle IA
+	public boolean CanCastSpell2(Fighter fighter, SortStats spell, Case cell, int launchCase)
 	{
 		//Si le sort n'est pas existant
 		if(spell == null)
@@ -2194,18 +2383,18 @@ public class Fight
 			return false;
 		}
 		//Si la cellule visée n'est pas alignée avec le joueur alors que le sort le demande
-		if(spell.isLineLaunch() && !Pathfinding.casesAreInSameLine(_map, fighter.get_fightCell().getID(), cell.getID(), 'z'))
+		if(spell.isLineLaunch() && !Pathfinding.casesAreInSameLine(_map, launchCase, cell.getID(), 'z'))
 		{
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande un lancer en ligne, or la case n'est pas alignée avec le joueur");
 			return false;
 		}
 		//Si le sort demande une ligne de vue et que la case demandée n'en fait pas partie
-		if(spell.hasLDV() && !Pathfinding.checkLoS(_map,fighter.get_fightCell().getID(),cell.getID()))
+		if(spell.hasLDV() && !Pathfinding.checkLoS(_map,launchCase,cell.getID(),fighter))
 		{
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande une ligne de vue, mais la case visée n'est pas visible pour le joueur");
 			return false;
 		}
-		int dist = Pathfinding.getDistanceBetween(_map, fighter.get_fightCell().getID(), cell.getID());
+		int dist = Pathfinding.getDistanceBetween(_map, launchCase, cell.getID());
 		int MaxPO = spell.getMaxPO();
 		if(spell.isModifPO())
 			MaxPO += fighter.getTotalStats().getEffect(Constants.STATS_ADD_PO);
@@ -2215,14 +2404,23 @@ public class Fight
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop éloignée Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
 			return false;
 		}
-        if (!fighter.finishedCooldown(spell)) 
-        {
-               SocketManager.GAME_SEND_Im_PACKET(_ordreJeu.get(_curPlayer).getPersonnage(), "1175");
-                return false;
-        }
-        fighter.passCooldowns(); //1 turn finished
-        fighter.startCooldown(spell); //start new cooldown
-        //after passing others
+		
+		//vérification cooldown
+		if(!LaunchedSort.coolDownGood(fighter,spell.getSpellID()))
+			return false;
+		
+		//vérification nombre de lancer par tour
+		int nbLancer = spell.getMaxLaunchbyTurn();
+		if(nbLancer - LaunchedSort.getNbLaunch(fighter, spell.getSpellID()) <= 0 && nbLancer > 0)
+			return false;
+		
+		//vérification nombre de lancer par cible
+		Fighter target = cell.getFirstFighter();
+		int nbLancerT = spell.getMaxLaunchbyByTarget();
+		if(nbLancerT - LaunchedSort.getNbLaunchTarget(fighter, target, spell.getSpellID()) <= 0 && nbLancerT > 0)
+			return false;
+			
+		/* TODO: COOLDOWN */
 		
 		return true;
 	}
