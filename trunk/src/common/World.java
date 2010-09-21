@@ -38,6 +38,7 @@ public class World {
 	private static Map<Integer,ItemSet> ItemSets = new TreeMap<Integer,ItemSet>();
 	private static Map<Integer,Guild> Guildes = new TreeMap<Integer,Guild>();
 	private static Map<Integer,Percepteur> Percepteur = new TreeMap<Integer,Percepteur>();
+	private static Map<Integer,House> House = new TreeMap<Integer,House>();
 	
 	private static int saveTry = 1;
 	
@@ -705,8 +706,12 @@ public class World {
 		System.out.println("Ok !");
 		
 		System.out.print("Chargement des percepteurs:");
-		SQLManager.LOAD_PERCEPTEURS();
-		System.out.println("Ok !");
+		nbr = SQLManager.LOAD_PERCEPTEURS();
+		System.out.println(nbr+" percepteurs charges");
+		
+		System.out.print("Chargement des maisons:");
+		nbr = SQLManager.LOAD_HOUSES();
+		System.out.println(nbr+" maisons chargees");
 	}
 	
 	public static Area getArea(int areaID)
@@ -972,6 +977,14 @@ public class World {
 			{
 				if(perco.get_inFight()>0)continue;
 				SQLManager.UPDATE_PERCO(perco);
+			}
+			GameServer.addToLog("Sauvegarde des maisons...");
+			for(House house : House.values())
+			{
+				if(house.get_owner_id() > 0)
+				{
+					SQLManager.UPDATE_HOUSE(house);
+				}
 			}
 			GameServer.addToLog("Sauvegarde effectuee !");
 			

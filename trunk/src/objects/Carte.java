@@ -1014,28 +1014,28 @@ public class Carte {
 					perso.get_compte().getGameThread().removeAction(GA);
 				break;
 				case 81://Vérouiller maison
-					House.CcellID = CcellID;
-					House.CcarteID = perso.get_curCarte().get_id();
-					House.Lock(perso);
+					House h = House.get_house_id_by_coord(perso.get_curCarte().get_id(), CcellID);
+					if(h == null)return;
+					h.Lock(perso);
 				break;
 				case 84://Rentrer dans une maison
-					House.CcellID = CcellID;
-					House.CcarteID = perso.get_curCarte().get_id();
-					House.HopIn(perso);
+					House h2 = House.get_house_id_by_coord(perso.get_curCarte().get_id(), CcellID);
+					if(h2 == null)return;
+					h2.HopIn(perso);
 				break;
 				case 97://Acheter maison
-					House.CcellID = CcellID;
-					House.CcarteID = perso.get_curCarte().get_id();
-					House.BuyIt(perso);
+					House h3 = House.get_house_id_by_coord(perso.get_curCarte().get_id(), CcellID);
+					if(h3 == null)return;
+					h3.BuyIt(perso);
 				break;
 				case 104://Ouvrir coffre privé
 					//TODO
 				break;
 				case 98://Vendre
 				case 108://Modifier prix de vente
-					House.CcellID = CcellID;
-					House.CcarteID = perso.get_curCarte().get_id();
-					House.SellIt(perso);
+					House h4 = House.get_house_id_by_coord(perso.get_curCarte().get_id(), CcellID);
+					if(h4 == null)return;
+					h4.SellIt(perso);
 				break;
 				
 				default:

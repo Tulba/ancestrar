@@ -553,13 +553,13 @@ public class GameThread implements Runnable
 	{
 		if(_perso.get_guild() == null)return;
 		int HouseID = Integer.parseInt(packet);
-		House.HouseCoordByID(HouseID);
-		if(_perso.get_guild().get_id() != House.isGuild) return;
-		if(!House.canDo(Constants.H_GTELE)) return;
+		House h = House.get_HouseID(HouseID);
+		if(_perso.get_guild().get_id() != h.get_guild_id()) return;
+		if(!h.canDo(h.get_id(), Constants.H_GTELE)) return;
 		if (_perso.hasItemTemplate(8883, 1))
 		{
 			_perso.removeByTemplateID(8883,1);
-			_perso.teleport(House.isMapID, House.isCellID);
+			_perso.teleport((short)h.get_mapid(), h.get_caseid());
 		}
 	}
 	
@@ -4728,17 +4728,19 @@ public class GameThread implements Runnable
 	private void house_action(String packet)
 	{
 		int actionID = Integer.parseInt(packet.substring(5));
+		House h = House.get_selectedHouse();
+		if(h == null) return;
 		switch(actionID)
 		{
 			case 81://Vérouiller maison
-				House.Lock(_perso);
+				h.Lock(_perso);
 			break;
 			case 97://Acheter maison
-				House.BuyIt(_perso);
+				h.BuyIt(_perso);
 			break;
 			case 98://Vendre
 			case 108://Modifier prix de vente
-				House.SellIt(_perso);
+				h.SellIt(_perso);
 			break;
 		}
 	}
