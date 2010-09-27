@@ -414,11 +414,11 @@ public class House
 			{
 				if(isFirst)
 				{
-					packet += house.getValue().get_id()+";"+World.getPersonnage(house.getValue().get_owner_id()).get_name()+";"+World.getCarte((short)house.getValue().get_mapid()).getX()+","+World.getCarte((short)house.getValue().get_mapid()).getY()+";0;"+house.getValue().get_guild_rights();	
+					packet += house.getValue().get_id()+";"+World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()+";"+World.getCarte((short)house.getValue().get_mapid()).getX()+","+World.getCarte((short)house.getValue().get_mapid()).getY()+";0;"+house.getValue().get_guild_rights();	
 					isFirst = false;
 				}else
 				{
-					packet += "|"+house.getValue().get_id()+";"+World.getPersonnage(house.getValue().get_owner_id()).get_name()+";"+World.getCarte((short)house.getValue().get_mapid()).getX()+","+World.getCarte((short)house.getValue().get_mapid()).getY()+";0;"+house.getValue().get_guild_rights();	
+					packet += "|"+house.getValue().get_id()+";"+World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()+";"+World.getCarte((short)house.getValue().get_mapid()).getX()+","+World.getCarte((short)house.getValue().get_mapid()).getY()+";0;"+house.getValue().get_guild_rights();	
 				}
 			}
 		}
@@ -544,8 +544,9 @@ public class House
 		if(!h.isHouse(P, h)) return;
 		int Pguid = Integer.parseInt(packet);
 		Personnage Target = World.getPersonnage(Pguid);
-		if(Target == null || Target.get_fight() != null || Target.get_curCarte().get_id() != P.get_curCarte().get_id()) return;
+		if(Target == null || !Target.isOnline() || Target.get_fight() != null || Target.get_curCarte().get_id() != P.get_curCarte().get_id()) return;
 		Target.teleport(h.get_map_id(), h.get_cell_id());
+		SocketManager.GAME_SEND_Im_PACKET(Target, "018;"+P.get_name());
 	}
 	
 	

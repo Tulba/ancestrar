@@ -293,6 +293,19 @@ public class Objet {
 		txtStats.put(i, s);
 	}
 	
+	public String getTraquedName()
+	{
+		for(Entry<Integer,String> entry : txtStats.entrySet())
+		{
+			if(Integer.toHexString(entry.getKey()).compareTo("3dd") == 0)
+			{
+				
+				return entry.getValue();	
+			}
+		}
+		return null;
+	}
+	
 	public Objet(int Guid, int template, int qua, int pos,	Stats stats,ArrayList<SpellEffect> effects)
 	{
 		this.guid = Guid;

@@ -113,7 +113,41 @@ public class Personnage {
 	//Percepteurs
 	public boolean _isOnPercepteur = false;
 	private int _isOnPercepteurID = 0;
+	//Traque
+	private traque _traqued = null; 
 	
+	
+	public static class traque 
+	{ 
+		private long _time; 
+		private Personnage _traqued; 
+		
+		public traque(long time, Personnage p) 
+		{ 
+			this._time = time; 
+			this._traqued = p; 
+		} 
+		
+		public void set_traqued(Personnage tempP) 
+		{ 
+			_traqued = tempP;
+		} 
+		
+		public Personnage get_traqued() 
+		{ 
+			return _traqued; 
+		} 
+		
+		public long get_time()
+		{
+			return _time;
+		}
+	
+		public void set_time(long time)
+		{
+			_time = time;
+		}
+	}
 	public static class Group
 	{
 		private ArrayList<Personnage> _persos = new ArrayList<Personnage>();
@@ -3069,5 +3103,16 @@ public class Personnage {
 				continue;
 			}
 		}
+		
+	}
+	
+	public traque get_traque()
+	{
+		return _traqued;
+	}
+	
+	public void set_traque(traque traq)
+	{
+		_traqued = traq;
 	}
 }

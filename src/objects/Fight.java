@@ -42,6 +42,8 @@ public class Fight
 		private SortStats _trapSpell;
 		private Fight _fight;
 		private int _color;
+		private boolean _isunHide = true;
+		private int _teamUnHide = -1;
 		
 		public Piege(Fight fight, Fighter caster, Case cell, byte size, SortStats trapSpell, int spell)
 		{
@@ -65,13 +67,41 @@ public class Fight
 		public Fighter get_caster() {
 			return _caster;
 		}
-	
-		public void desapear()
+		
+		public void set_isunHide(Fighter f)
+		{
+			_isunHide = true;
+			_teamUnHide = f.getTeam();
+		}
+		
+		public boolean get_isunHide()
+		{
+			return _isunHide;
+		}
+		
+		public void desappear()
 		{
 			int team = _caster.getTeam()+1;
 			String str = "GDZ-"+_cell.getID()+";"+_size+";"+_color;
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str);
 			str = "GDC"+_cell.getID();
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str);
+			if(get_isunHide())
+			{
+				int team2 = _teamUnHide+1;
+				String str2 = "GDZ-"+_cell.getID()+";"+_size+";"+_color;
+				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team2, 999, _caster.getGUID()+"", str2);
+				str2 = "GDC"+_cell.getID();
+				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team2, 999, _caster.getGUID()+"", str2);
+			}
+		}
+		
+		public void appear(Fighter f)
+		{
+			int team = f.getTeam()+1;
+			String str = "GDZ+"+_cell.getID()+";"+_size+";"+_color;
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str);
+			str = "GDC"+_cell.getID()+";Haaaaaaaaz3005;";
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str);
 		}
 		
@@ -80,7 +110,7 @@ public class Fight
 			if(target.isDead())return;
 			_fight.get_traps().remove(this);
 			//On efface le pieges
-			desapear();
+			desappear();
 			//On déclenche ses effets
 			String str = _spell+","+_cell.getID()+",0,1,1,"+_caster.getGUID();
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, 7, 307, target.getGUID()+"", str);
@@ -602,7 +632,9 @@ public class Fight
 			   spellID == 6 ||
 			   spellID == 14 ||
 			   spellID == 18 ||
-			   spellID == 7
+			   spellID == 7 ||
+			   spellID == 284 ||
+			   spellID == 197
 			   )
 			{
 				//Trêve
@@ -619,6 +651,8 @@ public class Fight
 				//Armure Venteuse
 				//Armure Aqueuse
 				//Bouclier Féca
+				//Accélération Poupesque
+				//Puissance Sylvestre
 				debuff = true;
 			}
 			//Si c'est le jouer actif qui s'autoBuff, on ajoute 1 a la durée
@@ -798,6 +832,12 @@ public class Fight
 		{
 			return fight._curFighterPM;
 		}
+		
+		public void setCurPM(Fight fight, int pm)
+		{
+			fight._curFighterPM = pm;
+		}
+		
 		public void setInvocator(Fighter caster)
 		{
 			_invocator = caster;
@@ -850,9 +890,22 @@ public class Fight
 			_isDead = b;
 		}
 
-		public void unHide()
+		public void unHide(int spellid)
 		{
 			//on retire le buff invi
+			if(spellid != -1)// -1 : CAC
+			{
+				switch(spellid) 
+				{ 
+				case 66: 
+				case 71:
+				case 181: 
+				case 196: 
+				case 200: 
+				case 219: 
+				return; 
+				}
+			}
 			ArrayList<SpellEffect> buffs = new ArrayList<SpellEffect>();
 			buffs.addAll(get_fightBuff());
 			for(SpellEffect SE : buffs)
@@ -1577,11 +1630,13 @@ public class Fight
 			endTurn();
 			return;
 		}
+		
 		//reset des Max des Chatis
 		_ordreJeu.get(_curPlayer).get_chatiValue().clear();
 		//Gestion des glyphes
 		ArrayList<Glyphe> glyphs = new ArrayList<Glyphe>();//Copie du tableau
 		glyphs.addAll(_glyphs);
+		
 		for(Glyphe g : glyphs)
 		{
 			if(_state >= Constants.FIGHT_STATE_FINISHED)return;
@@ -1613,10 +1668,10 @@ public class Fight
 			endTurn();
 			return;
 		}
-		
 		if(_ordreJeu.get(_curPlayer).getPersonnage() != null)
+		{
 			SocketManager.GAME_SEND_STATS_PACKET(_ordreJeu.get(_curPlayer).getPersonnage());
-		
+		}
 		if(_ordreJeu.get(_curPlayer).hasBuff(Constants.EFFECT_PASS_TURN))//Si il doit passer son tour
 		{
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Fighter ID= "+_ordreJeu.get(_curPlayer).getGUID()+" passe son tour");
@@ -1626,7 +1681,6 @@ public class Fight
 		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Début du tour de Fighter ID= "+_ordreJeu.get(_curPlayer).getGUID());
 		SocketManager.GAME_SEND_GAMETURNSTART_PACKET_TO_FIGHT(this,7,_ordreJeu.get(_curPlayer).getGUID(),Constants.TIME_BY_TURN);
 		_turnTimer.restart();
-		
 		try {
 			Thread.sleep(650);
 		} catch (InterruptedException e1) {e1.printStackTrace();}
@@ -2044,14 +2098,13 @@ public class Fight
 		}
 		
 		Fighter tacle = Pathfinding.getEnnemyFighterArround(f.get_fightCell().getID(), _map, this);
-		if( tacle != null)//Tentative de Tacle
+		if(tacle != null)//Tentative de Tacle
 		{
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le personnage est a coté d'un ennemi ("+tacle.getPacketsName()+","+tacle.get_fightCell().getID()+") => Tentative de tacle:");
 			int chance = Formulas.getTacleChance(f, tacle);
 			int rand = Formulas.getRandomValue(0, 99);
 			if(rand > chance)
 			{
-				//FIXME : Toujours le NaN
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7,GA._id, "104",_ordreJeu.get(_curPlayer).getGUID()+";", "");//Joueur taclé
 				int pertePA = _curFighterPA*chance/100;
 				
@@ -2127,6 +2180,12 @@ public class Fight
 		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Fighter ID= "+f.getGUID()+" se déplace de la case "+_ordreJeu.get(_curPlayer).get_fightCell().getID()+" vers "+CryptManager.cellCode_To_ID(newPath.substring(newPath.length() - 2)));
         _ordreJeu.get(_curPlayer).set_fightCell(_map.getCase(nextCellID));
         _ordreJeu.get(_curPlayer).get_fightCell().addFighter(_ordreJeu.get(_curPlayer));
+       if(nStep < 0) 
+       {
+    	   //FIXME Revoir le déplacement vers une position, lorsque l'on croise un ennemi
+    	   if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Fighter ID= "+f.getGUID()+" nStep negatives, reconversion");
+    	   nStep = nStep*(-1);
+       }
         _curAction = "GA;129;"+_ordreJeu.get(_curPlayer).getGUID()+";"+_ordreJeu.get(_curPlayer).getGUID()+",-"+nStep;
         
         //Si porteur
@@ -2246,8 +2305,14 @@ public class Fight
 				try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {};
-				endTurn();
-				return 5;
+				if(fighter.getMob() != null || fighter.isInvocation())//Mob, Invoque
+				{
+					return 5;
+				}else
+				{
+					endTurn();
+					return 5;
+				}
 			}
 			verifIfTeamAllDead();
 		}
@@ -2450,14 +2515,23 @@ public class Fight
         //Calculs des niveaux de groupes
         int TEAM1lvl = 0;
         int TEAM2lvl = 0;
+        //Traque
+        Personnage curp = null; 
         for(Fighter F : TEAM1)
         {
         	if(F.isInvocation())continue;
+        	if(TEAM1.size() == 1) curp = F.getPersonnage();
         	TEAM1lvl += F.get_lvl();
         }
         for(Fighter F : TEAM2)
         {
         	if(F.isInvocation())continue;
+        	if(curp != null && curp.get_traque() != null && curp.get_traque().get_traqued() == F.getPersonnage())
+        	{ 
+        		SocketManager.GAME_SEND_MESSAGE(curp, "Thomas Sacre : Contrat fini, reviens me voir pour recuperer ta recompense.", "000000"); 
+        		curp.get_traque().set_traqued(null); 
+        		curp.get_traque().set_time(-2); 
+        	} 
         	TEAM2lvl += F.get_lvl();
         }
         //fin
@@ -2714,6 +2788,7 @@ public class Fight
 		}
 		for(Fighter i : TEAM2)
 		{
+			if(i._double != null)continue;//Pas de double dans les gains
 			if(i.isInvocation() && i.getMob().getTemplate().getID() != 285)continue;//On affiche pas les invocs
 			if(_type != Constants.FIGHT_TYPE_AGRESSION)
         		Packet += "0;" + i.getGUID() + ";" + i.getPacketsName() + ";" + i.get_lvl() + ";" + (i.getPDV()==0 ?  "1" : "0" )+";"+i.xpString(";")+";;;;|";
@@ -2897,7 +2972,6 @@ public class Fight
 				//SocketManager.GAME_SEND_GV_PACKET(perso);	//Mauvaise ligne apparemment
 				perso.refreshMapAfterFight();
 			}
-			
 			World.getCarte(_map.get_id()).removeFight(_id);
 			SocketManager.GAME_SEND_MAP_FIGHT_COUNT_TO_MAP(World.getCarte(_map.get_id()));
 			_map = null;
@@ -3127,7 +3201,7 @@ public class Fight
 		{
 			if(p.get_caster().getGUID() == target.getGUID())
 			{
-				p.desapear();
+				p.desappear();
 				_traps.remove(p);
 			}
 		}
@@ -3162,7 +3236,7 @@ public class Fight
 				return;
 			SocketManager.GAME_SEND_GAS_PACKET_TO_FIGHT(this, 7, perso.get_GUID());
 			//Si le joueur est invisible
-			if(caster.isHide())caster.unHide();
+			if(caster.isHide())caster.unHide(-1);
 			
 			Fighter target = _map.getCase(cellID).getFirstFighter();
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 303, perso.get_GUID()+"", cellID+"");
@@ -3171,7 +3245,7 @@ public class Fight
 			{
 				int dmg = Formulas.getRandomJet("1d5+0");
 				//et pour les item type feu eau agi ?
-				int finalDommage = Formulas.calculFinalDommage(this,caster, target,Constants.ELEMENT_NEUTRE, dmg,false,true);
+				int finalDommage = Formulas.calculFinalDommage(this,caster, target,Constants.ELEMENT_NEUTRE, dmg,false,true, -1);
 				finalDommage = SpellEffect.applyOnHitBuffs(finalDommage,target,caster,this);//S'il y a des buffs spéciaux
 				
 				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
@@ -3215,7 +3289,7 @@ public class Fight
 				}
 				
 				//Si le joueur est invisible
-				if(caster.isHide())caster.unHide();
+				if(caster.isHide())caster.unHide(-1);
 				
 				ArrayList<SpellEffect> effets = arme.getEffects();
 				if(isCC)

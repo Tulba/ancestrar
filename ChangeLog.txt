@@ -1,3 +1,33 @@
+[27/09/2010]
+Ancestra_Remake 0.5.4
+- Personnage/Action : Ajout des traques (THX Alex).
+Les actions ids :
+50 : Lancer une traque. Pas d'arguments.
+51 : Cible sur la géoposition. Pas d'arguments.
+52 : Recompense pour traque. Pas d'arguments.
+- BDD : Patch 85 a appliquer.
+
+[25/09/2010]
+- SpellEffect : Ajout de l'effet 202 (Perception ... (Dévoile tout sur la carte : alliés comme ennemis)) a tester.
+
+[24/09/2010]
+- Fight/IA : L'EC des mobs/Invocations ne fait plus passer le tour des joueurs.
+- Fight : Accélération Poupesque est désormais débuffable.
+- Fight : Puissance Sylvestre est désormais débuffable.
+- Fight : Correction du gain de PM pendant le tour de jeu du joueur.
+- Fight : Les dégats indirecte ne rendre plus le sram visible (THX mathias52).
+- Fight : Correction des réductions des poisons (THX mathias52).
+- House : Ajout du Im packet lié a l'expulsion de la maison.
+- House : Correction du nom afficher dans les informations de guilde.
+
+[23/09/2010]
+- SocketManager : Correction de l'ouverture du panneau de guilde lorsque qu'une guilde est level 200.
+
+[22/09/2010]
+- Fight : Correction d'un bug mineur sur les doubles.
+- Fight : Correction de l'obtention des NaN PM(s) (A tester).
+- SpellEffect : Correction de la durée du sort Mot d'immobilisation.
+
 [21/09/2010]
 - House : Refonte du système de gestion des maisons.
 
