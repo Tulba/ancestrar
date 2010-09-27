@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------------------------------
 
-			Ancestra_Remake v0.5.3
+			Ancestra_Remake v0.5.4
 			Commencé le 25/05/2010
 			DeathDown & leCirconcit
 				
@@ -24,7 +24,6 @@
 --------------------------------------------------------------------------------------------------------
 			
 			TODO :
-			Si un mob fait un EC, sa passe le tour du joueur (rare).
 			Barre d'objets.
 			Finir les Percepteurs.
 			Finir les Maisons : intérieurs (Coffre+Spécialisations+Droits).

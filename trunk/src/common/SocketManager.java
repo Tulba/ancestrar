@@ -2063,7 +2063,15 @@ public class SocketManager {
 	public static void GAME_SEND_gIG_PACKET(Personnage p, Guild g)
 	{
 		long xpMin = World.getExpLevel(g.get_lvl()).guilde;
-		long xpMax = World.getExpLevel(g.get_lvl()+1).guilde;
+		long xpMax;
+		if(World.getExpLevel(g.get_lvl()+1) == null)
+		{
+			xpMax = -1;
+		}else
+		{
+			xpMax = World.getExpLevel(g.get_lvl()+1).guilde;
+		}
+		
 		String packet = "gIG"+(g.getSize()>9?1:0)+"|"+g.get_lvl()+"|"+xpMin+"|"+g.get_xp()+"|"+xpMax;
 		send(p,packet);
 		if(Ancestra.CONFIG_DEBUG)
@@ -2332,5 +2340,13 @@ public class SocketManager {
 		send(perso, packet);
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
+	}
+	public static void GAME_SEND_FLAG_PACKET(Personnage perso, Personnage cible) 
+	{ 
+		//FIXME 
+		String packet = "IC"+cible.get_curCarte().getX()+"|"+cible.get_curCarte().getY(); 
+		send(perso,packet); 
+		if(Ancestra.CONFIG_DEBUG) 
+			GameServer.addToSockLog("Game: Sended>>"+packet); 
 	}
 }

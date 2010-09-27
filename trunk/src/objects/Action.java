@@ -5,7 +5,9 @@ import java.io.PrintWriter;
 import objects.Metier.StatsMetier;
 import objects.NPC_tmpl.NPC_question;
 import objects.Objet.ObjTemplate;
+import objects.Personnage.traque;
 
+import common.Ancestra;
 import common.ConditionParser;
 import common.Constants;
 import common.Formulas;
@@ -14,6 +16,7 @@ import common.SocketManager;
 import common.World;
 
 import game.GameServer;
+import game.GameThread;
 
 public class Action {
 
@@ -437,6 +440,115 @@ public class Action {
 				perso.set_gfxID(UnMorphID);
 				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(perso.get_curCarte(), perso.get_GUID());
 				SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(perso.get_curCarte(), perso);
+			break;
+			case 50://Traque
+				if(perso.get_traque() == null)
+				{
+					traque traq = new traque(0, null);
+					perso.set_traque(traq);
+				}
+				if(perso.get_traque().get_time() < System.currentTimeMillis() - 600000 || perso.get_traque().get_time() == 0)
+				{
+				Personnage tempP = null;
+				int tmp = 15;
+				int diff = 0;
+				for(byte b = 0; b < 100; b++)
+				{
+				if(b == Ancestra.gameServer.getClients().size())break;
+				GameThread GT = Ancestra.gameServer.getClients().get(b);
+				Personnage P = GT.getPerso();
+				if(P == null || P == perso)continue;
+				if(P.get_compte().get_curIP() == perso.get_compte().get_curIP())continue;
+				//SI pas sériane ni neutre et si alignement opposé
+				if(P.get_align() == perso.get_align() || P.get_align() == 0 || P.get_align() == 3)continue;
+				
+				if(P.get_lvl()>perso.get_lvl())diff = P.get_lvl() - perso.get_lvl();
+				if(perso.get_lvl()>P.get_lvl())diff = perso.get_lvl() - P.get_lvl();
+				if(diff<tmp)tempP = P; tmp = diff;
+				}
+				if(tempP == null)
+				{
+					SocketManager.GAME_SEND_MESSAGE(perso, "Nous n'avons pas trouve de cible a ta hauteur. Reviens plus tard." , "000000");
+					break;
+				}
+				
+				
+				SocketManager.GAME_SEND_MESSAGE(perso, "Vous etes desormais en chasse de "+tempP.get_name()+"." , "000000");
+				
+				perso.get_traque().set_traqued(tempP);
+				perso.get_traque().set_time(System.currentTimeMillis());
+				
+				
+				ObjTemplate T = World.getObjTemplate(10085);
+				if(T == null)return;
+				perso.removeByTemplateID(T.getID(),-100);
+				
+				Objet newObj = T.createNewItem(20, false);
+				//On ajoute le nom du type à recherché
+				/*newObj.addTxtStat(962, Integer.toString(tempP.get_lvl()));
+				newObj.addTxtStat(961, Integer.toString(tempP.getGrade()));
+				
+				int alignid = tempP.get_align();
+				String align = "";
+				switch(alignid)
+				{
+				case 0:
+				align = "Neutre";
+				case 1:
+				align = "Bontarien";
+				break;
+				case 2:
+				align = "Brakmarien";
+				break;
+				case 3:
+				align = "Sériane";
+				break;
+				}
+				newObj.addTxtStat(960, align);*/
+				newObj.addTxtStat(989, tempP.get_name());
+				
+				//Si retourne true, on l'ajoute au monde
+				if(perso.addObjet(newObj, true)){
+					World.addObjet(newObj, true);
+			}else
+			{
+				perso.removeByTemplateID(T.getID(),-20);
+			}
+			}
+			else{
+			SocketManager.GAME_SEND_MESSAGE(perso, "Thomas Sacre : Vous venez juste de signer un contrat, vous devez vous reposer." , "000000");
+				}
+
+			break;
+			case 51://Cible sur la géoposition
+				String perr = "";
+				
+				perr = World.getObjet(itemID).getTraquedName();
+				if(perr == null)
+				{
+					break;	
+				}
+				Personnage cible = World.getPersoByName(perr);
+				if(cible==null)break;
+				if(!cible.isOnline())
+				{
+					SocketManager.GAME_SEND_MESSAGE(perso, "Ce joueur n'est pas connecte" , "000000");
+					break;
+				}
+				SocketManager.GAME_SEND_FLAG_PACKET(perso, cible);
+			break;
+			case 52://recompenser pour traque
+				if(perso.get_traque().get_time() == -2)
+				{
+					int xp = Formulas.getTraqueXP(perso.get_lvl());
+					perso.addXp(xp);
+					SocketManager.GAME_SEND_MESSAGE(perso, "Vous venez de recevoir "+xp , "000000");
+				}
+				else
+				{
+					SocketManager.GAME_SEND_MESSAGE(perso, "Thomas Sacre : Reviens me voir quand tu aura abatu un ennemi." , "000000");
+				}
+
 			break;
 			default:
 				GameServer.addToLog("Action ID="+ID+" non implantée");

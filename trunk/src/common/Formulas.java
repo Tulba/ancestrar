@@ -69,7 +69,7 @@ public class Formulas {
 		return (int)(jet * (100 + statC) / 100 + soins);
 	}
 	
-	public static int calculFinalDommage(Fight fight,Fighter caster,Fighter target,int statID,int jet,boolean isHeal, boolean isCaC)
+	public static int calculFinalDommage(Fight fight,Fighter caster,Fighter target,int statID,int jet,boolean isHeal, boolean isCaC, int spellid)
 	{
 		float i = 0;//Bonus maitrise
 		float j = 100; //Bonus de Classe
@@ -224,12 +224,27 @@ public class Formulas {
 			caster.removePDV(renvoie);
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", caster.getGUID()+",-"+renvoie);
 		}
+		
 		if(!isHeal)num -= resfT;//resis fixe
+		int reduc =	(int)((num/(float)100)*respT);//Reduc %resis
+		if(!isHeal)num -= reduc;
+		if(spellid != -1)
+		{
+			switch(spellid) 
+			{ 
+				case 66 : 
+				case 71 : 
+				case 181: 
+				case 196: 
+				case 200: 
+				case 219: 
+				return (int) num; 
+			} 
+		}
 		int armor= getArmorResist(target,statID);
 		if(!isHeal)num -= armor;
 		if(!isHeal)if(armor > 0)SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 105, caster.getGUID()+"", target.getGUID()+","+armor);
-		int reduc =	(int)((num/(float)100)*respT);//Reduc %resis
-		if(!isHeal)num -= reduc;
+
 		//dégats finaux
 		if(num < 1)num=0;
 		
@@ -819,4 +834,30 @@ public class Formulas {
 		System.out.println("B : "+b);
 		return Chance;
 	}
+	
+	public static int getTraqueXP(int lvl) 
+	{
+		if(lvl < 50)return 10000 * Ancestra.XP_PVM; 
+		if(lvl < 60)return 65000 * Ancestra.XP_PVM; 
+		if(lvl < 70)return 90000 * Ancestra.XP_PVM; 
+		if(lvl < 80)return 120000 * Ancestra.XP_PVM; 
+		if(lvl < 90)return 160000 * Ancestra.XP_PVM; 
+		if(lvl < 100)return 210000 * Ancestra.XP_PVM; 
+		if(lvl < 110)return 270000 * Ancestra.XP_PVM; 
+		if(lvl < 120)return 350000 * Ancestra.XP_PVM; 
+		if(lvl < 130)return 440000 * Ancestra.XP_PVM; 
+		if(lvl < 140)return 540000 * Ancestra.XP_PVM; 
+		if(lvl < 150)return 650000 * Ancestra.XP_PVM; 
+		if(lvl < 155)return 760000 * Ancestra.XP_PVM; 
+		if(lvl < 160)return 880000 * Ancestra.XP_PVM; 
+		if(lvl < 165)return 1000000 * Ancestra.XP_PVM;
+		if(lvl < 170)return 1130000 * Ancestra.XP_PVM;
+		if(lvl < 175)return 1300000 * Ancestra.XP_PVM; 
+		if(lvl < 180)return 1500000 * Ancestra.XP_PVM; 
+		if(lvl < 185)return 1700000 * Ancestra.XP_PVM; 
+		if(lvl < 190)return 2000000 * Ancestra.XP_PVM; 
+		if(lvl < 195)return 2500000 * Ancestra.XP_PVM; 
+		if(lvl < 200)return 3000000 * Ancestra.XP_PVM; 
+		return 0; 
+	} 
 }

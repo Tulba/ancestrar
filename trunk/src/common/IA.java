@@ -355,8 +355,10 @@ public class IA {
 					return;
 				if(PDVPER > 15)
 				{
-					if(!attackIfPossible(fight,F))//Attaque
+					int attack = attackIfPossible(fight,F);
+					if(attack != 0)//Attaque
 					{
+						if(attack == 5) stop = true;//EC
 						if(!moveToAttackIfPossible(fight,F))
 						{
 							if(!buffIfPossible(fight,F,F))//auto-buff
@@ -382,8 +384,10 @@ public class IA {
 				{
 					if(!HealIfPossible(fight,F,true))//auto-soin
 					{
-						if(!attackIfPossible(fight,F))//attaque
+						int attack = attackIfPossible(fight,F);
+						if(attack != 0)//Attaque
 						{
+							if(attack == 5) stop = true;//EC
 							if(!buffIfPossible(fight,F,F))//auto-buff
 							{
 								if(!HealIfPossible(fight,F,false))//soin allié
@@ -422,8 +426,10 @@ public class IA {
 									if(!invocIfPossible(fight,F))
 									{
 										T = getNearestEnnemy(fight, F);
-										if(!attackIfPossible(fight,F))//attaque
+										int attack = attackIfPossible(fight,F);
+										if(attack != 0)//Attaque
 										{
+											if(attack == 5) stop = true;//EC
 											if(!moveFarIfPossible(fight, F))//fuite
 												stop = true;
 										}
@@ -469,8 +475,10 @@ public class IA {
 			{
 				Fighter T = getNearestEnnemy(fight, F);
 				if(T == null) return;
-				if(!attackIfPossible(fight,F))//Attaque
+				int attack = attackIfPossible(fight,F);
+				if(attack != 0)//Attaque
 				{
+					if(attack == 5) stop = true;//EC
 					if(!moveFarIfPossible(fight, F))//fuite
 					{
 							if(!HealIfPossible(fight,F,false))//soin allié
@@ -523,8 +531,10 @@ public class IA {
 							{
 								if(!HealIfPossible(fight,F,true))
 								{
-									if(!attackIfPossible(fight,F))//attaque
+									int attack = attackIfPossible(fight,F);
+									if(attack != 0)//Attaque
 									{
+										if(attack == 5) stop = true;//EC
 										if(!moveFarIfPossible(fight, F))//fuite
 											stop = true;
 									}
@@ -971,7 +981,7 @@ public class IA {
 		}
 		
 		
-		private static boolean attackIfPossible(Fight fight, Fighter fighter)//return True si attaqué
+		private static int attackIfPossible(Fight fight, Fighter fighter)//return True si attaqué
 		{	
 			Map<Integer,Fighter> ennemyList = getLowHpEnnemyList(fight,fighter);
 			SortStats SS = null;
@@ -1005,17 +1015,17 @@ public class IA {
 			{
 				int attack = fight.tryCastSpell(fighter, SS2, cell);
 				if(attack != 0)
-					return false;
+					return attack;
 			}
 			else
 			{
 				if(target == null || SS == null)
-					return false;
+					return 666;
 				int attack = fight.tryCastSpell(fighter, SS, target.get_fightCell().getID());
 				if(attack != 0)
-					return false;			
+					return attack;			
 			}		
-			return true;
+			return 0;
 			
 		}
 		
