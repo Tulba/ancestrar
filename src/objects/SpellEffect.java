@@ -1871,6 +1871,8 @@ public class SpellEffect
 				target.addBuff(Constants.STATS_REM_PM, val, turns,0, true, spell,args,caster);
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7,Constants.STATS_REM_PM, caster.getGUID()+"", target.getGUID()+",-"+val+","+turns);
 				num += val;
+				//Gain de PM pendant le tour de jeu
+				if(target.canPlay() && target == caster) target.setCurPM(fight, target.getPM()+val);
 			}
 			if(num != 0)
 			{

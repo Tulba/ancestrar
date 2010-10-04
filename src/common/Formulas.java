@@ -232,13 +232,35 @@ public class Formulas {
 		{
 			switch(spellid) 
 			{ 
-				case 66 : 
-				case 71 : 
-				case 181: 
-				case 196: 
-				case 200: 
-				case 219: 
-				return (int) num; 
+			/* 
+			 * case [SPELLID]: 
+			 * statC = caster.getTotalStats().getEffect([EFFECT]) 
+			 * num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
+			 * return (int) num; 
+			 */ 
+			case 66 : statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_AGIL); 
+			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
+			return (int) num;
+			
+			case 71 : statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC); 
+			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
+			return (int) num; 
+			
+			case 181: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_INTE); 
+			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
+			return (int) num; 
+			
+			case 196: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC); 
+			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
+			return (int) num; 
+			
+			case 200: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_INTE); 
+			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
+			return (int) num; 
+			
+			case 219: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC); 
+			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
+			return (int) num; 
 			} 
 		}
 		int armor= getArmorResist(target,statID);

@@ -2706,14 +2706,12 @@ public class SQLManager {
 			int i = -50;//Pour éviter les conflits avec touts autre NPC
 			try
 			{
-				String query = "SELECT *" +
-						"FROM  percepteurs " +
-						";";
+				String query = "SELECT `guid` FROM `percepteurs` ORDER BY `guid` ASC LIMIT 0 , 1;";
 				
 				ResultSet RS = executeQuery(query,Ancestra.OTHER_DB_NAME);
 			      while (RS.next()) 
 			      {
-			    	 i--; 
+			    	 i = RS.getInt("guid")-1; 
 			      }
 				
 				closeResultSet(RS);

@@ -25,10 +25,11 @@ public class Percepteur
 	private Map<Integer,Objet> _objets = new TreeMap<Integer,Objet>();
 	private long _kamas = 0;
 	private long _xp = 0;
-	private long _LogKamas = 0;
-	private long _LogXP = 0;
-	private String _LogItem = "";
 	private boolean _inExchange = false;
+	
+	//Les logs
+	private Map<Integer,Objet> _LogObjets = new TreeMap<Integer,Objet>();
+	private long _LogXP = 0;
 	
 	public Percepteur(int guid, short map, int cellID, byte orientation, int GuildID, 
 			short N1, short N2, String items, long kamas, long xp)
@@ -450,16 +451,14 @@ public class Percepteur
 		SQLManager.SAVE_PERSONNAGE(P, true);
 	}
 	
-	public void LogPercepteurDrop(long kamas, long Xp, String item)
+	public void LogXpDrop(long Xp)
 	{
-		_LogKamas += kamas;
 		_LogXP += Xp;
-		_LogItem += item;
 	}
 	
-	public long get_LogKamas()
+	public void LogObjetDrop(int guid, Objet obj)
 	{
-		return _LogKamas;
+		_LogObjets.put(guid, obj);
 	}
 	
 	public long get_LogXp()
@@ -469,7 +468,15 @@ public class Percepteur
 	
 	public String get_LogItems()
 	{
-		return _LogItem;
+		String str = "";
+		boolean isFirst = true;
+		for(Objet obj : _LogObjets.values())
+		{
+			if(!isFirst) str += ";";
+			str += obj.getGuid()+","+obj.getQuantity();
+			isFirst = false;
+		}
+		return str;
 	}
 	
 	public void addObjet(Objet newObj)

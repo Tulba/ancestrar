@@ -2343,10 +2343,16 @@ public class SocketManager {
 	}
 	public static void GAME_SEND_FLAG_PACKET(Personnage perso, Personnage cible) 
 	{ 
-		//FIXME 
 		String packet = "IC"+cible.get_curCarte().getX()+"|"+cible.get_curCarte().getY(); 
 		send(perso,packet); 
 		if(Ancestra.CONFIG_DEBUG) 
-			GameServer.addToSockLog("Game: Sended>>"+packet); 
+			GameServer.addToSockLog("Game: Send>>"+packet); 
+	}
+	public static void GAME_SEND_gT_PACKET(Personnage perso, String str) 
+	{ 
+		String packet = "gT"+str; 
+		send(perso,packet); 
+		if(Ancestra.CONFIG_DEBUG) 
+			GameServer.addToSockLog("Game: Send>>"+packet); 
 	}
 }

@@ -1,3 +1,16 @@
+[03/10/2010]
+- Formulas : RE-Correction des réductions des poisons (THX mathias52).
+
+[29/09/2010]
+- Action : Amélioration du message de gain d'xp.
+- SpellEffect : Correction du gain de PM pendant le tour de jeu du joueur sur l'effet 77 (Vol de PM).
+
+[28/09/2010]
+- Action : Correction d'un problème lié aux récompense de traque.
+- SQLManager : Correction d'un problème d'obtention du guid (percepteur) dans la BDD.
+- GameThread : Ajout de la phrase de guilde lors de l'ajout/retrait d'un percepteur (THX nami-doc).
+- GameThread/Percepteur : Correction de l'affichage des gains percepteur lors de la récolte (THX nami-doc).
+
 [27/09/2010]
 Ancestra_Remake 0.5.4
 - Personnage/Action : Ajout des traques (THX Alex).
