@@ -507,6 +507,18 @@ public class GameThread implements Runnable
 		SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_perso.get_curCarte(), IDPerco);
 		SQLManager.DELETE_PERCO(perco.getGuid());
 		perco.DelPerco(perco.getGuid());
+		for(Personnage z : _perso.get_guild().getMembers())
+		{
+			if(z.isOnline())
+			{
+				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
+				String str = "";
+				str += "R"+perco.get_N1()+","+perco.get_N2()+"|";
+				str += perco.get_mapID()+"|";// FIXME : pas sûr.
+				str += World.getCarte((short)perco.get_mapID()).getX()+"|"+World.getCarte((short)perco.get_mapID()).getY()+"|"+_perso.get_name();
+				SocketManager.GAME_SEND_gT_PACKET(z, str);
+			}
+		}
 	}
 
 	private void guild_add_perco() 
@@ -532,6 +544,18 @@ public class GameThread implements Runnable
 		Percepteur.addPerco(perco);
 		SocketManager.GAME_SEND_ADD_PERCO_TO_MAP(_perso.get_curCarte());
 		SQLManager.ADD_PERCO_ON_MAP(id, _perso.get_curCarte().get_id(), _perso.get_guild().get_id(), _perso.get_curCell().getID(), 3, random1, random2);
+		for(Personnage z : _perso.get_guild().getMembers())
+		{
+			if(z.isOnline())
+			{
+				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
+				String str = "";
+				str += "S"+perco.get_N1()+","+perco.get_N2()+"|";
+				str += perco.get_mapID()+"|";// FIXME : pas sûr.
+				str += World.getCarte((short)perco.get_mapID()).getX()+"|"+World.getCarte((short)perco.get_mapID()).getY()+"|"+_perso.get_name();
+				SocketManager.GAME_SEND_gT_PACKET(z, str);
+			}
+		}
 	}
 
 	private void guild_enclo(String packet)
@@ -1844,7 +1868,6 @@ public class GameThread implements Runnable
 					}
 					perco.setKamas(P_Retrait);
 					_perso.addKamas(P_Kamas);
-					perco.LogPercepteurDrop(P_Kamas, 0, "");
 					SocketManager.GAME_SEND_STATS_PACKET(_perso);
 					SocketManager.GAME_SEND_EsK_PACKET(_perso,"G"+perco.getKamas());
 				}
@@ -1871,12 +1894,12 @@ public class GameThread implements Runnable
 					{
 						perco.removeFromPercepteur(_perso, guid, qua);
 					}
-					perco.LogPercepteurDrop(0, 0, "x"+obj.getQuantity()+"\n");
+					perco.LogObjetDrop(guid, obj);
 				}
 			break;
 			}
 			_perso.get_guild().addXp(perco.getXp());
-			perco.LogPercepteurDrop(0, perco.getXp(), "");
+			perco.LogXpDrop(perco.getXp());
 			perco.setXp(0);
 			SQLManager.UPDATE_GUILD(_perso.get_guild());
 		}
@@ -2201,15 +2224,18 @@ public class GameThread implements Runnable
 		if(_perso.get_isOnPercepteur())
 		{
 			Percepteur perco = Percepteur.GetPerco(_perso.get_isOnPercepteurID());
-			//On actualise la guilde+Message de récolte FIXME
 			for(Personnage z : World.getGuild(perco.get_guildID()).getMembers())
 			{
 				if(z.isOnline())
 				{
 					SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
-					SocketManager.GAME_SEND_MESSAGE(z, "Un percepteur vient d'etre recolte par "+_perso.get_name()+".", Ancestra.CONFIG_MOTD_COLOR);
-					//TODO : ITEMS ?
-					SocketManager.GAME_SEND_MESSAGE(z, "Gains : \n-Kamas : "+perco.get_LogKamas()+"\n-Xp : "+perco.get_LogXp()+".", Ancestra.CONFIG_MOTD_COLOR);
+					String str = "";
+					str += "G"+perco.get_N1()+","+perco.get_N2();
+					str += "|.|"+World.getCarte((short)perco.get_mapID()).getX()+"|"+World.getCarte((short)perco.get_mapID()).getY()+"|";
+					str += _perso.get_name()+"|";
+					str += perco.get_LogXp()+";";
+					str += perco.get_LogItems();
+					SocketManager.GAME_SEND_gT_PACKET(z, str);
 				}
 			}
 			_perso.get_curCarte().RemoveNPC(perco.getGuid());
