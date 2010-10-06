@@ -177,6 +177,14 @@ public class Fight
 		private Percepteur _Perco = null;
 		private Personnage _double = null;
 		private ArrayList<LaunchedSort> _launchedSort = new ArrayList<LaunchedSort>();
+		private Fighter _oldCible = null;
+		
+		public Fighter get_oldCible() {
+			return _oldCible;
+		}
+		public void set_oldCible(Fighter cible) {
+			_oldCible = cible;
+		}
 		
 		public Fighter(Fight f, MobGrade mob)
 		{

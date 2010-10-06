@@ -375,7 +375,7 @@ public class SpellEffect
 				break;
 				case 97://Dommage Terre 
 					applyEffect_97(cibles,fight,isCaC);
-					break; 
+				break; 
 				case 98://Dommage Air 
 					applyEffect_98(cibles,fight,isCaC);
 				break;
@@ -665,13 +665,33 @@ public class SpellEffect
 			if(spell == 113)
 			{
 				//unhide des personnages
-				for(Fighter f : fight.getFighters(0))
+				if(fight.getFighters(0) != null && fight.getFighters(0).size() > 0)
 				{
-					if(f.isHide()) f.unHide(spell);
+					for(Fighter f : fight.getFighters(0))
+					{
+						if(f.isHide()) f.unHide(spell);
+					}
 				}
-				for(Fighter f : fight.getFighters(1))
+				if(fight.getFighters(1) != null && fight.getFighters(1).size() > 0)
 				{
-					if(f.isHide()) f.unHide(spell);
+					for(Fighter f : fight.getFighters(1))
+					{
+						if(f.isHide()) f.unHide(spell);
+					}
+				}
+				if(fight.getFighters(2) != null && fight.getFighters(2).size() > 0)
+				{
+					for(Fighter f : fight.getFighters(2))
+					{
+						if(f.isHide()) f.unHide(spell);
+					}
+				}
+				if(fight.getFighters(4) != null && fight.getFighters(4).size() > 0)
+				{
+					for(Fighter f : fight.getFighters(4))
+					{
+						if(f.isHide()) f.unHide(spell);
+					}
 				}
 				//unhide des pièges
 				for(Piege p : fight.get_traps())
@@ -1927,7 +1947,7 @@ public class SpellEffect
 			{
 				for(Fighter target : cibles)
 				{
-					if(spell == 197)
+					if(spell == 197 || spell == 112)
 					{
 						target.addBuff(effectID, value, turns, turns, false, spell, args, caster);
 					}else
@@ -1951,6 +1971,12 @@ public class SpellEffect
 				}
 			}else
 			{
+				if(cibles.size() == 0 && spell == 120 && caster.get_oldCible() != null) 
+				{
+					caster.get_oldCible().addBuff(effectID, value, turns, turns, false, spell, args, caster);
+					if(turns <= 1 || duration <= 1)
+						SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 169,caster.get_oldCible().getGUID()+"",caster.get_oldCible().getGUID()+",-"+value);
+				}
 				for(Fighter target : cibles)
 				{
 					if(spell == 192)//Ronce apaisante
@@ -2236,6 +2262,13 @@ public class SpellEffect
 		
 		private void applyEffect_5(ArrayList<Fighter> cibles,Fight fight)
 		{
+			if(cibles.size() == 1 && spell == 120)
+			{
+				if(!cibles.get(0).isDead())
+				{
+					caster.set_oldCible(cibles.get(0));
+				}
+			}
 			if(turns <= 0)
 			{
 				for(Fighter target : cibles)
@@ -3551,6 +3584,14 @@ public class SpellEffect
 				for(Fighter target : cibles)
 				{
 					if(spell==139 && target.getTeam()!= caster.getTeam())//Mot d'altruisme on saute les ennemis ?
+					{
+						continue;
+					}
+					if(spell == 59 && Integer.parseInt(args.split(";")[0]) == 200 && caster.getTeam() != target.getTeam())
+					{
+						continue;
+					}
+					if(spell == 59 && Integer.parseInt(args.split(";")[0]) == 100 && caster.getTeam() == target.getTeam())
 					{
 						continue;
 					}

@@ -1,3 +1,11 @@
+[06/10/2010]
+- SpellEffect/Fight : Correction de la perte du PM sur le sort Destin d'Ecaflip.
+
+[05/10/2010]
+- SpellEffect : Correction du sort corruption.
+- SpellEffect : Correction de l'effet 202 (perception etc ...).
+- SpellEffect : Correction de la perte du PA sur le sort griffe ceangal.
+
 [03/10/2010]
 - Formulas : RE-Correction des réductions des poisons (THX mathias52).
 
