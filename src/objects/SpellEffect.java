@@ -526,7 +526,6 @@ public class SpellEffect
 				case 180://Double du sram
 					applyEffect_180(fight);
 				break;
-
 				case 181://Invoque une créature
 					applyEffect_181(fight);
 				break;
@@ -544,7 +543,7 @@ public class SpellEffect
 				break;
 				
 				case 202://Perception
-					applyEffect_202(fight);
+					applyEffect_202(fight, cibles);
 				break;
 				
 				case 210://Resist % terre
@@ -643,7 +642,7 @@ public class SpellEffect
 				break;
 
 				case 788://Chatiment de X sur Y tours
-					applyEffect_788(fight);
+					applyEffect_788(cibles,fight);
 				break;
 				
 				case 950://Etat X
@@ -659,39 +658,15 @@ public class SpellEffect
 			}
 		}
 
-		private void applyEffect_202(Fight fight) 
+		private void applyEffect_202(Fight fight, ArrayList<Fighter> cibles) 
 		{
 			// TODO A tester !
 			if(spell == 113)
 			{
 				//unhide des personnages
-				if(fight.getFighters(0) != null && fight.getFighters(0).size() > 0)
+				for(Fighter target : cibles)
 				{
-					for(Fighter f : fight.getFighters(0))
-					{
-						if(f.isHide()) f.unHide(spell);
-					}
-				}
-				if(fight.getFighters(1) != null && fight.getFighters(1).size() > 0)
-				{
-					for(Fighter f : fight.getFighters(1))
-					{
-						if(f.isHide()) f.unHide(spell);
-					}
-				}
-				if(fight.getFighters(2) != null && fight.getFighters(2).size() > 0)
-				{
-					for(Fighter f : fight.getFighters(2))
-					{
-						if(f.isHide()) f.unHide(spell);
-					}
-				}
-				if(fight.getFighters(4) != null && fight.getFighters(4).size() > 0)
-				{
-					for(Fighter f : fight.getFighters(4))
-					{
-						if(f.isHide()) f.unHide(spell);
-					}
+					if(target.isHide()) target.unHide(spell);
 				}
 				//unhide des pièges
 				for(Piege p : fight.get_traps())
@@ -815,9 +790,13 @@ public class SpellEffect
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 50, caster.getGUID()+"", ""+target.getGUID());
 		}
 
-		private void applyEffect_788(Fight fight)
+		private void applyEffect_788(ArrayList<Fighter> cibles, Fight fight)
 		{
-			caster.addBuff(effectID, value, turns, 1, false, spell, args, caster);
+			//caster.addBuff(effectID, value, turns, 1, false, spell, args, caster);
+			for(Fighter target : cibles) 
+			{ 
+				target.addBuff(effectID, value, turns, 1, false, spell, args, target); 
+			}
 		}
 
 		private void applyEffect_131(ArrayList<Fighter> cibles, Fight fight)

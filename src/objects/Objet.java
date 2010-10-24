@@ -214,9 +214,9 @@ public class Objet {
 			return str;
 		}
 
-		public void applyAction(Personnage perso, int objID)
+		public void applyAction(Personnage perso, Personnage target, int objID)
 		{
-			for(Action a : onUseActions)a.apply(perso, objID);
+			for(Action a : onUseActions)a.apply(perso, target, objID);
 		}
 	}
 

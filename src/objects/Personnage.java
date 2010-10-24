@@ -642,20 +642,12 @@ public class Personnage {
 	public static Personnage CREATE_PERSONNAGE(String name, int sexe, int classe, int color1, int color2, int color3,Compte compte)
 	{
 		String z = "";
-		if(Ancestra.CONFIG_ZAAP_ANK)
+		if(Ancestra.CONFIG_ZAAP)
 		{
-			for(int[] i : Constants.AMAKNA_ZAAPS)
+			for(Entry<Integer, Integer> i : Constants.ZAAPS.entrySet())
 			{
 				if(z.length() != 0)z+=",";
-				z += i[0];
-			}
-		}
-		if(Ancestra.CONFIG_ZAAP_INC)
-		{
-			for(int[] i : Constants.INCARNAM_ZAAPS)
-			{
-				if(z.length() != 0)z+=",";
-				z += i[0];
+				z += i.getKey();
 			}
 		}
 		Personnage perso = new Personnage(
