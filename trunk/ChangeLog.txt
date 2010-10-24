@@ -1,3 +1,27 @@
+[24/10/2010]
+- BDD : Ajout du champ "objets" pour le percepteur.
+- Action/GameThread : Ajout de la gestion des objets ciblables pour l'actionID 10 (Pain/potion/viande/poisson).
+
+[20/10/2010]
+- Personnage/World/GameThread [...] : Refonte des zaaps, ils s'ajoute désormais depuis la BDD (THX nami-doc).
+- Carte/GameThread/BDD : Simplification des cellids des portes des enclos (THX nami-doc).
+
+[15/10/2010]
+- GameManager : Ajout des Im paquets liéé au flood sur les canal commerce et recrutement (THX mathias52 & nami-doc).
+
+[14/10/2010]
+- GameManager : On peut changer les items de leur place pendant la phase "FIGHT_STATE_PLACE" (2, choix des places) du combat.
+- Pathfinding : Lancer un CaC sur une cible en diagonal touche désormais cette cible.
+
+[12/10/2010]
+- SpellEffect : Correction des cibles pour les chatiments (...) (THX mathias52).
+
+[11/10/2010]
+- Patch : Correction du nom du patch 66.
+
+[07/10/2010]
+- BDD : Correction des PA/PM du tofu level 6.
+
 [06/10/2010]
 - SpellEffect/Fight : Correction de la perte du PM sur le sort Destin d'Ecaflip.
 

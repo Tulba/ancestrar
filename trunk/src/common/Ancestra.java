@@ -41,8 +41,7 @@ public class Ancestra {
 	public static int CONFIG_START_KAMAS = 0;
 	public static int CONFIG_SAVE_TIME = 10*60*10000;
 	public static int CONFIG_DROP = 1;
-	public static boolean CONFIG_ZAAP_ANK = false;
-	public static boolean CONFIG_ZAAP_INC = false;
+	public static boolean CONFIG_ZAAP = false;
 	public static int CONFIG_LOAD_DELAY = 60000;
 	public static int CONFIG_RELOAD_MOB_DELAY = 18000000;// 5heures ça me parait correct :)
 	public static int CONFIG_PLAYER_LIMIT = 30;
@@ -213,17 +212,11 @@ public class Ancestra {
 					{
 						Ancestra.CONFIG_IP_LOOPBACK = true;
 					}
-				}else if(param.equalsIgnoreCase("ZAAP_ANK"))
+				}else if(param.equalsIgnoreCase("ZAAP"))
 				{
 					if(value.equalsIgnoreCase("true"))
 					{
-						Ancestra.CONFIG_ZAAP_ANK = true;
-					}
-				}else if(param.equalsIgnoreCase("ZAAP_INC"))
-				{
-					if(value.equalsIgnoreCase("true"))
-					{
-						Ancestra.CONFIG_ZAAP_INC = true;
+						Ancestra.CONFIG_ZAAP = true;
 					}
 				}else if(param.equalsIgnoreCase("USE_IP"))
 				{

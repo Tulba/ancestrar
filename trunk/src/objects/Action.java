@@ -32,7 +32,7 @@ public class Action {
 	}
 
 
-	public void apply(Personnage perso, int itemID)
+	public void apply(Personnage perso, Personnage target, int itemID)
 	{
 		if(perso == null)return;
 		if(!cond.equalsIgnoreCase("") && !cond.equalsIgnoreCase("-1")&& !ConditionParser.validConditions(perso,cond))
@@ -262,9 +262,18 @@ public class Action {
 					int max = Integer.parseInt(args.split(",",2)[1]);
 					if(max == 0) max = min;
 					int val = Formulas.getRandomValue(min, max);
-					if(perso.get_PDV() + val > perso.get_PDVMAX())val = perso.get_PDVMAX()-perso.get_PDV();
-					perso.set_PDV(perso.get_PDV()+val);
-					SocketManager.GAME_SEND_STATS_PACKET(perso);
+					if(target != null)
+					{
+						if(target.get_PDV() + val > target.get_PDVMAX())val = target.get_PDVMAX()-target.get_PDV();
+						target.set_PDV(target.get_PDV()+val);
+						SocketManager.GAME_SEND_STATS_PACKET(target);
+					}
+					else
+					{
+						if(perso.get_PDV() + val > perso.get_PDVMAX())val = perso.get_PDVMAX()-perso.get_PDV();
+						perso.set_PDV(perso.get_PDV()+val);
+						SocketManager.GAME_SEND_STATS_PACKET(perso);
+					}
 				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 11://Definir l'alignement

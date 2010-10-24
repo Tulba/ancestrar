@@ -263,7 +263,12 @@ public class Pathfinding {
 	{
 		ArrayList<Fighter> cibles = new ArrayList<Fighter>();
 		char c = getDirBetweenTwoCase(castCellID,cell.getID(),fight.get_map(),true);
-		if(c == 0)return cibles;
+		if(c == 0)
+		{
+			//On cible quand meme le fighter sur la case
+			if(cell.getFirstFighter() != null) cibles.add(cell.getFirstFighter());
+			return cibles;
+		}
 		
 		switch(type)
 		{

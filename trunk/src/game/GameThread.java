@@ -488,12 +488,13 @@ public class GameThread implements Runnable
 				String PercoID = Integer.toString(Integer.parseInt(packet.substring(1)), 36);
 				int TiD = Integer.parseInt(PercoID);
 				Percepteur perco = Percepteur.GetPerco(TiD);
+				if(perco == null) return;
 				int FightID = perco.get_inFightID();
 				short MapID = World.getCarte((short)perco.get_mapID()).getFight(FightID).get_map().get_id();
 				int CellID = perco.get_cellID();
 				_perso.teleport(MapID, CellID);
 				World.getCarte(MapID).getFight(FightID).joinPercepteurFight(_perso,_perso.get_GUID(), TiD);
-			break;
+				break;
 		}
 	}
 
@@ -1406,13 +1407,26 @@ public class GameThread implements Runnable
 
 	private void Object_use(String packet)
 	{
+		//OU577|1|37
+		// 1 : PGUID
+		// 37 : ??
 		int guid = -1;
+		int targetGuid = -1;
+		Personnage Target = null;
 		try
 		{
 			String[] infos = packet.substring(2).split("\\|");
 			guid = Integer.parseInt(infos[0]);
+			try
+			{
+			targetGuid = Integer.parseInt(infos[1]);
+			}catch(Exception e){targetGuid = -1;};
 		}catch(Exception e){return;};
 		//Si le joueur n'a pas l'objet
+		if(World.getPersonnage(targetGuid) != null)
+		{
+			Target = World.getPersonnage(targetGuid);
+		}
 		if(!_perso.hasItemGuid(guid))return;
 		Objet obj = World.getObjet(guid);
 		ObjTemplate T = obj.getTemplate();
@@ -1421,7 +1435,7 @@ public class GameThread implements Runnable
 			SocketManager.GAME_SEND_Im_PACKET(_perso, "119|43");
 			return;
 		}
-		T.applyAction(_perso, guid);
+		T.applyAction(_perso, Target, guid);
 	}
 
 	private synchronized void Object_move(String packet)
@@ -1434,7 +1448,7 @@ public class GameThread implements Runnable
 			Objet obj = World.getObjet(guid);
 			if(!_perso.hasItemGuid(guid) || obj == null)
 				return;
-			if(_perso.get_fight() != null)return;
+			if(_perso.get_fight() != null && _perso.get_fight().get_state() > 2)return;
 			if(!Constants.isValidPlaceForItem(obj.getTemplate(),pos) && pos != Constants.ITEM_POS_NO_EQUIPED)
 				return;
 			
@@ -4050,7 +4064,7 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
 				return;
 			}
-			MountPark MP = new MountPark(owner, _perso.get_curCarte(), size, "", -1, price);
+			MountPark MP = new MountPark(owner, _perso.get_curCarte(), _perso.get_curCell().getID(), size, "", -1, price);
 			_perso.get_curCarte().setMountPark(MP);
 			SQLManager.SAVE_MOUNTPARK(MP);
 			String str = "L'enclos a ete config. avec succes";
@@ -4276,7 +4290,7 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
 				return;
 			}
-			(new Action(type,args,cond)).apply(perso, -1);
+			(new Action(type,args,cond)).apply(perso, null, -1);
 			String mess = "Action effectuee !";
 			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
 		}else if (command.equalsIgnoreCase("SPAWN"))
@@ -4400,7 +4414,7 @@ public class GameThread implements Runnable
 				if((l = System.currentTimeMillis() - _timeLastTradeMsg) < Ancestra.FLOOD_TIME)
 				{
 					l = (Ancestra.FLOOD_TIME  - l)/1000;//On calcul la différence en secondes
-					SocketManager.GAME_SEND_MESSAGE(_perso, "Pour parler de nouveau, il faut attendre : "+((int)Math.ceil(l)+1)+" s", "009900");
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "0115;"+((int)Math.ceil(l)+1));
 					return;
 				}
 				_timeLastTradeMsg = System.currentTimeMillis();
@@ -4418,7 +4432,7 @@ public class GameThread implements Runnable
 				if((j = System.currentTimeMillis() - _timeLastRecrutmentMsg) < Ancestra.FLOOD_TIME)
 				{
 					j = (Ancestra.FLOOD_TIME  - j)/1000;//On calcul la différence en secondes
-					SocketManager.GAME_SEND_MESSAGE(_perso, "Pour parler de nouveau, il faut attendre : "+((int)Math.ceil(j)+1)+" s", "009900");
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "0115;"+((int)Math.ceil(j)+1));
 					return;
 				}
 				_timeLastRecrutmentMsg = System.currentTimeMillis();

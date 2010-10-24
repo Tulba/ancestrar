@@ -47,15 +47,17 @@ public class Carte {
 		private ArrayList<Case> _cases = new ArrayList<Case>();
 		private Guild _guild;
 		private Carte _map;
+		private int _cellid = -1;
 		private int _price;
 		
-		public MountPark(int owner, Carte map, int size,String data, int guild,int price)
+		public MountPark(int owner, Carte map, int cellid, int size,String data, int guild,int price)
 		{
 			_owner = owner;
 			_door = map.getMountParkDoor();
 			_size = size;
 			_guild = World.getGuild(guild);
 			_map = map;
+			_cellid = cellid;
 			_price = price;
 			if(_map != null)_map.setMountPark(this);
 		}
@@ -86,6 +88,10 @@ public class Carte {
 
 		public Carte get_map() {
 			return _map;
+		}
+		
+		public int get_cellid() {
+			return _cellid;
 		}
 
 		public int get_price() {
@@ -854,7 +860,7 @@ public class Carte {
 			
 			for(Action act : _onCellStop)
 			{
-				act.apply(perso, -1);
+				act.apply(perso, null, -1);
 			}
 		}
 		public void addPerso(Personnage perso)
@@ -1194,7 +1200,7 @@ public class Carte {
 	public void applyEndFightAction(int type,Personnage perso)
 	{
 		if(_endFightAction.get(type) == null)return;
-		for(Action A : _endFightAction.get(type))A.apply(perso, -1);
+		for(Action A : _endFightAction.get(type))A.apply(perso, null, -1);
 	}
 	public void addEndFightAction(int type,Action A)
 	{

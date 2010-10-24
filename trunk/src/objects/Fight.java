@@ -3242,11 +3242,14 @@ public class Fight
 		{
 			if(_curFighterPA < 4)//S'il n'a pas assez de PA
 				return;
+			
 			SocketManager.GAME_SEND_GAS_PACKET_TO_FIGHT(this, 7, perso.get_GUID());
+			
 			//Si le joueur est invisible
 			if(caster.isHide())caster.unHide(-1);
 			
 			Fighter target = _map.getCase(cellID).getFirstFighter();
+			
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 303, perso.get_GUID()+"", cellID+"");
 			
 			if(target != null)

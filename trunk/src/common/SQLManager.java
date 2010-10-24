@@ -401,6 +401,7 @@ public class SQLManager {
 				new MountPark(
 						RS.getInt("owner"),
 						map,
+						RS.getInt("cellid"),
 						RS.getInt("size"),
 						RS.getString("data"),
 						RS.getInt("guild"),
@@ -1792,17 +1793,18 @@ public class SQLManager {
 	}
 	public static void SAVE_MOUNTPARK(MountPark MP)
 	{
-		String baseQuery = "REPLACE INTO `mountpark_data`( `mapid` , `size` , `owner` , `guild` , `price` , `data` )" +
-				" VALUES (?,?,?,?,?,?);";
+		String baseQuery = "REPLACE INTO `mountpark_data`( `mapid` , `cellid`, `size` , `owner` , `guild` , `price` , `data` )" +
+				" VALUES (?,?,?,?,?,?,?);";
 				
 		try {
 			PreparedStatement p = newTransact(baseQuery, othCon);
 			p.setInt(1,MP.get_map().get_id());
-			p.setInt(2,MP.get_size());
-			p.setInt(3,MP.get_owner());
-			p.setInt(4,(MP.get_guild()==null?-1:MP.get_guild().get_id()));
-			p.setInt(5,MP.get_price());
-			p.setString(6,MP.parseData());
+			p.setInt(2,MP.get_cellid());
+			p.setInt(3,MP.get_size());
+			p.setInt(4,MP.get_owner());
+			p.setInt(5,(MP.get_guild()==null?-1:MP.get_guild().get_id()));
+			p.setInt(6,MP.get_price());
+			p.setString(7,MP.parseData());
 			
 			p.execute();
 			closePreparedStatement(p);
@@ -2666,7 +2668,7 @@ public class SQLManager {
 				ResultSet RS = executeQuery(query,Ancestra.OTHER_DB_NAME);
 			      while (RS.next()) 
 			      {
-			    	  packet += "|"+RS.getShort("mapid")+";"+RS.getShort("size")+";"+RS.getShort("size");
+			    	  packet += "|"+RS.getShort("mapid")+";"+RS.getShort("size")+";"+RS.getShort("size"); // Nombre d'objets pour le dernier
 				  }
 				
 				closeResultSet(RS);
@@ -2715,6 +2717,26 @@ public class SQLManager {
 			      }
 				
 				closeResultSet(RS);
+			}catch(SQLException e)
+			{
+				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+			}
+			return i;
+		}
+		
+		public static int LOAD_ZAAPS() 
+		{
+			int i = 0;
+			try
+			{
+				ResultSet RS = SQLManager.executeQuery("SELECT mapID, cellID from zaaps;",Ancestra.OTHER_DB_NAME); 
+			      while (RS.next()) 
+			      { 
+						Constants.ZAAPS.put(RS.getInt("mapID"), RS.getInt("cellID"));
+						i++;
+			      }
+					closeResultSet(RS);
 			}catch(SQLException e)
 			{
 				RealmServer.addToLog("SQL ERROR: "+e.getMessage());

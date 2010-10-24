@@ -712,6 +712,10 @@ public class World {
 		System.out.print("Chargement des maisons:");
 		nbr = SQLManager.LOAD_HOUSES();
 		System.out.println(nbr+" maisons chargees");
+		
+		System.out.print("Chargement des zaaps:");
+		nbr = SQLManager.LOAD_ZAAPS();
+		System.out.println(nbr+" zaaps chargees");
 	}
 	
 	public static Area getArea(int areaID)
@@ -1169,22 +1173,22 @@ public class World {
 	}
 	public static int getZaapCellIdByMapId(short i)
 	{
-		for(int[] zaap : Constants.AMAKNA_ZAAPS)
+		for(Entry<Integer, Integer> zaap : Constants.ZAAPS.entrySet())
 		{
-			if(zaap[0] == i)return zaap[1];
-		}
-		for(int[] zaap : Constants.INCARNAM_ZAAPS)
-		{
-			if(zaap[0] == i)return zaap[1];
+			if(zaap.getKey() == i)return zaap.getValue();
 		}
 		return -1;
 	}
 	public static int getEncloCellIdByMapId(short i)
 	{
-		for(int[] enclo : Constants.ENCLOS_LIST)
+		if(World.getCarte(i).getMountPark() != null)
 		{
-			if(enclo[0] == i)return enclo[1];
+			if(World.getCarte(i).getMountPark().get_cellid() > 0)
+			{
+				return World.getCarte(i).getMountPark().get_cellid();
+			}
 		}
+		
 		return -1;
 	}
 
