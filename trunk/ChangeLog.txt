@@ -1,3 +1,19 @@
+[26/10/2010]
+- GameThread : Débugge de la barre d'objets, a tester (Risque de duplication ou perte d'items).
+- GameServer/SocketManager : Mise en place des Im(s) paquets liéé a la sauvegarde (THX nami-doc).
+- SocketManager : Supression de 2 paquets inutiles.
+- Fight : Les pierres d'âme ne permettent plus d'obtenir des PAs a l'infini.
+- GameThread : Ajout de la commande "SHUTDOWN" 2 arguments : 
+"1 ou 0" : creation ou supression du programme 
+"xx" : temps en minutes du programme
+Ex : 
+SHUTDOWN 1 30 : Ferme le serveur dans 30 minutes.
+SHUTDOWN 0 : Retire l'action précédente.
+
+
+[25/10/2010]
+- Guild : Correction d'un problème liéé a la supression du personnage.
+
 [24/10/2010]
 - BDD : Ajout du champ "objets" pour le percepteur.
 - Action/GameThread : Ajout de la gestion des objets ciblables pour l'actionID 10 (Pain/potion/viande/poisson).

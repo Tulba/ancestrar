@@ -100,7 +100,7 @@ public class SocketManager {
 		String packet = "Ad"+pseudo+(char)0x00;
 		packet += "Ac0"+(char)0x00;
 		//AH[ID];[State];[Completion];[CanLog]
-		packet += "AH1;1;110;1"+(char)0x00;
+		packet += "AH1;"+World.get_state()+";110;1"+(char)0x00;
 		packet += "AlK"+level+(char)0x00;
 		packet += "AQ"+question.replace(" ", "+");
 		
@@ -139,9 +139,9 @@ public class SocketManager {
 	
 	public static void REALM_SEND_PERSO_LIST(PrintWriter out, int number)
 	{
-		String packet = "AxK31536000000";
+		String packet = "AxK31536000000";//Temps d'abonnement
 		if(number>0)
-			packet+= "|1," + number;
+			packet+= "|1," + number;//ServeurID
 		
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
@@ -741,7 +741,14 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
-	
+	public static void GAME_SEND_Im_PACKET_TO_ALL(String str)
+	{
+		String packet = "Im"+str; 
+		for(Personnage perso : World.getOnlinePersos())
+			send(perso,packet);
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet);
+	}
 	public static void GAME_SEND_Im_PACKET(Personnage out,String str)
 	{
 		String packet = "Im"+str;
@@ -1440,7 +1447,6 @@ public class SocketManager {
 	
 	public static void GAME_SEND_OAKO_PACKET(Personnage out, Objet obj)
 	{
-		//FIXME :	OAKO4f2f69b~201f~1~~76#2#0#0#0d0+2;
 		String packet = "OAKO"+obj.parseItem();
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
@@ -2276,21 +2282,6 @@ public class SocketManager {
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
 		
-	}
-	public static void GAME_SEND_Im068(Personnage perso) 
-	{
-		String packet = "Im068";
-		send(perso, packet);
-		if (Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>" + packet);
-		
-	}
-	public static void GAME_SEND_OR_PACKET(Personnage p, Objet obj) 
-	{
-		String packet = "OR"+obj.getGuid();
-		send(p, packet);
-		if (Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>" + packet);
 	}
 	public static void GAME_SEND_FORGETSPELL_INTERFACE(char sign,Personnage perso)
 	{

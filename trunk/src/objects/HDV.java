@@ -357,7 +357,7 @@ public class HDV
 			LoadBuyItem(P, obj.getTemplate().getID(), HdvId);
 			SocketManager.GAME_SEND_STATS_PACKET(P);
 			SocketManager.GAME_SEND_Ow_PACKET(P);
-			SocketManager.GAME_SEND_Im068(P);
+			SocketManager.GAME_SEND_Im_PACKET(P, "068");
 		}
 		
 	}

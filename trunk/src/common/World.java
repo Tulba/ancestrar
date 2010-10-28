@@ -41,6 +41,8 @@ public class World {
 	private static Map<Integer,House> House = new TreeMap<Integer,House>();
 	
 	private static int saveTry = 1;
+	//Statut du serveur 1: accesible 0: inaccesible
+	private static short _state = 1;
 	
 	public static class Drop
 	{
@@ -957,6 +959,8 @@ public class World {
 		PrintWriter _out = null;
 		if(saver != null)
 		_out = saver.get_compte().getGameThread().get_out();
+		
+		set_state((short)0);
 
 		try
 		{
@@ -991,6 +995,13 @@ public class World {
 				}
 			}
 			GameServer.addToLog("Sauvegarde effectuee !");
+			try
+			{
+				Thread.sleep(10000);
+			}catch(ConcurrentModificationException e){}
+			
+			set_state((short)1);
+			//TODO : Rafraichir 
 			
 		}catch(ConcurrentModificationException e)
 		{
@@ -1004,6 +1015,8 @@ public class World {
 			}
 			else
 			{
+				set_state((short)1);
+				//TODO : Rafraichir 
 				String mess = "Échec de la sauvegarde après " + saveTry + " tentatives";
 				if(saver != null && _out != null)
 					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
@@ -1229,6 +1242,17 @@ public class World {
 			return new PierreAme(Guid, qua, template, pos, strStats);
 		else
 			return new Objet(Guid, template, qua, pos, strStats);
+	}
+	
+	
+	public static short get_state()
+	{
+		return _state;
+	}
+	
+	public static void set_state(short state)
+	{
+		_state = state;
 	}
 
 }
