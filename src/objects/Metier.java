@@ -1110,7 +1110,7 @@ public class Metier {
 				{	
 					obj.setStats(obj.generateNewStatsFromTemplate((obj.parseFMEchecStatsString(obj, poid).replace(";","#")+statsnegatif), false));
 				}
-				SocketManager.GAME_SEND_OR_PACKET(_P, obj);//Supprime l'ancien affichage de l'item
+				SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_P, obj.getGuid());//Supprime l'ancien affichage de l'item
 				SocketManager.GAME_SEND_Ow_PACKET(_P);
 				SocketManager.GAME_SEND_OAKO_PACKET(_P, obj);
 				SocketManager.GAME_SEND_Em_PACKET(_P,"EO+"+obj.getGuid()+"|1|"+tID+"|"+obj.parseStatsString().replace(";","#"));//Si prés du but :)
@@ -1210,7 +1210,7 @@ public class Metier {
 					}
 				}
 				//On envoie les packets
-				SocketManager.GAME_SEND_OR_PACKET(_P, obj);//Supprime l'ancien affichage de l'item
+				SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_P, obj.getGuid());//Supprime l'ancien affichage de l'item
 				SocketManager.GAME_SEND_Ow_PACKET(_P);//Pods
 				SocketManager.GAME_SEND_OAKO_PACKET(_P, obj);//Nouveau jet
 				SocketManager.GAME_SEND_Em_PACKET(_P,"KO+"+obj.getGuid()+"|1|"+tID+"|"+obj.parseStatsString().replace(";","#"));//On replace l'item dans l'inventaire

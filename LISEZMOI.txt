@@ -24,7 +24,6 @@
 --------------------------------------------------------------------------------------------------------
 			
 			TODO :
-			Barre d'objets.
 			Finir les Percepteurs.
 			Finir les Maisons : intérieurs (Coffre+Spécialisations+Droits).
 			Finir de corriger les sorts.
@@ -45,4 +44,3 @@
 			
 			RECHERCHE :
 			Paquet(s) pour l'ouverture du panneau de guilde (lorsque l'on lance la potion de téléportation de maison de guilde).
-			Paquets liés a l'agression de percepteurs.

@@ -361,7 +361,7 @@ public class Guild {
 	{
 		return _members.get(guid);
 	}
-	public void removeMember(int guid)
+	public void removeMember(Personnage perso)
 	{
 		/*if(_members.get(guid).getRank() == 1 && _members.size() > 1)	//Si c'est le meneur et qu'il y a d'autre personne dans la guilde
 		{
@@ -386,7 +386,7 @@ public class Guild {
 			if(newMeneur != null)
 				newMeneur.setRank(1);
 		}*/
-		House h = House.get_HouseByPerso(World.getPersonnage(guid));
+		House h = House.get_HouseByPerso(perso);
 		if(h != null)
 		{
 			if(House.HouseOnGuild(_id) > 0)
@@ -394,8 +394,8 @@ public class Guild {
 				SQLManager.HOUSE_GUILD(h, 0, 0);
 			}
 		}
-		_members.remove(guid);
-		SQLManager.DEL_GUILDMEMBER(guid);
+		_members.remove(perso.get_GUID());
+		SQLManager.DEL_GUILDMEMBER(perso.get_GUID());
 	}
 	
 	public void addXp(long xp)

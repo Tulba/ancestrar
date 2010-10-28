@@ -1215,6 +1215,45 @@ public class Constants
 			case ITEM_TYPE_BOUCLIER:
 				if(place == ITEM_POS_BOUCLIER)return true;
 			break;
+			
+			//Barre d'objets TODO : Normalement le client bloque les items interdits
+			case ITEM_TYPE_POTION:
+			case ITEM_TYPE_PARCHO_EXP:
+			case ITEM_TYPE_BOOST_FOOD:
+			case ITEM_TYPE_PAIN:
+			case ITEM_TYPE_BIERE:
+			case ITEM_TYPE_POISSON:
+			case ITEM_TYPE_BONBON:
+			case ITEM_TYPE_COMESTI_POISSON:
+			case ITEM_TYPE_VIANDE:
+			case ITEM_TYPE_VIANDE_CONSERVEE:
+			case ITEM_TYPE_VIANDE_COMESTIBLE:
+			case ITEM_TYPE_TEINTURE:
+			case ITEM_TYPE_MAITRISE:
+			case ITEM_TYPE_BOISSON:
+			case ITEM_TYPE_PIERRE_AME_PLEINE:
+			case ITEM_TYPE_PARCHO_RECHERCHE:
+			case ITEM_TYPE_CADEAUX:
+			case ITEM_TYPE_OBJET_ELEVAGE:
+			case ITEM_TYPE_OBJET_UTILISABLE:
+			case ITEM_TYPE_PRISME:
+				if(place == 35)return true;
+				if(place == 36)return true;
+				if(place == 37)return true;
+				if(place == 38)return true;
+				if(place == 39)return true;
+				if(place == 40)return true;
+				if(place == 41)return true;
+				if(place == 42)return true;
+				if(place == 43)return true;
+				if(place == 44)return true;
+				if(place == 45)return true;
+				if(place == 46)return true;
+				if(place == 47)return true;
+				if(place == 48)return true;
+			break;
+				
+			
 		}
 		return false;
 	}

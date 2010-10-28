@@ -3274,6 +3274,18 @@ public class Fight
 		}else
 		{
 			Objet arme = perso.getObjetByPos(Constants.ITEM_POS_ARME);
+			
+			//Pierre d'âmes = EC
+			if(arme.getTemplate().getType() == 83)
+			{
+				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 305, perso.get_GUID()+"", "");//Echec Critique Cac
+				SocketManager.GAME_SEND_GAF_PACKET_TO_FIGHT(this, 7, 0, perso.get_GUID());//Fin de l'action
+				try{
+					Thread.sleep(500);
+				}catch(Exception e){}
+				endTurn();
+			}
+			
 			int PACost = arme.getTemplate().getPACost();
 			
 			if(_curFighterPA < PACost)//S'il n'a pas assez de PA
@@ -3282,6 +3294,7 @@ public class Fight
 				return;
 			}
 			SocketManager.GAME_SEND_GAS_PACKET_TO_FIGHT(this, 7, perso.get_GUID());
+			
 			boolean isEc = arme.getTemplate().getTauxEC() != 0 && Formulas.getRandomValue(1, arme.getTemplate().getTauxEC()) == arme.getTemplate().getTauxEC();
 			if(isEc)
 			{

@@ -2,6 +2,8 @@ package game;
 
 import game.GameServer.SaveThread;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -11,6 +13,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.swing.Timer;
 
 import objects.*;
 import objects.Carte.*;
@@ -37,6 +41,9 @@ public class GameThread implements Runnable
 	private Personnage _perso;
 	private Map<Integer,GameAction> _actions = new TreeMap<Integer,GameAction>();
 	private long _timeLastTradeMsg = 0, _timeLastRecrutmentMsg = 0, _timeLastsave = 0, _timeLastAlignMsg = 0;
+	//Sauvegarde
+	private boolean _TimerStart = false;
+	Timer _timer;
 	
 	public static class GameAction
 	{
@@ -733,7 +740,7 @@ public class GameThread implements Runnable
 			if(toRemMember.getRank() == 1) //S'il veut kicker le meneur
 				return;
 			
-			toRemGuild.removeMember(toRemMember.getGuid());
+			toRemGuild.removeMember(toRemMember.getPerso());
 			if(P != null)
 				P.setGuildMember(null);
 			
@@ -748,7 +755,7 @@ public class GameThread implements Runnable
 				//TODO : Envoyer le message qu'il doit mettre un autre membre meneur (Pas vraiment....)
 				return;
 			}
-			G.removeMember(_perso.get_GUID());
+			G.removeMember(_perso);
 			_perso.setGuildMember(null);
 			//S'il n'y a plus personne
 			if(G.getMembers().size() == 0)World.removeGuild(G.get_id());
@@ -1443,28 +1450,38 @@ public class GameThread implements Runnable
 		String[] infos = packet.substring(2).split(""+(char)0x0A)[0].split("\\|");
 		try
 		{
+			int qua;
 			int guid = Integer.parseInt(infos[0]);
 			int pos = Integer.parseInt(infos[1]);
+			try
+			{
+				qua = Integer.parseInt(infos[2]);
+			}catch(Exception e)
+			{
+				qua = 1;
+			}
 			Objet obj = World.getObjet(guid);
+			
 			if(!_perso.hasItemGuid(guid) || obj == null)
 				return;
+			
 			if(_perso.get_fight() != null && _perso.get_fight().get_state() > 2)return;
 			if(!Constants.isValidPlaceForItem(obj.getTemplate(),pos) && pos != Constants.ITEM_POS_NO_EQUIPED)
 				return;
-			
 			if(!obj.getTemplate().getConditions().equalsIgnoreCase("") && !ConditionParser.validConditions(_perso,obj.getTemplate().getConditions()))
 			{
 				SocketManager.GAME_SEND_Im_PACKET(_perso, "119|43");
 				return;
 			}
 			
-			Objet exObj = _perso.getObjetByPos(pos);
+			Objet exObj = _perso.getObjetByPos(pos);//Objet a l'ancienne position
+			
 			if(exObj != null)//S'il y avait déja un objet => Ne devrait pas arriver, le client envoie déséquiper avant
 			{
 				Objet obj2;
-				if(( obj2 = _perso.getSimilarItem(exObj)) != null)
+				if((obj2 = _perso.getSimilarItem(exObj)) != null)//On le possède deja
 				{
-					obj2.setQuantity(obj2.getQuantity()+1);
+					obj2.setQuantity(obj2.getQuantity()+exObj.getQuantity());
 					SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj2);
 					World.removeItem(exObj.getGuid());
 					_perso.removeItem(exObj.getGuid());
@@ -1491,26 +1508,44 @@ public class GameThread implements Runnable
 			return;
 			
 			Objet obj2;
-			if(( obj2 = _perso.getSimilarItem(obj)) != null)
+			//On a un objet similaire
+			if((obj2 = _perso.getSimilarItem(obj)) != null)
 			{
-				obj2.setQuantity(obj2.getQuantity()+1);
+				if(qua > obj.getQuantity()) qua = obj.getQuantity();
+				
+				obj2.setQuantity(obj2.getQuantity()+qua);
 				SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj2);
-				World.removeItem(obj.getGuid());
-				_perso.removeItem(obj.getGuid());
-				SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso, obj.getGuid());
+				
+				if(obj.getQuantity() - qua > 0)//Si il en reste dans la barre
+				{
+					obj.setQuantity(obj.getQuantity()-qua);
+					SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj);
+				}else//Sinon on supprime
+				{
+					World.removeItem(obj.getGuid());
+					_perso.removeItem(obj.getGuid());
+					SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso, obj.getGuid());
+				}
 			}
-			else
+			else//Pas d'objets similaires
 			{
 				obj.setPosition(pos);
 				SocketManager.GAME_SEND_OBJET_MOVE_PACKET(_perso,obj);
 				if(obj.getQuantity() > 1)
 				{
-					int newItemQua = obj.getQuantity()-1;
+					if(qua > obj.getQuantity()) qua = obj.getQuantity();
+					int newItemQua = obj.getQuantity()-qua;
 					Objet newItem = Objet.getCloneObjet(obj,newItemQua);
 					_perso.addObjet(newItem,false);
 					World.addObjet(newItem,true);
-					obj.setQuantity(1);
+					obj.setQuantity(qua);
 					SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj);
+					if(newItemQua <= 0)
+					{
+						World.removeItem(newItem.getGuid());
+						_perso.removeItem(newItem.getGuid());
+						SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso, newItem.getGuid());
+					}
 				}
 			}
 			SocketManager.GAME_SEND_Ow_PACKET(_perso);
@@ -1898,7 +1933,6 @@ public class GameThread implements Runnable
 						qua  = Integer.parseInt(infos[1]);
 					}catch(NumberFormatException e){};
 					
-					System.out.println(guid+" : "+qua);
 					if(guid <= 0 || qua <= 0) return;
 					
 					Objet obj = World.getObjet(guid);
@@ -2582,6 +2616,36 @@ public class GameThread implements Runnable
 		return _perso;
 	}
 	
+	  private Timer createTimer(final int time)
+	  {
+	    ActionListener action = new ActionListener ()
+	      {
+	    	int Time = time;
+	        public void actionPerformed (ActionEvent event)
+	        {
+	        	Time = Time-1;
+	        	if(Time == 1)
+	        	{
+	        		SocketManager.GAME_SEND_Im_PACKET_TO_ALL("115;"+Time+" minute");
+	        	}else
+	        	{
+		        	SocketManager.GAME_SEND_Im_PACKET_TO_ALL("115;"+Time+" minutes");
+	        	}
+	        	if(Time <= 0)
+	        	{
+	        		for(Personnage perso : World.getOnlinePersos())
+	        		{
+	        			perso.get_compte().getGameThread().kick();
+	        		}
+	    			System.exit(0);
+	        	}
+	        }
+	      };
+	    // Génération du repeat toutes les minutes.
+	    return new Timer (60000, action);//60000
+	  }  
+
+	  
 	private void Basic_console(String packet)
 	{
 		if(_compte.get_gmLvl() == 0)
@@ -2598,7 +2662,7 @@ public class GameThread implements Runnable
 			Ancestra.addToMjLog(_compte.get_curIP()+": "+_compte.get_name()+" "+_perso.get_name()+"=>"+msg);
 		}
 		if(command.equalsIgnoreCase("EXIT"))
-		{
+		{	
 			if(_compte.get_gmLvl() < 3)
 			{
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
@@ -4301,6 +4365,39 @@ public class GameThread implements Runnable
 				return;
 			}
 			_perso.get_curCarte().spawnGroupOnCommand(_perso.get_curCell().getID(), infos[1]);
+		}else if (command.equalsIgnoreCase("SHUTDOWN"))
+		{
+			if(_compte.get_gmLvl() < 2)
+			{
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
+				return;
+			}
+			int time = 30, OffOn = 0;
+			try
+			{
+				OffOn = Integer.parseInt(infos[1]);
+				time = Integer.parseInt(infos[2]);
+			}catch(Exception e){};
+			
+			if(OffOn == 1 && _TimerStart)// demande de démarer le reboot
+			{
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Un shutdown est deja programmer.");
+			}else if(OffOn == 1 && !_TimerStart)
+			{
+				_timer = createTimer(time);
+				_timer.start();
+				_TimerStart = true;
+				SocketManager.GAME_SEND_Im_PACKET_TO_ALL("115;"+time+" minute");
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Shutdown lance.");
+			}else if(OffOn == 0 && _TimerStart)
+			{
+				_timer.stop();
+				_TimerStart = false;
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Shutdown arrete.");
+			}else if(OffOn == 0 && !_TimerStart)
+			{
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Aucun shutdown n'est lance.");
+			}
 		}
 		else
 		{

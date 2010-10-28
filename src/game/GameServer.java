@@ -80,9 +80,9 @@ public class GameServer implements Runnable{
 		{
 			if(Ancestra.isSaving == false)
 			{
-			SocketManager.GAME_SEND_MESSAGE_TO_ALL("Une sauvegarde a demarree!", Ancestra.CONFIG_MOTD_COLOR);
+			SocketManager.GAME_SEND_Im_PACKET_TO_ALL("1164");
 			World.saveAll(null);
-			SocketManager.GAME_SEND_MESSAGE_TO_ALL("Sauvegarde effectuee!", Ancestra.CONFIG_MOTD_COLOR);
+			SocketManager.GAME_SEND_Im_PACKET_TO_ALL("1165");
 			}
 		}
 	}

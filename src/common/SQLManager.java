@@ -882,7 +882,7 @@ public class SQLManager {
 			}
 			if(perso.getGuildMember() != null)
 			{
-				perso.get_guild().removeMember(guid);
+				perso.get_guild().removeMember(perso);
 				baseQuery = "DELETE FROM guild_members WHERE guid = ?";
 				p = newTransact(baseQuery, othCon);
 				p.setInt(1, guid);
