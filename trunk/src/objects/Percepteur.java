@@ -26,7 +26,8 @@ public class Percepteur
 	private long _kamas = 0;
 	private long _xp = 0;
 	private boolean _inExchange = false;
-	
+	//Timer
+	private int _timeTurn = 45000;
 	//Les logs
 	private Map<Integer,Objet> _LogObjets = new TreeMap<Integer,Objet>();
 	private long _LogXP = 0;
@@ -94,6 +95,21 @@ public class Percepteur
 		{
 			return false;
 		}
+	}
+	
+	public void remove_timeTurn(int time)
+	{
+		_timeTurn -= time;
+	}
+	
+	public void set_timeTurn(int time)
+	{
+		_timeTurn = time;
+	}
+	
+	public int get_turnTimer()
+	{
+		return _timeTurn;
 	}
 	
 	public static String parseGM(Carte map)
@@ -209,15 +225,22 @@ public class Percepteur
 		{
 			 if(perco.getValue().get_guildID() == GuildID)
     		 {
+				 	Carte map = World.getCarte((short)perco.getValue().get_mapID());
+				 	
 	    			if(!isFirst) packet += "|";
-	    			packet += perco.getValue()._guid+";"+perco.getValue()._N1+","+perco.getValue()._N2+";";
+	    			packet += perco.getValue().getGuid()+";"+perco.getValue().get_N1()+","+perco.getValue().get_N2()+";";
 	    			
-	    			packet += Integer.toString(World.getCarte(perco.getValue()._MapID).get_id(), 36)+","+World.getCarte(perco.getValue()._MapID).getX()+","+World.getCarte(perco.getValue()._MapID).getY()+";";//perco.getValue()._MapID+
-	    			packet += perco.getValue()._inFight+";";
-	    			if(perco.getValue()._inFight == 1)
+	    			packet += Integer.toString(map.get_id(), 36)+","+map.getX()+","+map.getY()+";";
+	    			packet += perco.getValue().get_inFight()+";";
+	    			if(perco.getValue().get_inFight() == 1)
 	    			{
-	    				//TODO : Temps restant du combat, les timer ce n'est pas mon fort.
-	    				packet += "45000;";//TimerActuel
+	    				if(map.getFight(perco.getValue().get_inFightID()) == null)
+	    				{
+	    					packet += "45000;";//TimerActuel
+	    				}else
+	    				{
+	    					packet += perco.getValue().get_turnTimer()+";";//TimerActuel
+	    				}
 	    				packet += "45000;";//TimerInit
 	    				packet += "7;";//Nombre de place maximum FIXME : En fonction de la map
 	    				packet += "?,?,";//?

@@ -1,6 +1,20 @@
+[30/10/2010]
+- Fight : leftFight, gère désormais la déconnexion pendant la phase de mise en position des joueurs*.
+* : Si le joueurs qui a lancer quitte le combat est arrêté, sinon le joueur est expulsé.
+
+[29/10/2010]
+- Fight/Percepteur : Ajout du "timer" pour le percepteur.
+- World : Correction lié a la sauvegarde (petite inversion de statut).
+- Fight : Correction de la méthode : getFightIDByFighter, elle retourne désormais bien l'ID du fight.
+- GameThread : Correction de la méthode : game_join_fight, le paquet nous donne l'id du joueur et non l'id du combat.
+- Fight : Amélioration de la fonction expulser qui généré plusieurs bugs.
+
+[28/10/2010]
+- World : Correction lié au statut de la sauvegarde (THX mathias52).
+
 [26/10/2010]
 - GameThread : Débugge de la barre d'objets, a tester (Risque de duplication ou perte d'items).
-- GameServer/SocketManager : Mise en place des Im(s) paquets liéé a la sauvegarde (THX nami-doc).
+- GameServer/SocketManager : Mise en place des Im(s) paquets lié a la sauvegarde (THX nami-doc).
 - SocketManager : Supression de 2 paquets inutiles.
 - Fight : Les pierres d'âme ne permettent plus d'obtenir des PAs a l'infini.
 - GameThread : Ajout de la commande "SHUTDOWN" 2 arguments : 
@@ -12,7 +26,7 @@ SHUTDOWN 0 : Retire l'action précédente.
 
 
 [25/10/2010]
-- Guild : Correction d'un problème liéé a la supression du personnage.
+- Guild : Correction d'un problème lié a la supression du personnage.
 
 [24/10/2010]
 - BDD : Ajout du champ "objets" pour le percepteur.

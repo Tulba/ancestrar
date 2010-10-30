@@ -1959,6 +1959,7 @@ public class SocketManager {
 	}
 	public static void GAME_SEND_ADD_PERCO_TO_MAP(Carte map)
 	{
+		if(Percepteur.parseGM(map).length() < 4) return;
 		String packet = "GM|"+Percepteur.parseGM(map);
 		for(Personnage perso : map.getPersos())
 			send(perso,packet);
