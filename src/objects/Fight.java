@@ -1129,6 +1129,28 @@ public class Fight
 	private PierreAme pierrePleine;
 	private Percepteur _Perco;
 	
+	//TIMER décompte toutes les secondes
+	private Timer TurnTimer (final int timer, final Percepteur perco)
+	{
+	    ActionListener action = new ActionListener ()
+	      {
+	    	int Time = timer;
+	        public void actionPerformed (ActionEvent event)
+	        {
+	        	Time = Time-1000;
+	        	if(perco != null) perco.remove_timeTurn(1000);
+	        	if(Time <= 0)
+	        	{
+	        		startFight();
+					_turnTimer.stop();
+					if(perco != null) perco.set_timeTurn(45000);
+					return;
+	        	}
+	        }
+	      };
+	    return new Timer (1000, action);
+	 }
+	
 	public Fight(int type, int id,Carte map, Personnage init1, Personnage init2)
 	{
 		_type = type; //1: Défie (2: Pvm) 3:PVP
@@ -1146,15 +1168,7 @@ public class Fight
 		
 		if(_type!=Constants.FIGHT_TYPE_CHALLENGE)
 		{
-			_turnTimer = new Timer(45000,new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					startFight();
-					_turnTimer.stop();
-					return;
-				}
-			});
+			_turnTimer = TurnTimer(45000, null);
 			_turnTimer.start();
 		}
 		Random teams = new Random();
@@ -1226,16 +1240,9 @@ public class Fight
 		//on desactive le timer de regen coté client
 		SocketManager.GAME_SEND_ILF_PACKET(init1, 0);
 		
-		_turnTimer = new Timer(45000,new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				startFight();
-				_turnTimer.stop();
-				return;
-			}
-		});
+		_turnTimer = TurnTimer(45000, null);
 		_turnTimer.start();
+		
 		Random teams = new Random();
 		if(teams.nextBoolean())
 		{
@@ -1321,16 +1328,8 @@ public class Fight
 		
 		//on desactive le timer de regen coté client
 		SocketManager.GAME_SEND_ILF_PACKET(perso, 0);
-
-		_turnTimer = new Timer(45000,new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				startFight();
-				_turnTimer.stop();
-				return;
-			}
-		});
+		
+		_turnTimer = TurnTimer(45000, perco);
 		_turnTimer.start();
 		
 		Random teams = new Random();
@@ -3374,7 +3373,7 @@ public class Fight
 		}
 		if(F != null)
 		{
-			if(_state >= Constants.FIGHT_STATE_ACTIVE)
+			if(_state >= Constants.FIGHT_STATE_ACTIVE)//Il kick pendant le combat
 			{
 				onFighterDie(F);
 				verifIfTeamAllDead();
@@ -3400,21 +3399,34 @@ public class Fight
 			}
 			else
 			{
-				if(_state == Constants.FIGHT_STATE_PLACE && _type == Constants.FIGHT_TYPE_CHALLENGE)
+				if(_state == Constants.FIGHT_STATE_PLACE && _type == Constants.FIGHT_TYPE_CHALLENGE)//Il kick un défis pendant la mise en position
 				{
 					leftStatePlace(F, perso);
 				}else//Ce n'est pas un défis, donc du leave contre mob/perco/aggros
 				{
-					if(_state == Constants.FIGHT_STATE_PLACE && _type != Constants.FIGHT_TYPE_AGRESSION)//mob/perco
+					if(_state == Constants.FIGHT_STATE_PLACE && _type != Constants.FIGHT_TYPE_AGRESSION)//mob/perco pendant la mise en position
 					{
-						if(F.getPersonnage().get_GUID() == _init0.getPersonnage().get_GUID())
+						//Deux cas : leave lui meme ou leave un autre
+						if(F.getPersonnage().get_GUID() == _init0.getPersonnage().get_GUID() && T != null)//Celui qui fait l'action a lancer le combat et leave un autre personnage
 						{
-							if(T == null)return;
 							if((T.getTeam() == F.getTeam()) && (T.getGUID() != F.getGUID()))
 							{
 								if(Ancestra.CONFIG_DEBUG) System.out.println("EXULSION DE : "+T.getPersonnage().get_name());
-								SocketManager.GAME_SEND_GV_PACKET(T.getPersonnage());
 								SocketManager.GAME_SEND_ON_FIGHTER_KICK(this, T.getPersonnage().get_GUID(), getTeamID(T.getGUID()));
+								Personnage P = T.getPersonnage();
+								P.set_duelID(-1);
+								P.set_ready(false);
+								P.fullPDV();
+								P.set_fight(null);
+								
+								if(P.isOnline())
+								{
+									SocketManager.GAME_SEND_GV_PACKET(P);
+									SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(_mapOld, P);
+									P.get_curCell().addPerso(P);
+								}
+								
+								//On le supprime de la team
 								if(_team0.containsKey(T.getGUID()))
 								{
 									_team0.remove(T.getGUID());
@@ -3423,18 +3435,79 @@ public class Fight
 								{
 									_team1.remove(T.getGUID());
 								}
-								T.getPersonnage().set_duelID(-1);
-								T.getPersonnage().set_ready(false);
-								T.getPersonnage().fullPDV();
-								T.getPersonnage().set_fight(null);
-								SocketManager.GAME_SEND_GV_PACKET(T.getPersonnage());
-								SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(_mapOld, T.getPersonnage());
-								perso.get_curCell().addPerso(T.getPersonnage());
+							}
+						}else if(T == null)//Il leave de son plein gré donc (T = null)
+						{
+							//TODO
+							//On va faire au plus simple
+							//Soit il a lancer le combat => annulation du combat
+							//Soit il a rejoin le combat => Left de lui seul
+							if(F.getPersonnage().get_GUID() == _init0.getPersonnage().get_GUID())
+							{
+								for(Fighter f : this.getFighters(getTeamID(F.getGUID())))
+								{
+									Personnage P = f.getPersonnage();
+									P.set_duelID(-1);
+									P.set_ready(false);
+									P.fullPDV();
+									P.set_fight(null);
+									if(F.getPersonnage().get_GUID() != f.getPersonnage().get_GUID())
+									{
+										if(f.getPersonnage().isOnline())
+										{
+											SocketManager.GAME_SEND_GV_PACKET(P);
+											SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(_mapOld, P);
+											P.get_curCell().addPerso(P);
+										}
+									}else
+									{
+										P.warpToSavePos();
+										P.set_PDV(1);
+									}
+								}
+								SocketManager.GAME_SEND_GAME_REMFLAG_PACKET_TO_MAP(_init0.getPersonnage().get_curCarte(),_init0.getGUID());
+								World.getCarte(_map.get_id()).removeFight(_id);
+								SocketManager.GAME_SEND_MAP_FIGHT_COUNT_TO_MAP(World.getCarte(_map.get_id()));
+								_map = null;
+								_ordreJeu = null;
+								//RESPAWN DU GROUPE
+								if(_type == Constants.FIGHT_TYPE_PVM)
+								{			
+									int align = -1;
+									if(_team1.size() >0)
+									{
+										 _team1.get(_team1.keySet().toArray()[0]).getMob().getTemplate().getAlign();
+									}
+									//Si groupe non fixe
+									if(!_mobGroup.isFix())World.getCarte(_map.get_id()).spawnGroup(align, 1, true,_mobGroup.getCellID());//Respawn d'un groupe
+								}
+							}else
+							{
+								SocketManager.GAME_SEND_ON_FIGHTER_KICK(this, F.getPersonnage().get_GUID(), getTeamID(F.getGUID()));
+								Personnage P = F.getPersonnage();
+								P.set_duelID(-1);
+								P.set_ready(false);
+								P.fullPDV();
+								P.set_fight(null);
+								SocketManager.GAME_SEND_GV_PACKET(P);
+								//TODO perte d'energie
+								P.warpToSavePos();
+								P.set_PDV(1);
+								//On le supprime de la team
+								if(_team0.containsKey(F.getGUID()))
+								{
+									_team0.remove(F.getGUID());
+								}
+								else if(_team1.containsKey(F.getGUID()))
+								{
+									_team1.remove(F.getGUID());
+								}
 							}
 						}
 						return;
 					}else//C'est une agression, il left pendant une mise en place
 					{
+						//TODO
 						F.setLeft(true);
 					}
 				}
@@ -3743,7 +3816,7 @@ public class Fight
 			{
 				if(F.getValue().getPersonnage() != null && F.getValue().getGUID() == guid)
 				{
-					return F.getValue()._id;
+					return fight.getValue().get_id();
 				}
 			}
 		}

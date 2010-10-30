@@ -41,7 +41,7 @@ public class World {
 	private static Map<Integer,House> House = new TreeMap<Integer,House>();
 	
 	private static int saveTry = 1;
-	//Statut du serveur 1: accesible 0: inaccesible
+	//Statut du serveur 1: accesible; 0: inaccesible; 2: sauvegarde
 	private static short _state = 1;
 	
 	public static class Drop
@@ -960,7 +960,7 @@ public class World {
 		if(saver != null)
 		_out = saver.get_compte().getGameThread().get_out();
 		
-		set_state((short)0);
+		set_state((short)2);
 
 		try
 		{
@@ -995,10 +995,6 @@ public class World {
 				}
 			}
 			GameServer.addToLog("Sauvegarde effectuee !");
-			try
-			{
-				Thread.sleep(10000);
-			}catch(ConcurrentModificationException e){}
 			
 			set_state((short)1);
 			//TODO : Rafraichir 

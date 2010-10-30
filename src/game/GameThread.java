@@ -4652,7 +4652,10 @@ public class GameThread implements Runnable
 		int targetID = -1;
 		if(!packet.substring(2).isEmpty())
 		{
-			targetID = Integer.parseInt(packet.substring(2));
+			try
+			{
+				targetID = Integer.parseInt(packet.substring(2));
+			}catch(Exception e){};
 		}
 		if(_perso.get_fight() == null)return;
 		if(targetID > 0)
@@ -4988,7 +4991,6 @@ public class GameThread implements Runnable
 
 	private void game_join_fight(String packet)
 	{
-		System.out.println("Pack "+packet);
 		String[] infos = packet.substring(5).split(";");
 		if(infos.length == 1)
 		{
@@ -5004,12 +5006,10 @@ public class GameThread implements Runnable
 				int guid = Integer.parseInt(infos[1]);
 				if(_perso.is_away()){SocketManager.GAME_SEND_GA903_ERROR_PACKET(_out,'o',guid);return;};
 				if(World.getPersonnage(guid) == null)return;
-				Fight F = _perso.get_curCarte().getFight(Integer.parseInt(infos[0]));
-				if(F == null)
-				{
-					int Fid = Fight.getFightIDByFighter(_perso.get_curCarte(), Integer.parseInt(infos[1]));
-					F = _perso.get_curCarte().getFight(Fid);
-				}
+				
+				int Fid = Fight.getFightIDByFighter(_perso.get_curCarte(), Integer.parseInt(infos[1]));
+				Fight F = _perso.get_curCarte().getFight(Fid);
+				
 				if(_perso.get_guild() != null)
 				{
 					if(F != null && F.get_guildID() == _perso.get_guild().get_id()) 
