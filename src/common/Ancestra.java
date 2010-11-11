@@ -73,6 +73,8 @@ public class Ancestra {
 	public static int CONFIG_ARENA_TIMER = 10*60*1000;// 10 minutes
 	//BDD
 	public static int CONFIG_DB_COMMIT = 30*1000;
+	//Inactivité
+	public static int CONFIG_MAX_IDLE_TIME = 1800000;//En millisecondes
 	
 	public static void main(String[] args)
 	{
@@ -293,6 +295,9 @@ public class Ancestra {
 				}else if (param.equalsIgnoreCase("ALLOW_MULE_PVP"))
 				{
 					Ancestra.ALLOW_MULE_PVP = value.equalsIgnoreCase("true");
+				}else if (param.equalsIgnoreCase("MAX_IDLE_TIME"))
+				{
+					Ancestra.CONFIG_MAX_IDLE_TIME = (Integer.parseInt(value)*60000);
 				}
 			}
 			if(STATIC_DB_NAME == null || OTHER_DB_NAME == null || DB_HOST == null || DB_PASS == null || DB_USER == null)

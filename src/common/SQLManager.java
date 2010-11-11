@@ -694,7 +694,8 @@ public class SQLManager {
 						RS.getInt("honor"),
 						RS.getInt("deshonor"),
 						RS.getInt("alvl"),
-						RS.getString("zaaps")
+						RS.getString("zaaps"),
+						RS.getByte("title")
 						);
 				//Vérifications pré-connexion
 				perso.VerifAndChangeItemPlace();
@@ -769,7 +770,8 @@ public class SQLManager {
 								RS.getInt("honor"),
 								RS.getInt("deshonor"),
 								RS.getInt("alvl"),
-								RS.getString("zaaps")
+								RS.getString("zaaps"),
+								RS.getByte("title")
 								);
 						World.addPersonnage(perso);
 						int guildId = isPersoInGuild(RS.getInt("guid"));
@@ -839,7 +841,8 @@ public class SQLManager {
 						RS.getInt("honor"),
 						RS.getInt("deshonor"),
 						RS.getInt("alvl"),
-						RS.getString("zaaps")
+						RS.getString("zaaps"),
+						RS.getByte("title")
 						);
 				World.addPersonnage(perso);
 				if(World.getCompte(RS.getInt("account")) != null)
@@ -1055,7 +1058,8 @@ public class SQLManager {
 						"`mountxpgive` = ?,"+
 						"`zaaps` = ?,"+
 						"`mount` = ?,"+
-						"`seeAlign` = ?"+
+						"`seeAlign` = ?,"+
+						"`title` = ?"+
 						" WHERE `personnages`.`guid` = ? LIMIT 1 ;";
 		
 		PreparedStatement p = null;
@@ -1095,7 +1099,8 @@ public class SQLManager {
 			p.setString(29,_perso.parseZaaps());
 			p.setInt(30, (_perso.getMount()!=null?_perso.getMount().get_id():-1));
 			p.setInt(31,(_perso.is_showWings()?1:0));
-			p.setInt(32,_perso.get_GUID());
+			p.setByte(32,(_perso.get_title()));
+			p.setInt(33,_perso.get_GUID());
 			
 			p.executeUpdate();
 			
@@ -2743,6 +2748,29 @@ public class SQLManager {
 				e.printStackTrace();
 			}
 			return i;
+		}
+		
+		public static int getNextObjetID()
+		{
+			try
+			{
+				ResultSet RS = executeQuery("SELECT MAX(guid) AS max FROM items;",Ancestra.OTHER_DB_NAME);
+				
+				int guid = 0;
+				boolean found = RS.first();
+				
+				if(found)
+					guid = RS.getInt("max");
+				
+				closeResultSet(RS);
+				return guid;
+			}catch(SQLException e)
+			{
+				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+				Ancestra.closeServers();
+			}
+			return 0;
 		}
 }
 

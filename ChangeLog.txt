@@ -1,3 +1,54 @@
+[11/11/2010]
+- Commands : Ajout de la commande BLOCK args : [GMLevel] [KickPlayer]
+BLOCK 4 1 : Kick et bloque le serveur aux joueurs inférieur au GmLevel 4.
+BLOCK 3 1 : Kick et bloque le serveur aux joueurs inférieur au GmLevel 3.
+
+[09/11/2010]
+- GameThread : Ajout de la limitation des pods.
+- World :  Amélioration de la fonction getNewItemGuid() (évite les ConcurrentModificationException).
+- World : La déconnection des personnages entraine le déchargement de leurs items.
+- GameThread : Correction d'un faille dans les échanges (THX MARTHIEUBEAN).
+
+[08/11/2010]
+- Config : Ajout de la constante MAX_IDLE_TIME en minutes.
+- Personnage/GameServer/Ancestra : Les joueurs innactifs sont kick automatiquement après MAX_IDLE_TIME minutes.
+
+[07/11/2010]
+- Constants : Retrait de la fonction NO_MOBS_MAP, pour ne pas mettre de mobs sur une map il faut mettre la colone numgroup dans maps a 0 (THX nami-doc).
+- Commands : Ajout de la commande LOCK args : 0, 1 ou 2.
+LOCK 1 : Serveur accessible. 
+LOCK 2 : Serveur en sauvegarde. 
+LOCK 0 : Serveur non disponible.
+
+[06/11/2010]
+- House : Le nom afficher sur les maisons achetés est désormais le pseudo et plus le nom de compte (Attention il est important que chaque joueur aient un pseudo prédéfini).
+- [...] : Correction de quelques NullPointerException.
+- Fight : Correction des gain d'honneur lors de l'agression des neutres.
+- GameThread/Fight : Ajout du déshonneur lors de l'agression d'un neutre.
+
+1 point de deshonneur : Banques-Prisme(poser/retirer)-Canal alignement bloqué
+2 points de deshonneur : Zaapi bloqué
+3 points de deshonneur : Zaap bloqué
+5 points de deshonneur : HDV-Etables bloqué
+
+- Percepteur/Fight : Ajout des stats du percepteur.
+- Commands/GameThread : Séparation des commandes du GameThread.
+
+[04/11/2010]
+- GameThread/Personnage : Ajout de la commande TITLE. 2 arguments : Nom du joueur TitleID.
+Ex : TITLE Xel 52
+Patch 90 a appliquer.
+(THX ilgend).
+
+[03/11/2010]
+- Fight : Correction de quelques FIXME dans la méthode leftStatePlace.
+
+[01/11/2010]
+- World : Ajout d'une exception NullPointer (THX nami-doc).
+
+[31/10/2010]
+- GameThread : Informations donne désormais le pseudo du compte et non le nom.
+
 [30/10/2010]
 - Fight : leftFight, gère désormais la déconnexion pendant la phase de mise en position des joueurs*.
 * : Si le joueurs qui a lancer quitte le combat est arrêté, sinon le joueur est expulsé.

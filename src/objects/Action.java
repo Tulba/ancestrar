@@ -55,6 +55,11 @@ public class Action {
 			case -1://Ouvrir banque
 				//Sauvagarde du perso et des item avant.
 				SQLManager.SAVE_PERSONNAGE(perso,true);
+				if(perso.getDeshonor() >= 1) 
+				{
+					SocketManager.GAME_SEND_Im_PACKET(perso, "183");
+					return;
+				}
 				int cost = perso.getBankCost();
 				if(cost > 0)
 				{

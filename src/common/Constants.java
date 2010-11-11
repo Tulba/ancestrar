@@ -369,8 +369,6 @@ public class Constants
 	
 	//Buff déclenché en cas de frappe
 	public static final int[] ON_HIT_BUFFS		=	{9,79,107,788};
-	//Map sans monstres
-	public static final int[] NO_MOBS_MAP		=	{10329};
 	
 	//Effects
 	public static final int STATS_ADD_PM2			= 	78;

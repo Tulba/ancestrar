@@ -1,0 +1,1 @@
+ALTER TABLE `personnages` ADD `title` INT NOT NULL DEFAULT '0';
