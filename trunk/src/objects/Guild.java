@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
+import objects.Personnage.Stats;
+
 import org.joda.time.LocalDate;
 import org.joda.time.Days;
 import common.SQLManager;
@@ -24,6 +26,8 @@ public class Guild {
 	private int _nbrPerco = 0;
 	private Map<Integer, Integer> sorts = new TreeMap<Integer, Integer>();	//<ID, Level>
 	private Map<Integer, Integer> stats = new TreeMap<Integer, Integer>(); //<Effet, Quantité>
+	//Stats en combat
+	private Map<Integer,Integer> statsFight = new TreeMap<Integer,Integer>();
 	
 	public static class GuildMember
 	{
@@ -238,7 +242,6 @@ public class Guild {
 		_emblem = emblem;
 		_lvl = 1;
 		_xp= 0;
-		//decompileSpell(Ancestra.BASE_GUILD_SPELL);
 	}
 	public Guild(int id,String name, String emblem,int lvl,long xp,
 			int capital, int nbrmax,
@@ -253,6 +256,20 @@ public class Guild {
 		_nbrPerco = nbrmax;
 		decompileSpell(sorts);
 		decompileStats(stats);
+		//Mise en place des stats
+		statsFight.clear();
+		statsFight.put(Constants.STATS_ADD_FORC, _lvl);
+		statsFight.put(Constants.STATS_ADD_SAGE, get_Stats(Constants.STATS_ADD_SAGE));
+		statsFight.put(Constants.STATS_ADD_INTE, _lvl);
+		statsFight.put(Constants.STATS_ADD_CHAN, _lvl);
+		statsFight.put(Constants.STATS_ADD_AGIL, _lvl);
+		statsFight.put(Constants.STATS_ADD_RP_NEU, (int)Math.floor(get_lvl()/2));
+		statsFight.put(Constants.STATS_ADD_RP_FEU, (int)Math.floor(get_lvl()/2));
+		statsFight.put(Constants.STATS_ADD_RP_EAU, (int)Math.floor(get_lvl()/2));
+		statsFight.put(Constants.STATS_ADD_RP_AIR, (int)Math.floor(get_lvl()/2));
+		statsFight.put(Constants.STATS_ADD_RP_TER, (int)Math.floor(get_lvl()/2));
+		statsFight.put(Constants.STATS_ADD_AFLEE, (int)Math.floor(get_lvl()/2));
+		statsFight.put(Constants.STATS_ADD_MFLEE, (int)Math.floor(get_lvl()/2));
 	}
 
 	public GuildMember addMember(int guid,String name,int lvl,int gfx,int r,byte pXp,long x,int ri,byte a,String lastCo)
@@ -308,6 +325,10 @@ public class Guild {
 		int old = sorts.get(ID);
 		
 		sorts.put(ID, old + 1);
+	}
+	public Stats getStatsFight()
+	{
+		return new Stats(statsFight);
 	}
 	
 	public String get_name() {

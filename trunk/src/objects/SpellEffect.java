@@ -1623,7 +1623,13 @@ public class SpellEffect
 				mobID = Integer.parseInt(args.split(";")[0]);
 				level = Integer.parseInt(args.split(";")[1]);
 			}catch(Exception e){}
-			MobGrade MG = World.getMonstre(mobID).getGradeByLevel(level).getCopy();
+			
+			MobGrade MG = null;
+			if(World.getMonstre(mobID) != null && World.getMonstre(mobID).getGradeByLevel(level) != null)
+			{
+				MG = World.getMonstre(mobID).getGradeByLevel(level).getCopy();
+			}
+			
 			if(mobID == -1 || level == -1 || MG == null)return;
 			int id = fight.getNextLowerFighterGuid();
 			MG.setInFightID(id);

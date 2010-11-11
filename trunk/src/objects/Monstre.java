@@ -22,7 +22,7 @@ public class Monstre
 	private int gfxID;
 	private int align;
 	private String colors;
-	private int IAType;
+	private int IAType = 0;
 	private int minKamas;
 	private int maxKamas;
 	private Map<Integer,MobGrade> grades = new TreeMap<Integer,MobGrade>();

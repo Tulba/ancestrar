@@ -470,10 +470,10 @@ public class SocketManager {
 	public static void GAME_SEND_ERASE_ON_MAP_TO_MAP(Carte map,int guid)
 	{
 		String packet = "GM|-"+guid;
-		for(int z=0;z < map.getPersos().size();z++)
+		for(Personnage z : map.getPersos())
 		{
-			if(map.getPersos().get(z).get_compte().getGameThread() == null)continue;
-			send(map.getPersos().get(z).get_compte().getGameThread().get_out(),packet);
+			if(z.get_compte().getGameThread() == null)continue;
+			send(z.get_compte().getGameThread().get_out(),packet);
 		}
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map "+map.get_id()+": Send>>"+packet);
@@ -511,7 +511,7 @@ public class SocketManager {
 	public static void GAME_SEND_ADD_PLAYER_TO_MAP(Carte map, Personnage perso)
 	{
 		String packet = "GM|+"+perso.parseToGM();
-		for(Personnage P : map.getPersos())send(P,packet);	
+		for(Personnage z : map.getPersos()) send(z,packet);	
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map "+map.get_id()+": Send>>"+packet);
 	}
@@ -535,7 +535,7 @@ public class SocketManager {
 	public static void GAME_SEND_MAP_NEW_DUEL_TO_MAP(Carte map,int guid, int guid2)
 	{
 		String packet = "GA;900;"+guid+";"+guid2;
-		for(Personnage P : map.getPersos())send(P,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map "+map.get_id()+": Send>>"+packet);
 	}
@@ -543,7 +543,7 @@ public class SocketManager {
 	public static void GAME_SEND_CANCEL_DUEL_TO_MAP(Carte map, int guid,int guid2)
 	{
 		String packet = "GA;902;"+guid+";"+guid2;
-		for(Personnage P : map.getPersos())send(P,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -551,7 +551,7 @@ public class SocketManager {
 	public static void GAME_SEND_MAP_START_DUEL_TO_MAP(Carte map,int guid, int guid2)
 	{
 		String packet = "GA;901;"+guid+";"+guid2;
-		for(Personnage P : map.getPersos())send(P,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -592,10 +592,7 @@ public class SocketManager {
 	public static void GAME_SEND_MAP_FIGHT_COUNT_TO_MAP(Carte map)
 	{
 		String packet = "fC"+map.getNbrFight();
-		for(int z=0;z < map.getPersos().size();z++)
-		{
-			send(map.getPersos().get(z),packet);
-		}
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -603,10 +600,7 @@ public class SocketManager {
 	public static void GAME_SEND_GAME_ADDFLAG_PACKET_TO_MAP(Carte map,int arg1, int guid1,int guid2,int cell1,String str1,int cell2,String str2)
 	{
 		String packet = "Gc+"+guid1+";"+arg1+"|"+guid1+";"+cell1+";"+str1+"|"+guid2+";"+cell2+";"+str2;
-		for(int z=0;z < map.getPersos().size();z++)
-		{
-			send(map.getPersos().get(z),packet);
-		}
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -622,10 +616,7 @@ public class SocketManager {
 	public static void GAME_SEND_GAME_REMFLAG_PACKET_TO_MAP(Carte map, int guid)
 	{
 		String packet = "Gc-"+guid;
-		for(int z=0;z < map.getPersos().size();z++)
-		{
-			send(map.getPersos().get(z),packet);
-		}
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -633,10 +624,7 @@ public class SocketManager {
 	public static void GAME_SEND_ADD_IN_TEAM_PACKET_TO_MAP(Carte map,int teamID,Fighter perso)
 	{
 		String packet = "Gt"+teamID+"|+"+perso.getGUID()+";"+perso.getPacketsName()+";"+perso.get_lvl();
-		for(int z=0;z < map.getPersos().size();z++)
-		{
-			send(map.getPersos().get(z),packet);
-		}
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -649,12 +637,18 @@ public class SocketManager {
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
 	
+	public static void GAME_SEND_REMOVE_IN_TEAM_PACKET_TO_MAP(Carte map,int teamID,Fighter perso)
+	{
+		String packet = "Gt"+teamID+"|-"+perso.getGUID()+";"+perso.getPacketsName()+";"+perso.get_lvl();
+		for(Personnage z : map.getPersos()) send(z,packet);
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Map: Send>>"+packet);
+	}
+	
 	public static void GAME_SEND_MAP_MOBS_GMS_PACKETS_TO_MAP(Carte map)
 	{
 		String packet = map.getMobGroupGMsPackets(); // Un par un comme sa lors du respawn :)
-		for(Personnage z:map.getPersos())
-			send(z,packet);
-		
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -663,9 +657,7 @@ public class SocketManager {
 	{
 		String packet = "GM|";
 		packet += current_Mobs.parseGM(); // Un par un comme sa lors du respawn :)
-		for(Personnage z:map.getPersos())
-			send(z,packet);
-		
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -682,10 +674,7 @@ public class SocketManager {
 	public static void GAME_SEND_ON_EQUIP_ITEM(Carte map, Personnage _perso)
 	{
 		String packet = _perso.parseToOa();;
-		
-		for(Personnage z:map.getPersos())
-			send(z,packet);
-		
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -706,8 +695,7 @@ public class SocketManager {
 	public static void GAME_SEND_FIGHT_CHANGE_OPTION_PACKET_TO_MAP(Carte map,char s,char option, int guid)
 	{
 		String packet = "Go"+s+option+guid;
-		for(Personnage z:map.getPersos())
-			send(z,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
@@ -772,16 +760,14 @@ public class SocketManager {
 	public static void GAME_SEND_Im_PACKET_TO_MAP(Carte map, String id)
 	{
 		String packet = "Im"+id;
-		for(Personnage z:map.getPersos())
-			send(z,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
 	public static void GAME_SEND_eUK_PACKET_TO_MAP(Carte map, int guid, int emote)
 	{
 		String packet = "eUK"+guid+"|"+emote;
-		for(Personnage z:map.getPersos())
-			send(z,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -809,10 +795,7 @@ public class SocketManager {
 	public static void GAME_SEND_MESSAGE_TO_MAP(Carte map,String mess, String color)
 	{
 		String packet = "cs<font color='#"+color+"'>"+mess+"</font>";
-		for(Personnage perso : map.getPersos())
-		{
-			send(perso,packet);
-		}
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1085,8 +1068,7 @@ public class SocketManager {
 	public static void GAME_SEND_EMOTICONE_TO_MAP(Carte map,int guid, int id)
 	{
 		String packet = "cS"+guid+"|"+id;
-		for(Personnage perso : map.getPersos())
-			send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1229,8 +1211,7 @@ public class SocketManager {
 	public static void GAME_SEND_cMK_PACKET_TO_MAP(Carte map,String suffix,int guid,String name,String msg)
 	{
 		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
-		for(Personnage perso : map.getPersos())
-			send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1333,8 +1314,7 @@ public class SocketManager {
 	public static void GAME_SEND_eD_PACKET_TO_MAP(Carte map,int guid, int dir)
 	{
 		String packet = "eD"+guid+"|"+dir;
-		for(Personnage perso : map.getPersos())
-			send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1713,7 +1693,7 @@ public class SocketManager {
 		int cellID = cell.getID();
 		InteractiveObject object = cell.getObject();
 		String packet = "GDF|"+cellID+";"+object.getState()+";"+(object.isInteractive()?"1":"0");
-		for(Personnage perso : map.getPersos())send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1723,7 +1703,7 @@ public class SocketManager {
 		String packet = "GA"+gameActionID+";"+actionID+";"+s1;
 		if(!s2.equals(""))packet += ";"+s2;
 		
-		for(Personnage perso : map.getPersos())send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1820,8 +1800,7 @@ public class SocketManager {
 	public static void GAME_SEND_IO_PACKET_TO_MAP(Carte map,int guid,String str)
 	{
 		String packet = "IO"+guid+"|"+str;
-		for(Personnage perso : map.getPersos())
-			send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1928,9 +1907,7 @@ public class SocketManager {
 	public static void GAME_SEND_ALTER_GM_PACKET(Carte map,	Personnage perso)
 	{
 		String packet = "GM|~"+perso.parseToGM();
-		for(Personnage z:map.getPersos())
-			send(z,packet);
-		
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1952,8 +1929,7 @@ public class SocketManager {
 	public static void GAME_SEND_ADD_NPC_TO_MAP(Carte map, NPC npc)
 	{
 		String packet = "GM|"+npc.parseGM();
-		for(Personnage perso : map.getPersos())
-			send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1961,8 +1937,7 @@ public class SocketManager {
 	{
 		if(Percepteur.parseGM(map).length() < 4) return;
 		String packet = "GM|"+Percepteur.parseGM(map);
-		for(Personnage perso : map.getPersos())
-			send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
@@ -1970,8 +1945,7 @@ public class SocketManager {
 	public static void GAME_SEND_GDO_PACKET_TO_MAP(Carte map, char c,int cell, int itm, int i)
 	{
 		String packet = "GDO"+c+cell+";"+itm+";"+i;
-		for(Personnage perso : map.getPersos())
-			send(perso,packet);
+		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}

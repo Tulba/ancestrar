@@ -752,25 +752,6 @@ public class Formulas {
 		if(loosers.contains(F))base = -base;
 		return base * Ancestra.HONOR;
 	}
-
-	public static int calculDeshonorWin(ArrayList<Fighter> winners,ArrayList<Fighter> loosers,Fighter F)
-	{
-		ArrayList<Fighter> ennemy = new ArrayList<Fighter>();
-		if(winners.contains(F))
-			ennemy.addAll(loosers);
-		else
-			ennemy.addAll(winners);
-
-		if(F.getPersonnage() == null)return 0;//Pas normal ca XD
-		if(F.getPersonnage().get_align() == Constants.ALIGNEMENT_NEUTRE || F.getPersonnage().get_align() == Constants.ALIGNEMENT_MERCENAIRE)return 0;
-		
-		for(Fighter f : ennemy)
-		{
-			if(f.getPersonnage() == null)continue;
-			if(f.getPersonnage().get_align() == Constants.ALIGNEMENT_NEUTRE)return 1;
-		}
-		return 0;
-	}
 	
 	public static Couple<Integer, Integer> decompPierreAme(Objet toDecomp)
 	{

@@ -1,9 +1,5 @@
 package game;
 
-import game.GameServer.SaveThread;
-
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,24 +10,20 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.Timer;
 
 import objects.*;
 import objects.Carte.*;
 import objects.Fight.Fighter;
 import objects.Guild.GuildMember;
 import objects.Metier.StatsMetier;
-import objects.Monstre.MobGroup;
 import objects.NPC_tmpl.*;
 import objects.Objet.ObjTemplate;
 import objects.Personnage.Group;
 import objects.Sort.SortStats;
 import common.*;
-import common.World.ItemSet;
 
 public class GameThread implements Runnable
 {
-	private long _LastDateFonction = 0;
 	private long _LastDateFonctionMoveObject = 0;
 	private BufferedReader _in;
 	private Thread _t;
@@ -41,9 +33,8 @@ public class GameThread implements Runnable
 	private Personnage _perso;
 	private Map<Integer,GameAction> _actions = new TreeMap<Integer,GameAction>();
 	private long _timeLastTradeMsg = 0, _timeLastRecrutmentMsg = 0, _timeLastsave = 0, _timeLastAlignMsg = 0;
-	//Sauvegarde
-	private boolean _TimerStart = false;
-	Timer _timer;
+	
+	private Commands command;
 	
 	public static class GameAction
 	{
@@ -127,6 +118,10 @@ public class GameThread implements Runnable
 
 	private void parsePacket(String packet)
 	{
+		if(_perso != null) {
+			_perso.refreshLastPacketTime();
+		}
+		
 		if(packet.length()>3 && packet.substring(0,4).equalsIgnoreCase("ping"))
 		{
 			SocketManager.GAME_SEND_PONG(_out);
@@ -392,6 +387,11 @@ public class GameThread implements Runnable
 	
 	private void Zaapi_use(String packet)
 	{
+		if(_perso.getDeshonor() >= 2) 
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "183");
+			return;
+		}
 		_perso.Zaapi_use(packet);
 	}
 	
@@ -499,9 +499,16 @@ public class GameThread implements Runnable
 				int FightID = perco.get_inFightID();
 				short MapID = World.getCarte((short)perco.get_mapID()).getFight(FightID).get_map().get_id();
 				int CellID = perco.get_cellID();
-				_perso.teleport(MapID, CellID);
-				World.getCarte(MapID).getFight(FightID).joinPercepteurFight(_perso,_perso.get_GUID(), TiD);
-				break;
+				if(Ancestra.CONFIG_DEBUG) System.out.println("INFOS : TiD:"+TiD+", FightID:"+FightID+", MapID:"+MapID+", CellID"+CellID);
+				if(_perso.get_fight() == null)
+				{
+					if(_perso.get_curCarte().get_id() != MapID)
+					{
+						_perso.teleport(MapID, CellID);
+					}
+					World.getCarte(MapID).getFight(FightID).joinPercepteurFight(_perso,_perso.get_GUID(), TiD);
+				}
+			break;
 		}
 	}
 
@@ -522,7 +529,7 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
 				String str = "";
 				str += "R"+perco.get_N1()+","+perco.get_N2()+"|";
-				str += perco.get_mapID()+"|";// FIXME : pas sûr.
+				str += perco.get_mapID()+"|";
 				str += World.getCarte((short)perco.get_mapID()).getX()+"|"+World.getCarte((short)perco.get_mapID()).getY()+"|"+_perso.get_name();
 				SocketManager.GAME_SEND_gT_PACKET(z, str);
 			}
@@ -559,7 +566,7 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
 				String str = "";
 				str += "S"+perco.get_N1()+","+perco.get_N2()+"|";
-				str += perco.get_mapID()+"|";// FIXME : pas sûr.
+				str += perco.get_mapID()+"|";
 				str += World.getCarte((short)perco.get_mapID()).getX()+"|"+World.getCarte((short)perco.get_mapID()).getY()+"|"+_perso.get_name();
 				SocketManager.GAME_SEND_gT_PACKET(z, str);
 			}
@@ -1373,7 +1380,6 @@ public class GameThread implements Runnable
 					Object_move(packet);
 				}
 			break;
-			
 			case 'U'://Utiliser un objet (potions)
 				Object_use(packet);
 			break;
@@ -2078,7 +2084,7 @@ public class GameThread implements Runnable
 						guid = Integer.parseInt(packet.substring(4).split("\\|")[0]);
 						qua = Integer.parseInt(packet.substring(4).split("\\|")[1]);
 					}catch(Exception e){};
-					if(guid == 0 || qua == 0)return;
+					if(guid == 0 || qua <= 0)return;
 					
 					switch(packet.charAt(3))
 					{
@@ -2098,14 +2104,6 @@ public class GameThread implements Runnable
 		switch(packet.charAt(2))
 		{
 			case 'O'://Objet ?
-				long m;
-				if((m = System.currentTimeMillis() - _LastDateFonction) < 2000)
-				{
-					m = (2000  - m)/10;//On calcul la différence en secondes
-					return;
-				}else
-				{
-				_LastDateFonction = System.currentTimeMillis();
 				if(packet.charAt(3) == '+')
 				{
 					String[] infos = packet.substring(4).split("\\|");
@@ -2114,13 +2112,17 @@ public class GameThread implements Runnable
 						
 						int guid = Integer.parseInt(infos[0]);
 						int qua  = Integer.parseInt(infos[1]);
+						int quaInExch = _perso.get_curExchange().getQuaItem(guid, _perso.get_GUID());
+						
 						if(!_perso.hasItemGuid(guid))return;
 						Objet obj = World.getObjet(guid);
 						if(obj == null)return;
-						if(obj.getQuantity()<qua)
-						{
-							qua = obj.getQuantity();
-						}
+						
+						if(qua > obj.getQuantity()-quaInExch)
+
+							qua = obj.getQuantity()-quaInExch;
+						if(qua <= 0)return;
+						
 						_perso.get_curExchange().addItem(guid,qua,_perso.get_GUID());
 					}catch(NumberFormatException e){};
 				}else
@@ -2130,14 +2132,18 @@ public class GameThread implements Runnable
 					{
 						int guid = Integer.parseInt(infos[0]);
 						int qua  = Integer.parseInt(infos[1]);
+						
+						if(qua <= 0)return;
+						if(!_perso.hasItemGuid(guid))return;
+						
 						Objet obj = World.getObjet(guid);
 						if(obj == null)return;
+						if(qua > _perso.get_curExchange().getQuaItem(guid, _perso.get_GUID()))return;
+						
 						_perso.get_curExchange().removeItem(guid,qua,_perso.get_GUID());
 					}catch(NumberFormatException e){};
 				}
-				}
 			break;
-			
 			case 'G'://Kamas
 				try
 				{
@@ -2344,6 +2350,11 @@ public class GameThread implements Runnable
 		switch(packet.charAt(3))
 		{
 		case '0':
+			if(_perso.getDeshonor() >= 5) 
+			{
+				SocketManager.GAME_SEND_Im_PACKET(_perso, "183");
+				return;
+			}
 			if(HDV._isHdv)
 			{
 				SocketManager.GAME_SEND_EV_PACKET(_out);
@@ -2353,6 +2364,11 @@ public class GameThread implements Runnable
 			HDV.StartSellHdv(_perso, HDV._HdvType);
 		break;
 		case '1':
+			if(_perso.getDeshonor() >= 5) 
+			{
+				SocketManager.GAME_SEND_Im_PACKET(_perso, "183");
+				return;
+			}
 			if(HDV._isHdv)
 			{
 				SocketManager.GAME_SEND_EV_PACKET(_out);
@@ -2615,1795 +2631,11 @@ public class GameThread implements Runnable
 	{
 		return _perso;
 	}
-	
-	  private Timer createTimer(final int time)
-	  {
-	    ActionListener action = new ActionListener ()
-	      {
-	    	int Time = time;
-	        public void actionPerformed (ActionEvent event)
-	        {
-	        	Time = Time-1;
-	        	if(Time == 1)
-	        	{
-	        		SocketManager.GAME_SEND_Im_PACKET_TO_ALL("115;"+Time+" minute");
-	        	}else
-	        	{
-		        	SocketManager.GAME_SEND_Im_PACKET_TO_ALL("115;"+Time+" minutes");
-	        	}
-	        	if(Time <= 0)
-	        	{
-	        		for(Personnage perso : World.getOnlinePersos())
-	        		{
-	        			perso.get_compte().getGameThread().kick();
-	        		}
-	    			System.exit(0);
-	        	}
-	        }
-	      };
-	    // Génération du repeat toutes les minutes.
-	    return new Timer (60000, action);//60000
-	  }  
-
 	  
 	private void Basic_console(String packet)
 	{
-		if(_compte.get_gmLvl() == 0)
-		{
-			closeSocket();
-			return;
-		}
-		String msg = packet.substring(2);
-		String[] infos = msg.split(" ");
-		if(infos.length == 0)return;
-		String command = infos[0];
-		if(Ancestra.canLog)
-		{
-			Ancestra.addToMjLog(_compte.get_curIP()+": "+_compte.get_name()+" "+_perso.get_name()+"=>"+msg);
-		}
-		if(command.equalsIgnoreCase("EXIT"))
-		{	
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			System.exit(0);
-		}else
-		if(command.equalsIgnoreCase("INFOS"))
-		{
-			long uptime = System.currentTimeMillis() - Ancestra.gameServer.getStartTime();
-			int jour = (int) (uptime/(1000*3600*24));
-			uptime %= (1000*3600*24);
-			int hour = (int) (uptime/(1000*3600));
-			uptime %= (1000*3600);
-			int min = (int) (uptime/(1000*60));
-			uptime %= (1000*60);
-			int sec = (int) (uptime/(1000));
-			
-			String mess =	"===========\n"
-				+       	"Ancestra-R v. "+Constants.SERVER_VERSION+" par "+Constants.SERVER_MAKER+"\n"
-				+			"\n"
-				+			"Uptime: "+jour+"j "+hour+"h "+min+"m "+sec+"s\n"
-				+			"Joueurs en lignes: "+Ancestra.gameServer.getPlayerNumber()+"\n"
-				+			"Record de connexion: "+Ancestra.gameServer.getMaxPlayer()+"\n"
-				+			"===========";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			return;
-		}else
-		if(command.equalsIgnoreCase("REFRESHMOBS"))
-		{
-			_perso.get_curCarte().refreshSpawns();
-			String mess = "Mob Spawn refreshed!";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("SAVE") && !Ancestra.isSaving)
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			Thread t = new Thread(new SaveThread());
-			t.start();
-			String mess = "Sauvegarde lancee!";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("MAPINFO"))
-		{
-			String mess = 	"==========\n"
-						+	"Liste des Npcs de la carte:";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			Carte map = _perso.get_curCarte();
-			for(Entry<Integer,NPC> entry : map.get_npcs().entrySet())
-			{
-				mess = entry.getKey()+" "+entry.getValue().get_template().get_id()+" "+entry.getValue().get_cellID()+" "+entry.getValue().get_template().get_initQuestionID();
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			}
-			mess = "Liste des groupes de monstres:";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			for(Entry<Integer,MobGroup> entry : map.getMobGroups().entrySet())
-			{
-				mess = entry.getKey()+" "+entry.getValue().getCellID()+" "+entry.getValue().getAlignement()+" "+entry.getValue().getSize();
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			}
-			mess = "==========";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("WHO"))
-		{
-			String mess = 	"==========\n"
-				+			"Liste des joueurs en ligne:";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			int diff = Ancestra.gameServer.getClients().size() -  30;
-			for(byte b = 0; b < 30; b++)
-			{
-				if(b == Ancestra.gameServer.getClients().size())break;
-				GameThread GT = Ancestra.gameServer.getClients().get(b);
-				Personnage P = GT.getPerso();
-				if(P == null)continue;
-				mess = P.get_name()+"("+P.get_GUID()+") ";
-				
-				switch(P.get_classe())
-				{
-					case Constants.CLASS_FECA:
-						mess += "Fec";
-					break;
-					case Constants.CLASS_OSAMODAS:
-						mess += "Osa";
-					break;
-					case Constants.CLASS_ENUTROF:
-						mess += "Enu";
-					break;
-					case Constants.CLASS_SRAM:
-						mess += "Sra";
-					break;
-					case Constants.CLASS_XELOR:
-						mess += "Xel";
-					break;
-					case Constants.CLASS_ECAFLIP:
-						mess += "Eca";
-					break;
-					case Constants.CLASS_ENIRIPSA:
-						mess += "Eni";
-					break;
-					case Constants.CLASS_IOP:
-						mess += "Iop";
-					break;
-					case Constants.CLASS_CRA:
-						mess += "Cra";
-					break;
-					case Constants.CLASS_SADIDA:
-						mess += "Sad";
-					break;
-					case Constants.CLASS_SACRIEUR:
-						mess += "Sac";
-					break;
-					case Constants.CLASS_PANDAWA:
-						mess += "Pan";
-					break;
-					default:
-						mess += "Unk";
-				}
-				mess += " ";
-				mess += (P.get_sexe()==0?"M":"F")+" ";
-				mess += P.get_lvl()+" ";
-				mess += P.get_curCarte().get_id()+"("+P.get_curCarte().getX()+"/"+P.get_curCarte().getY()+") ";
-				mess += P.get_fight()==null?"":"Combat ";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			}
-			if(diff >0)
-			{
-				mess = 	"Et "+diff+" autres personnages";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			}
-			mess = 	"==========\n";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("SHOWFIGHTPOS"))
-		{
-			String mess = "Liste des StartCell [teamID][cellID]:";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			String places = _perso.get_curCarte().get_placesStr();
-			if(places.indexOf('|') == -1 || places.length() <2)
-			{
-				mess = "Les places n'ont pas ete definies";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-				return;
-			}
-			String team0 = "",team1 = "";
-			String[] p = places.split("\\|");
-			try
-			{
-				team0 = p[0];
-			}catch(Exception e){};
-			try
-			{
-				team1 = p[1];
-			}catch(Exception e){};
-			mess = "Team 0:\n";
-			for(int a = 0;a <= team0.length()-2; a+=2)
-			{
-				String code = team0.substring(a,a+2);
-				mess += CryptManager.cellCode_To_ID(code);
-			}
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			mess = "Team 1:\n";
-			for(int a = 0;a <= team1.length()-2; a+=2)
-			{
-				String code = team1.substring(a,a+2);
-				mess += CryptManager.cellCode_To_ID(code)+" , ";
-			}
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
-			return;
-		}else
-		if(command.equalsIgnoreCase("DELFIGHTPOS"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int cell = -1;
-			try
-			{
-				cell = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			if(cell < 0 || _perso.get_curCarte().getCase(cell) == null)
-			{
-				cell = _perso.get_curCell().getID();
-			}
-			String places = _perso.get_curCarte().get_placesStr();
-			String[] p = places.split("\\|");
-			String newPlaces = "";
-			String team0 = "",team1 = "";
-			try
-			{
-				team0 = p[0];
-			}catch(Exception e){};
-			try
-			{
-				team1 = p[1];
-			}catch(Exception e){};
-			
-			for(int a = 0;a<=team0.length()-2;a+=2)
-			{
-				String c = p[0].substring(a,a+2);
-				if(cell == CryptManager.cellCode_To_ID(c))continue;
-				newPlaces += c;
-			}
-			newPlaces += "|";
-			for(int a = 0;a<=team1.length()-2;a+=2)
-			{
-				String c = p[1].substring(a,a+2);
-				if(cell == CryptManager.cellCode_To_ID(c))continue;
-				newPlaces += c;
-			}
-			_perso.get_curCarte().setPlaces(newPlaces);
-			if(!SQLManager.SAVE_MAP_DATA(_perso.get_curCarte()))return;
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"Les places ont ete modifiees ("+newPlaces+")");
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("CREATEGUILD"))
-		{
-			Personnage perso = _perso;
-			if(infos.length >1)
-			{
-				perso = World.getPersoByName(infos[1]);
-			}
-			if(perso == null)
-			{
-				String mess = "Le personnage n'existe pas.";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			
-			if(!perso.isOnline())
-			{
-				String mess = "Le personnage "+perso.get_name()+" n'etait pas connecte";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			if(perso.get_guild() != null || perso.getGuildMember() != null)
-			{
-				String mess = "Le personnage "+perso.get_name()+" a deja une guilde";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			SocketManager.GAME_SEND_gn_PACKET(perso);
-			String mess = perso.get_name()+": Panneau de creation de guilde ouvert";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("TOOGLEAGGRO"))
-		{
-			Personnage perso = _perso;
-			String name = infos[1];
-			
-			perso = World.getPersoByName(name);
-			if(perso == null)
-			{
-				String mess = "Le personnage n'existe pas.";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			
-			perso.set_canAggro(!perso.canAggro());
-			String mess = perso.get_name();
-			if(perso.canAggro()) mess += " peut maintenant etre aggresser";
-			else mess += " ne peut plus etre agresser";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			
-			if(!perso.isOnline())
-			{
-				mess = "(Le personnage "+perso.get_name()+" n'etait pas connecte)";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			}
-		}
-		else
-		if(infos.length <2)
-		{
-			String mess = "Commande non reconnue ou incomplete";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			return;
-		}
-		//Commandes avec 1 argument
-		infos = msg.split(" ");
-
-		if(command.equalsIgnoreCase("ANNOUNCE"))
-		{
-			infos = msg.split(" ",2);
-			SocketManager.GAME_SEND_MESSAGE_TO_ALL(infos[1], Ancestra.CONFIG_MOTD_COLOR);
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("NAMEANNOUNCE"))
-		{
-			infos = msg.split(" ",2);
-			String prefix = "["+_perso.get_name()+"]";
-			SocketManager.GAME_SEND_MESSAGE_TO_ALL(prefix+infos[1], Ancestra.CONFIG_MOTD_COLOR);
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("BAN"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			Personnage P = World.getPersoByName(infos[1]);
-			if(P == null)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Personnage non trouve");
-				return;
-			}
-			if(P.get_compte() == null)SQLManager.LOAD_ACCOUNT_BY_GUID(P.getAccID());
-			if(P.get_compte() == null)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Erreur");
-				return;
-			}
-			P.get_compte().setBanned(true);
-			SQLManager.UPDATE_ACCOUNT_DATA(P.get_compte());
-			if(P.get_compte().getGameThread() == null)P.get_compte().getGameThread().kick();
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous avez banni "+P.get_name());
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("UNBAN"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			Personnage P = World.getPersoByName(infos[1]);
-			if(P == null)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Personnage non trouve");
-				return;
-			}
-			if(P.get_compte() == null)SQLManager.LOAD_ACCOUNT_BY_GUID(P.getAccID());
-			if(P.get_compte() == null)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Erreur");
-				return;
-			}
-			P.get_compte().setBanned(false);
-			SQLManager.UPDATE_ACCOUNT_DATA(P.get_compte());
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous avez debanni "+P.get_name());
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("ADDFIGHTPOS"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int team = -1;
-			int cell = -1;
-			try
-			{
-				team = Integer.parseInt(infos[1]);
-				cell = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			if( team < 0 || team>1)
-			{
-				String str = "Team ou cellID incorects";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			if(cell <0 || _perso.get_curCarte().getCase(cell) == null || !_perso.get_curCarte().getCase(cell).isWalkable(true))
-			{
-				cell = _perso.get_curCell().getID();
-			}
-			String places = _perso.get_curCarte().get_placesStr();
-			String[] p = places.split("\\|");
-			boolean already = false;
-			String team0 = "",team1 = "";
-			try
-			{
-				team0 = p[0];
-			}catch(Exception e){};
-			try
-			{
-				team1 = p[1];
-			}catch(Exception e){};
-			
-			//Si case déjà utilisée
-			System.out.println("0 => "+team0+"\n1 =>"+team1+"\nCell: "+CryptManager.cellID_To_Code(cell));
-			for(int a = 0; a <= team0.length()-2;a+=2)if(cell == CryptManager.cellCode_To_ID(team0.substring(a,a+2)))already = true;
-			for(int a = 0; a <= team1.length()-2;a+=2)if(cell == CryptManager.cellCode_To_ID(team1.substring(a,a+2)))already = true;
-			if(already)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"La case est deja dans la liste");
-				return;
-			}
-			if(team == 0)team0 += CryptManager.cellID_To_Code(cell);
-			else if(team == 1)team1 += CryptManager.cellID_To_Code(cell);
-			
-			String newPlaces = team0+"|"+team1;
-			
-			_perso.get_curCarte().setPlaces(newPlaces);
-			if(!SQLManager.SAVE_MAP_DATA(_perso.get_curCarte()))return;
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"Les places ont ete modifiees ("+newPlaces+")");
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("SETMAXGROUP"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			infos = msg.split(" ",4);
-			byte id = -1;
-			try
-			{
-				id = Byte.parseByte(infos[1]);
-			}catch(Exception e){};
-			if(id == -1)
-			{
-				String str = "Valeur invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			String mess = "Le nombre de groupe a ete fixe";
-			_perso.get_curCarte().setMaxGroup(id);
-			boolean ok = SQLManager.SAVE_MAP_DATA(_perso.get_curCarte());
-			if(ok)mess += " et a ete sauvegarder a la BDD";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-		}else
-		if(command.equalsIgnoreCase("ADDREPONSEACTION"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			infos = msg.split(" ",4);
-			int id = -30;
-			int repID = 0;
-			String args = infos[3];
-			try
-			{
-				repID = Integer.parseInt(infos[1]);
-				id = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			NPC_reponse rep = World.getNPCreponse(repID);
-			if(id == -30 || rep == null)
-			{
-				String str = "Au moins une des valeur est invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			String mess = "L'action a ete ajoute";
-			
-			rep.addAction(new Action(id,args,""));
-			boolean ok = SQLManager.ADD_REPONSEACTION(repID,id,args);
-			if(ok)mess += " et ajoute a la BDD";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-		}else
-		if(command.equalsIgnoreCase("SETINITQUESTION"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			infos = msg.split(" ",4);
-			int id = -30;
-			int q = 0;
-			try
-			{
-				q = Integer.parseInt(infos[2]);
-				id = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(id == -30)
-			{
-				String str = "NpcID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			String mess = "L'action a ete ajoute";
-			NPC_tmpl npc = World.getNPCTemplate(id);
-			
-			npc.setInitQuestion(q);
-			boolean ok = SQLManager.UPDATE_INITQUESTION(id,q);
-			if(ok)mess += " et ajoute a la BDD";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-		}else
-		if(command.equalsIgnoreCase("ADDENDFIGHTACTION"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			infos = msg.split(" ",4);
-			int id = -30;
-			int type = 0;
-			String args = infos[3];
-			String cond = infos[4];
-			try
-			{
-				type = Integer.parseInt(infos[1]);
-				id = Integer.parseInt(infos[2]);
-				
-			}catch(Exception e){};
-			if(id == -30)
-			{
-				String str = "Au moins une des valeur est invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			String mess = "L'action a ete ajoute";
-			_perso.get_curCarte().addEndFightAction(type, new Action(id,args,cond));
-			boolean ok = SQLManager.ADD_ENDFIGHTACTION(_perso.get_curCarte().get_id(),type,id,args,cond);
-			if(ok)mess += " et ajoute a la BDD";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			return;
-		}else
-		if(command.equalsIgnoreCase("MUTE"))
-		{
-			if(_compte.get_gmLvl() < 1)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			Personnage perso = _perso;
-			String name = infos[1];
-			int time = 0;
-			try
-			{
-				time = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			
-			perso = World.getPersoByName(name);
-			if(perso == null || time < 0)
-			{
-				String mess = "Le personnage n'existe pas ou la duree est invalide.";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			String mess = "Vous avez mute "+perso.get_name()+" pour "+time+" secondes";
-			if(perso.get_compte() == null)
-			{
-				mess = "(Le personnage "+perso.get_name()+" n'etait pas connecte)";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			perso.get_compte().mute(true,time);
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			
-			if(!perso.isOnline())
-			{
-				mess = "(Le personnage "+perso.get_name()+" n'etait pas connecte)";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			}else
-			{
-				SocketManager.GAME_SEND_Im_PACKET(perso, "1124;"+time);
-			}
-			return;
-		}
-		else
-		if(command.equalsIgnoreCase("UNMUTE"))
-		{
-			Personnage perso = _perso;
-			String name = infos[1];
-			
-			perso = World.getPersoByName(name);
-			if(perso == null)
-			{
-				String mess = "Le personnage n'existe pas.";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			
-			perso.get_compte().mute(false,0);
-			String mess = "Vous avez unmute "+perso.get_name();
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			
-			if(!perso.isOnline())
-			{
-				mess = "(Le personnage "+perso.get_name()+" n'etait pas connecte)";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			}
-		}
-		else
-		if(command.equalsIgnoreCase("KICK"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			Personnage perso = _perso;
-			String name = infos[1];
-			perso = World.getPersoByName(name);
-			if(perso == null)
-			{
-				String mess = "Le personnage n'existe pas.";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			if(perso.isOnline())
-			{
-				perso.get_compte().getGameThread().kick();
-				String mess = "Vous avez kick "+perso.get_name();
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			}
-			else
-			{
-				String mess = "Le personnage "+perso.get_name()+" n'est pas connecte";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			}
-		}
-		else
-		if(command.equalsIgnoreCase("SPELLPOINT"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int pts = -1;
-			try
-			{
-				pts = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(pts == -1)
-			{
-				String str = "Valeur invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			target.addSpellPoint(pts);
-			SocketManager.GAME_SEND_STATS_PACKET(target);
-			String str = "Le nombre de point de sort a ete modifiee";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("LEARNSPELL"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int spell = -1;
-			try
-			{
-				spell = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(spell == -1)
-			{
-				String str = "Valeur invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			
-			target.learnSpell(spell, 1, true,true);
-			
-			String str = "Le sort a ete appris";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("SETALIGN"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			byte align = -1;
-			try
-			{
-				align = Byte.parseByte(infos[1]);
-			}catch(Exception e){};
-			if(align < Constants.ALIGNEMENT_NEUTRE || align >Constants.ALIGNEMENT_MERCENAIRE)
-			{
-				String str = "Valeur invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			
-			target.modifAlignement(align);
-			
-			String str = "L'alignement du joueur a ete modifie";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("SETREPONSES"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			if(infos.length <3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"Il manque un/des arguments");
-				return;
-			}
-			int id = 0;
-			try
-			{
-				id = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			String reps = infos[2];
-			NPC_question Q = World.getNPCQuestion(id);
-			String str = "";
-			if(id == 0 || Q == null)
-			{
-				str = "QuestionID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Q.setReponses(reps);
-			boolean a= SQLManager.UPDATE_NPCREPONSES(id,reps);
-			str = "Liste des reponses pour la question "+id+": "+Q.getReponses();
-			if(a)str += "(sauvegarde dans la BDD)";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-			return;
-		}else
-		if(command.equalsIgnoreCase("SHOWREPONSES"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int id = 0;
-			try
-			{
-				id = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			NPC_question Q = World.getNPCQuestion(id);
-			String str = "";
-			if(id == 0 || Q == null)
-			{
-				str = "QuestionID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			str = "Liste des reponses pour la question "+id+": "+Q.getReponses();
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-			return;
-		}else
-		if(command.equalsIgnoreCase("HONOR"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int honor = 0;
-			try
-			{
-				honor = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			String str = "Vous avez ajouter "+honor+" honneur a "+target.get_name();
-			if(target.get_align() == Constants.ALIGNEMENT_NEUTRE)
-			{
-				str = "Le joueur est neutre ...";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			target.addHonor(honor);
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-			
-		}else
-		if(command.equalsIgnoreCase("ADDJOBXP"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int job = -1;
-			int xp = -1;
-			try
-			{
-				job = Integer.parseInt(infos[1]);
-				xp = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			if(job == -1 || xp < 0)
-			{
-				String str = "Valeurs invalides";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 3)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[3]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			StatsMetier SM = target.getMetierByID(job);
-			if(SM== null)
-			{
-				String str = "Le joueur ne connais pas le métier demandé";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-				
-			SM.addXp(target, xp);
-			
-			String str = "Le metier a ete experimenter";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("LEARNJOB"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int job = -1;
-			try
-			{
-				job = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(job == -1 || World.getMetier(job) == null)
-			{
-				String str = "Valeur invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			
-			target.learnJob(World.getMetier(job));
-			
-			String str = "Le metier a ete appris";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("CAPITAL"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int pts = -1;
-			try
-			{
-				pts = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(pts == -1)
-			{
-				String str = "Valeur invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			target.addCapital(pts);
-			SocketManager.GAME_SEND_STATS_PACKET(target);
-			String str = "Le capital a ete modifiee";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("SPAWNFIX"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			String groupData = infos[1];
-
-			_perso.get_curCarte().addStaticGroup(_perso.get_curCell().getID(), groupData);
-			String str = "Le grouppe a ete fixe";
-			//Sauvegarde DB de la modif
-			if(SQLManager.SAVE_NEW_FIXGROUP(_perso.get_curCarte().get_id(),_perso.get_curCell().getID(), groupData))
-				str += " et a ete sauvegarde dans la BDD";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-			return;
-		}
-		if(command.equalsIgnoreCase("SIZE"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int size = -1;
-			try
-			{
-				size = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(size == -1)
-			{
-				String str = "Taille invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			target.set_size(size);
-			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(target.get_curCarte(), target.get_GUID());
-			SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(target.get_curCarte(), target);
-			String str = "La taille du joueur a ete modifiee";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("SETADMIN"))
-		{
-			if(_compte.get_gmLvl() < 4)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int gmLvl = -100;
-			try
-			{
-				gmLvl = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(gmLvl == -100)
-			{
-				String str = "Valeur incorrecte";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			target.get_compte().setGmLvl(gmLvl);
-			SQLManager.UPDATE_ACCOUNT_DATA(target.get_compte());
-			String str = "Le niveau GM du joueur a ete modifie";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("DEMORPH"))
-		{
-			Personnage target = _perso;
-			if(infos.length > 1)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[1]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			int morphID = target.get_classe()*10 + target.get_sexe();
-			target.set_gfxID(morphID);
-			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(target.get_curCarte(), target.get_GUID());
-			SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(target.get_curCarte(), target);
-			String str = "Le joueur a ete transformé";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("MORPH"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int morphID = -1;
-			try
-			{
-				morphID = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(morphID == -1)
-			{
-				String str = "MorphID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			target.set_gfxID(morphID);
-			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(target.get_curCarte(), target.get_GUID());
-			SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(target.get_curCarte(), target);
-			String str = "Le joueur a ete transformé";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("GONAME") || command.equalsIgnoreCase("JOIN"))
-		{
-			Personnage P = World.getPersoByName(infos[1]);
-			if(P == null)
-			{
-				String str = "Le personnage n'existe pas";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			short mapID = P.get_curCarte().get_id();
-			int cellID = P.get_curCell().getID();
-			
-			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié 
-			{
-				target = World.getPersoByName(infos[2]);
-				if(target == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-				if(target.get_fight() != null)
-				{
-					String str = "La cible est en combat";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			target.teleport(mapID, cellID);
-			String str = "Le joueur a ete teleporte";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("NAMEGO"))
-		{
-			Personnage target = World.getPersoByName(infos[1]);
-			if(target == null)
-			{
-				String str = "Le personnage n'existe pas";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			if(target.get_fight() != null)
-			{
-				String str = "La cible est en combat";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage P = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié
-			{
-				P = World.getPersoByName(infos[2]);
-				if(P == null)
-				{
-					String str = "Le personnage n'a pas ete trouve";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			short mapID = P.get_curCarte().get_id();
-			int cellID = P.get_curCell().getID();
-			target.teleport(mapID, cellID);
-			String str = "Le joueur a ete teleporte";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("ADDNPC"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int id = 0;
-			try
-			{
-				id = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(id == 0 || World.getNPCTemplate(id) == null)
-			{
-				String str = "NpcID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			NPC npc = _perso.get_curCarte().addNpc(id, _perso.get_curCell().getID(), _perso.get_orientation());
-			SocketManager.GAME_SEND_ADD_NPC_TO_MAP(_perso.get_curCarte(), npc);
-			String str = "Le PNJ a ete ajoute";
-			if(_perso.get_orientation() == 0
-					|| _perso.get_orientation() == 2
-					|| _perso.get_orientation() == 4
-					|| _perso.get_orientation() == 6)
-						str += " mais est invisible (orientation diagonale invalide).";
-			
-			if(SQLManager.ADD_NPC_ON_MAP(_perso.get_curCarte().get_id(), id, _perso.get_curCell().getID(), _perso.get_orientation()))
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-			else
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"Erreur au moment de sauvegarder la position");
-		}else
-		if(command.equalsIgnoreCase("DELNPC"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int id = 0;
-			try
-			{
-				id = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			NPC npc = _perso.get_curCarte().getNPC(id);
-			if(id == 0 || npc == null)
-			{
-				String str = "Npc GUID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			int exC = npc.get_cellID();
-			//on l'efface de la map
-			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_perso.get_curCarte(), id);
-			_perso.get_curCarte().removeNpcOrMobGroup(id);
-			
-			String str = "Le PNJ a ete supprime";
-			if(SQLManager.DELETE_NPC_ON_MAP(_perso.get_curCarte().get_id(),exC))
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-			else
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"Erreur au moment de sauvegarder la position");
-		}else
-		if(command.equalsIgnoreCase("MOVENPC"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int id = 0;
-			try
-			{
-				id = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			NPC npc = _perso.get_curCarte().getNPC(id);
-			if(id == 0 || npc == null)
-			{
-				String str = "Npc GUID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			int exC = npc.get_cellID();
-			//on l'efface de la map
-			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_perso.get_curCarte(), id);
-			//on change sa position/orientation
-			npc.setCellID(_perso.get_curCell().getID());
-			npc.setOrientation((byte)_perso.get_orientation());
-			//on envoie la modif
-			SocketManager.GAME_SEND_ADD_NPC_TO_MAP(_perso.get_curCarte(),npc);
-			String str = "Le PNJ a ete deplace";
-			if(_perso.get_orientation() == 0
-			|| _perso.get_orientation() == 2
-			|| _perso.get_orientation() == 4
-			|| _perso.get_orientation() == 6)
-				str += " mais est devenu invisible (orientation diagonale invalide).";
-			if(SQLManager.DELETE_NPC_ON_MAP(_perso.get_curCarte().get_id(),exC)
-			&& SQLManager.ADD_NPC_ON_MAP(_perso.get_curCarte().get_id(),npc.get_template().get_id(),_perso.get_curCell().getID(),_perso.get_orientation()))
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-			else
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"Erreur au moment de sauvegarder la position");
-		}else
-		if(command.equalsIgnoreCase("DELTRIGGER"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int cellID = -1;
-			try
-			{
-				cellID = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(cellID == -1 || _perso.get_curCarte().getCase(cellID) == null)
-			{
-				String str = "CellID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			
-			_perso.get_curCarte().getCase(cellID).clearOnCellAction();
-			boolean success = SQLManager.REMOVE_TRIGGER(_perso.get_curCarte().get_id(),cellID);
-			String str = "";
-			if(success)	str = "Le trigger a ete retire";
-			else 		str = "Le trigger n'a pas ete retire";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("ADDTRIGGER"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int actionID = -1;
-			String args = "",cond = "";
-			try
-			{
-				actionID = Integer.parseInt(infos[1]);
-				args = infos[2];
-				cond = infos[3];
-			}catch(Exception e){};
-			if(args.equals("") || actionID <= -3)
-			{
-				String str = "Valeur invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			
-			_perso.get_curCell().addOnCellStopAction(actionID,args, cond);
-			boolean success = SQLManager.SAVE_TRIGGER(_perso.get_curCarte().get_id(),_perso.get_curCell().getID(),actionID,1,args,cond);
-			String str = "";
-			if(success)	str = "Le trigger a ete ajoute";
-			else 		str = "Le trigger n'a pas ete ajoute";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("TELEPORT"))
-		{
-			short mapID = -1;
-			int cellID = -1;
-			try
-			{
-				mapID = Short.parseShort(infos[1]);
-				cellID = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			if(mapID == -1 || cellID == -1 || World.getCarte(mapID) == null)
-			{
-				String str = "MapID ou cellID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			if(World.getCarte(mapID).getCase(cellID) == null)
-			{
-				String str = "MapID ou cellID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 3)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[3]);
-				if(target == null  || target.get_fight() != null)
-				{
-					String str = "Le personnage n'a pas ete trouve ou est en combat";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			target.teleport(mapID, cellID);
-			String str = "Le joueur a ete teleporte";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("DELNPCITEM"))
-		{
-			if(_compte.get_gmLvl() <3)return;
-			int npcGUID = 0;
-			int itmID = -1;
-			try
-			{
-				npcGUID = Integer.parseInt(infos[1]);
-				itmID = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			NPC_tmpl npc =  _perso.get_curCarte().getNPC(npcGUID).get_template();
-			if(npcGUID == 0 || itmID == -1 || npc == null)
-			{
-				String str = "NpcGUID ou itmID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			
-			
-			String str = "";
-			if(npc.delItemVendor(itmID))str = "L'objet a ete retire";
-			else str = "L'objet n'a pas ete retire";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("ADDNPCITEM"))
-		{
-			if(_compte.get_gmLvl() <3)return;
-			int npcGUID = 0;
-			int itmID = -1;
-			try
-			{
-				npcGUID = Integer.parseInt(infos[1]);
-				itmID = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			NPC_tmpl npc =  _perso.get_curCarte().getNPC(npcGUID).get_template();
-			ObjTemplate item =  World.getObjTemplate(itmID);
-			if(npcGUID == 0 || itmID == -1 || npc == null || item == null)
-			{
-				String str = "NpcGUID ou itmID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			
-			
-			String str = "";
-			if(npc.addItemVendor(item))str = "L'objet a ete rajoute";
-			else str = "L'objet n'a pas ete rajoute";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("GOMAP"))
-		{
-			int mapX = 0;
-			int mapY = 0;
-			int cellID = 0;
-			int contID = 0;//Par défaut Amakna
-			try
-			{
-				mapX = Integer.parseInt(infos[1]);
-				mapY = Integer.parseInt(infos[2]);
-				cellID = Integer.parseInt(infos[3]);
-				contID = Integer.parseInt(infos[4]);
-			}catch(Exception e){};
-			Carte map = World.getCarteByPosAndCont(mapX,mapY,contID);
-			if(map == null)
-			{
-				String str = "Position ou continent invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			if(map.getCase(cellID) == null)
-			{
-				String str = "CellID invalide";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			Personnage target = _perso;
-			if(infos.length > 5)//Si un nom de perso est spécifié
-			{
-				target = World.getPersoByName(infos[5]);
-				if(target == null || target.get_fight() != null)
-				{
-					String str = "Le personnage n'a pas ete trouve ou est en combat";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-				if(target.get_fight() != null)
-				{
-					String str = "La cible est en combat";
-					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-					return;
-				}
-			}
-			target.teleport(map.get_id(), cellID);
-			String str = "Le joueur a ete teleporte";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("ADDMOUNTPARK"))
-		{
-			if(_compte.get_gmLvl() < 3)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int size = -1;
-			int owner = -2;
-			int price = -1;
-			try
-			{
-				size = Integer.parseInt(infos[1]);
-				owner = Integer.parseInt(infos[2]);
-				price = Integer.parseInt(infos[3]);
-				if(price > 20000000)price = 20000000;
-				if(price <0)price = 0;
-			}catch(Exception e){};
-			if(size == -1 || owner == -2 || price == -1 || _perso.get_curCarte().getMountPark() != null)
-			{
-				String str = "Infos invalides ou map deja config.";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-				return;
-			}
-			MountPark MP = new MountPark(owner, _perso.get_curCarte(), _perso.get_curCell().getID(), size, "", -1, price);
-			_perso.get_curCarte().setMountPark(MP);
-			SQLManager.SAVE_MOUNTPARK(MP);
-			String str = "L'enclos a ete config. avec succes";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}else
-		if(command.equalsIgnoreCase("ITEM") || command.equalsIgnoreCase("!getitem"))
-		{
-			boolean isOffiCmd = command.equalsIgnoreCase("!getitem");
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int tID = 0;
-			try
-			{
-				tID = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			if(tID == 0)
-			{
-				String mess = "Le template "+tID+" n'existe pas ";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			int qua = 1;
-			if(infos.length == 3)//Si une quantité est spécifiée
-			{
-				try
-				{
-					qua = Integer.parseInt(infos[2]);
-				}catch(Exception e){};
-			}
-			boolean useMax = false;
-			if(infos.length == 4 && !isOffiCmd)//Si un jet est spécifiée
-			{
-				if(infos[3].equalsIgnoreCase("MAX"))useMax = true;
-			}
-			ObjTemplate t = World.getObjTemplate(tID);
-			if(t == null)
-			{
-				String mess = "Le template "+tID+" n'existe pas ";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			if(qua <1)qua =1;
-			Objet obj = t.createNewItem(qua,useMax);
-			if(_perso.addObjet(obj, true))//Si le joueur n'avait pas d'item similaire
-				World.addObjet(obj,true);
-			String str = "Creation de l'item "+tID+" reussie";
-			if(useMax) str += " avec des stats maximums";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("ITEMSET"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int tID = 0;
-			try
-			{
-				tID = Integer.parseInt(infos[1]);
-			}catch(Exception e){};
-			ItemSet IS = World.getItemSet(tID);
-			if(tID == 0 || IS == null)
-			{
-				String mess = "La panoplie "+tID+" n'existe pas ";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			boolean useMax = false;
-			if(infos.length == 3)useMax = infos[2].equals("MAX");//Si un jet est spécifiée
-
-			
-			for(ObjTemplate t : IS.getItemTemplates())
-			{
-				Objet obj = t.createNewItem(1,useMax);
-				if(_perso.addObjet(obj, true))//Si le joueur n'avait pas d'item similaire
-					World.addObjet(obj,true);
-			}
-			String str = "Creation de la panoplie "+tID+" reussie";
-			if(useMax) str += " avec des stats maximums";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
-		}
-		else
-		if(command.equalsIgnoreCase("LEVEL"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int count = 0;
-			try
-			{
-				count = Integer.parseInt(infos[1]);
-				if(count < 1)	count = 1;
-				if(count > 200)	count = 200;
-				Personnage perso = _perso;
-				if(infos.length == 3)//Si le nom du perso est spécifier
-				{
-					String name = infos[2];
-					perso = World.getPersoByName(name);
-					if(perso == null)
-						perso = _perso;
-				}
-				if(perso.get_lvl() < count)
-				{
-					while(perso.get_lvl() < count)
-					{
-						perso.levelUp(false,true);
-					}
-					if(perso.isOnline())
-					{
-						SocketManager.GAME_SEND_NEW_LVL_PACKET(perso.get_compte().getGameThread().get_out(),perso.get_lvl());
-						SocketManager.GAME_SEND_STATS_PACKET(perso);
-					}
-				}
-				String mess = "Vous avez fixer le niveau de "+perso.get_name()+" a "+count;
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			}catch(Exception e)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Valeur incorecte");
-				return;
-			};
-		}
-		else
-		if(command.equalsIgnoreCase("PDVPER"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int count = 0;
-			try
-			{
-				count = Integer.parseInt(infos[1]);
-				if(count < 0)	count = 0;
-				if(count > 100)	count = 100;
-				Personnage perso = _perso;
-				if(infos.length == 3)//Si le nom du perso est spécifié
-				{
-					String name = infos[2];
-					perso = World.getPersoByName(name);
-					if(perso == null)
-						perso = _perso;
-				}
-				int newPDV = perso.get_PDVMAX() * count / 100;
-				perso.set_PDV(newPDV);
-				if(perso.isOnline())
-					SocketManager.GAME_SEND_STATS_PACKET(perso);
-				String mess = "Vous avez fixer le pourcentage de pdv de "+perso.get_name()+" a "+count;
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-			}catch(Exception e)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Valeur incorecte");
-				return;
-			};
-		}else
-		if(command.equalsIgnoreCase("KAMAS"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int count = 0;
-			try
-			{
-				count = Integer.parseInt(infos[1]);
-			}catch(Exception e)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Valeur incorecte");
-				return;
-			};
-			if(count == 0)return;
-			
-			Personnage perso = _perso;
-			if(infos.length == 3)//Si le nom du perso est spécifier
-			{
-				String name = infos[2];
-				perso = World.getPersoByName(name);
-				if(perso == null)
-					perso = _perso;
-			}
-			long curKamas = perso.get_kamas();
-			long newKamas = curKamas + count;
-			if(newKamas <0) newKamas = 0;
-			if(newKamas > 1000000000) newKamas = 1000000000;
-			perso.set_kamas(newKamas);
-			if(perso.isOnline())
-				SocketManager.GAME_SEND_STATS_PACKET(perso);
-			String mess = "Vous avez ";
-			mess += (count<0?"retirer":"ajouter")+" ";
-			mess += Math.abs(count)+" kamas a "+perso.get_name();
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-		}else if (command.equalsIgnoreCase("DOACTION"))
-		{
-			//DOACTION NAME TYPE ARGS COND
-			if(infos.length < 4)
-			{
-				String mess = "Nombre d'argument de la commande incorect !";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			int type = -100;
-			String args = "",cond = "";
-			Personnage perso = _perso;
-			try
-			{
-				perso = World.getPersoByName(infos[1]);
-				if(perso == null)perso = _perso;
-				type = Integer.parseInt(infos[2]);
-				args = infos[3];
-				if(infos.length >4)
-				cond = infos[4];
-			}catch(Exception e)
-			{
-				String mess = "Arguments de la commande incorect !";
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-				return;
-			}
-			(new Action(type,args,cond)).apply(perso, null, -1);
-			String mess = "Action effectuee !";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-		}else if (command.equalsIgnoreCase("SPAWN"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			_perso.get_curCarte().spawnGroupOnCommand(_perso.get_curCell().getID(), infos[1]);
-		}else if (command.equalsIgnoreCase("SHUTDOWN"))
-		{
-			if(_compte.get_gmLvl() < 2)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous n'avez pas le niveau MJ requis");
-				return;
-			}
-			int time = 30, OffOn = 0;
-			try
-			{
-				OffOn = Integer.parseInt(infos[1]);
-				time = Integer.parseInt(infos[2]);
-			}catch(Exception e){};
-			
-			if(OffOn == 1 && _TimerStart)// demande de démarer le reboot
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Un shutdown est deja programmer.");
-			}else if(OffOn == 1 && !_TimerStart)
-			{
-				_timer = createTimer(time);
-				_timer.start();
-				_TimerStart = true;
-				SocketManager.GAME_SEND_Im_PACKET_TO_ALL("115;"+time+" minute");
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Shutdown lance.");
-			}else if(OffOn == 0 && _TimerStart)
-			{
-				_timer.stop();
-				_TimerStart = false;
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Shutdown arrete.");
-			}else if(OffOn == 0 && !_TimerStart)
-			{
-				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Aucun shutdown n'est lance.");
-			}
-		}
-		else
-		{
-			String mess = "Commande non reconnue";
-			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,mess);
-		}
+		if(command == null) command = new Commands(_perso);
+		command.consoleCommand(packet);
 	}
 
 	public void closeSocket()
@@ -4547,6 +2779,11 @@ public class GameThread implements Runnable
 			case '!'://Alignement
 				if(!_perso.get_canaux().contains(packet.charAt(2)+""))return;
 				if(_perso.get_align() == 0) return;
+				if(_perso.getDeshonor() >= 1) 
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "183");
+					return;
+				}
 				long k;
 				if((k = System.currentTimeMillis() - _timeLastAlignMsg) < Ancestra.FLOOD_TIME)
 				{
@@ -4603,7 +2840,7 @@ public class GameThread implements Runnable
 	{
 			packet = packet.substring(2);
 			Personnage T = World.getPersoByName(packet);
-			SocketManager.GAME_SEND_BWK(_perso, T.get_compte().get_name()+"|1|"+T.get_name()+"|-1");
+			SocketManager.GAME_SEND_BWK(_perso, T.get_compte().get_pseudo()+"|1|"+T.get_name()+"|-1");
 	}
 
 	private void parseGamePacket(String packet)
@@ -4926,11 +3163,12 @@ public class GameThread implements Runnable
 			|| target.get_align() == _perso.get_align()
 			|| _perso.get_curCarte().get_placesStr().equalsIgnoreCase("|"))
 				return;
-			/*
-			 * 
-			 * || target.get_align() == 0 : Impossible d'agresser les joueurs neutres
-			 * 
-			 */
+			
+			if(target.get_align() == 0) 
+			{
+				_perso.setDeshonor(_perso.getDeshonor()+1);
+				SocketManager.GAME_SEND_Im_PACKET(_perso, "084;1");
+			}
 
 			_perso.toggleWings('+');
 			SocketManager.GAME_SEND_GA_PACKET_TO_MAP(_perso.get_curCarte(),"", 906, _perso.get_GUID()+"", id+"");
@@ -5073,6 +3311,11 @@ public class GameThread implements Runnable
 		String path = GA._packet.substring(5);
 		if(_perso.get_fight() == null)
 		{
+			if(_perso.getPodUsed() > _perso.getMaxPod())
+			{
+				SocketManager.GAME_SEND_Im_PACKET(_perso, "112");
+				return;
+			}
 			AtomicReference<String> pathRef = new AtomicReference<String>(path);
 			int result = Pathfinding.isValidPath(_perso.get_curCarte(),_perso.get_curCell().getID(),pathRef, null);
 			

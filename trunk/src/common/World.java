@@ -44,6 +44,10 @@ public class World {
 	//Statut du serveur 1: accesible; 0: inaccesible; 2: sauvegarde
 	private static short _state = 1;
 	
+	private static byte _GmAccess = 0;
+	
+	private static int nextObjetID; //Contient le derniere ID utilisé pour crée un Objet
+	
 	public static class Drop
 	{
 		private int _itemID;
@@ -718,6 +722,8 @@ public class World {
 		System.out.print("Chargement des zaaps:");
 		nbr = SQLManager.LOAD_ZAAPS();
 		System.out.println(nbr+" zaaps chargees");
+		
+		nextObjetID = SQLManager.getNextObjetID();
 	}
 	
 	public static Area getArea(int areaID)
@@ -843,6 +849,8 @@ public class World {
 	{
 		Persos.remove(perso.get_GUID());
 		SQLManager.DELETE_PERSO_IN_BDD(perso);
+		World.unloadPerso(perso.get_GUID());
+		//TODO : Remove vente hdv etc ...
 	}
 
 	public static String getSousZoneStateString()
@@ -888,14 +896,8 @@ public class World {
 	
 	public synchronized static int getNewItemGuid()
 	{
-		int id = 0;
-		for(Entry<Integer,Objet> entry : Objets.entrySet())
-		{
-			if(entry.getKey() > id)
-				id = entry.getKey();
-		}
-		id++;
-		return id;
+		nextObjetID++;
+		return nextObjetID;
 	}
 
 	public static void addMobTemplate(int id,Monstre mob)
@@ -1221,6 +1223,12 @@ public class World {
 
 	public static void unloadPerso(int g)
 	{
+		Personnage toRem = Persos.get(g);
+		for(Entry<Integer,Objet> curObj : toRem.getItems().entrySet())
+		{
+			Objets.remove(curObj.getKey());
+		}
+		toRem = null;
 		Persos.remove(g);
 	}
 	public static boolean isArenaMap(int mapID)
@@ -1234,6 +1242,12 @@ public class World {
 	}
 	public static Objet newObjet(int Guid, int template,int qua, int pos, String strStats)
 	{
+		if(World.getObjTemplate(template) == null) 
+		{ 
+			System.out.println("ItemTemplate "+template+" inexistant, GUID dans la table `items`:"+Guid);
+			Ancestra.closeServers(); 
+		} 
+		
 		if(World.getObjTemplate(template).getType() == 85)
 			return new PierreAme(Guid, qua, template, pos, strStats);
 		else
@@ -1249,6 +1263,16 @@ public class World {
 	public static void set_state(short state)
 	{
 		_state = state;
+	}
+	
+	public static byte getGmAccess()
+	{
+		return _GmAccess;
+	}
+	
+	public static void setGmAccess(byte GmAccess)
+	{
+		_GmAccess = GmAccess;
 	}
 
 }

@@ -114,8 +114,11 @@ public class Personnage {
 	public boolean _isOnPercepteur = false;
 	private int _isOnPercepteurID = 0;
 	//Traque
-	private traque _traqued = null; 
-	
+	private traque _traqued = null;
+	//Titre
+	private byte _title = 0;
+	//Inactivité
+	protected long _lastPacketTime;
 	
 	public static class traque 
 	{ 
@@ -444,7 +447,7 @@ public class Personnage {
 			int _color1, int _color2, int _color3,long _kamas, int pts, int _capital, int _energy, int _lvl, long exp,
 			int _size, int _gfxid, byte alignement, int _compte, Map<Integer,Integer> stats,
 			int seeFriend, byte seeAlign, String canaux, short map, int cell,String stuff,int pdvPer,String spells, String savePos,String jobs,
-			int mountXp,int mount,int honor,int deshonor,int alvl,String z)
+			int mountXp,int mount,int honor,int deshonor,int alvl,String z, byte title)
 	{
 		this._GUID = _guid;
 		this._name = _name;
@@ -566,6 +569,8 @@ public class Personnage {
 				}catch(Exception e){e.getStackTrace();}
 			}
 		}
+		
+		this._title = title;
 	}
 	
 	//Clone double
@@ -684,7 +689,8 @@ public class Personnage {
 				0,
 				0,
 				0,
-				z
+				z,
+				(byte)0
 				);
 		perso._sorts = Constants.getStartSorts(classe);
 		for(int a = 1; a <= perso.get_lvl();a++)
@@ -1211,7 +1217,8 @@ public class Personnage {
 			str+= "0"+";";//FIXME:?
 			str+= _GUID+";";
 			str+= _name+";";
-			str+= _classe+";";
+			str+= _classe;
+			str+= (this.get_title()>0?(","+this.get_title()+";"):(";"));
 			str+= _gfxID+"^"+_size+";";//gfxID^size
 			str+= _sexe+";";
 			str+= _align+",";//1,0,0,4055064
@@ -1761,9 +1768,9 @@ public class Personnage {
 
 	public void refreshStats()
 	{
-		int actPdvPer = (100*_PDV)/_PDVMAX;
+		double actPdvPer = (100*(double)_PDV)/(double)_PDVMAX;
 		_PDVMAX = (_lvl-1)*5+Constants.getBasePdv(_classe)+getTotalStats().getEffect(Constants.STATS_ADD_VITA);
-		_PDV = _PDVMAX*actPdvPer/100;
+		_PDV = (int) Math.round(_PDVMAX*actPdvPer/100);
 	}
 
 	public void levelUp(boolean send,boolean addXp)
@@ -2205,6 +2212,11 @@ public class Personnage {
 
 	public void openMountPark()
 	{
+		if(getDeshonor() >= 5) 
+		{
+			SocketManager.GAME_SEND_Im_PACKET(this, "183");
+			return;
+		}
 		_inMountPark = _curCarte.getMountPark();
 		_away = true;
 		String str = parseDragoList();
@@ -2549,9 +2561,9 @@ public class Personnage {
 		//Im045;50 ?
 	}
 
-	public void setDeshonor(int _deshonor)
+	public void setDeshonor(int deshonor)
 	{
-		this._deshonor = _deshonor;
+		_deshonor = deshonor;
 	}
 
 	public int getDeshonor()
@@ -2664,14 +2676,19 @@ public class Personnage {
 	{
 		if(this._fight == null)//On ouvre si il n'est pas en combat
 		{
-		_isZaaping = true;
-		if(!hasZaap(_curCarte.get_id()))//Si le joueur ne connaissait pas ce zaap
-		{
-			_zaaps.add(_curCarte.get_id());
-			SocketManager.GAME_SEND_Im_PACKET(this, "024");
-			SQLManager.SAVE_PERSONNAGE(this, false);
-		}
-		SocketManager.GAME_SEND_WC_PACKET(this);
+			if(getDeshonor() >= 3) 
+			{
+				SocketManager.GAME_SEND_Im_PACKET(this, "183");
+				return;
+			}
+			_isZaaping = true;
+			if(!hasZaap(_curCarte.get_id()))//Si le joueur ne connaissait pas ce zaap
+			{
+				_zaaps.add(_curCarte.get_id());
+				SocketManager.GAME_SEND_Im_PACKET(this, "024");
+				SQLManager.SAVE_PERSONNAGE(this, false);
+			}
+			SocketManager.GAME_SEND_WC_PACKET(this);
 		}
 	}
 	public void useZaap(short id)
@@ -2835,6 +2852,26 @@ public class Personnage {
 	public void set_isOnPercepteurID(int isOnPercepteurID)
 	{
 		_isOnPercepteurID = isOnPercepteurID;
+	}
+	
+	public void set_title(byte title)
+	{
+		_title = title;
+	}
+	
+	public byte get_title()
+	{
+		return _title;
+	}
+	
+	public long getLastPacketTime()
+	{
+		return _lastPacketTime;
+	}
+	
+	public void refreshLastPacketTime()
+	{
+		_lastPacketTime = System.currentTimeMillis();
 	}
 	
 	public static Personnage ClonePerso(Personnage P, int id)

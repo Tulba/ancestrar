@@ -173,6 +173,7 @@ public class Pathfinding {
 	public static int getDistanceBetween(Carte map,int id1,int id2)
 	{
 		if(id1 == id2)return 0;
+		if(map == null)return 0;
 		int diffX = Math.abs(getCellXCoord(map, id1) - getCellXCoord(map,id2));
 		int diffY = Math.abs(getCellYCoord(map, id1) - getCellYCoord(map,id2));
 		return (diffX + diffY);
@@ -421,6 +422,7 @@ public class Pathfinding {
 
 	public static int getCellXCoord(Carte map, int cellID)
 	{
+		if(map == null) return 0;
 		int w = map.get_w();
 		return ((cellID - (w -1) * getCellYCoord(map,cellID)) / w);
 	}

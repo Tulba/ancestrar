@@ -137,9 +137,13 @@ public class RealmThread implements Runnable{
 				if(Compte.COMPTE_LOGIN(_accountName,_hashPass,_hashKey))
 				{
 					_compte = World.getCompteByName(_accountName);
-					if(_compte.isOnline() && _compte.getGameThread()!=null)
+					if(_compte.isOnline() && _compte.getGameThread() != null)
 					{
 						_compte.getGameThread().closeSocket();
+					}else if(_compte.isOnline() && _compte.getGameThread() == null)
+					{
+						//REALMTHREAD OK, mais pas en jeu => Choix du serveur
+						//FIXME
 					}
 					if(_compte.isBanned())
 					{
@@ -160,6 +164,11 @@ public class RealmThread implements Runnable{
 							} catch (IOException e) {}
 							return;
 						}
+					}
+					if(World.getGmAccess() > _compte.get_gmLvl())
+					{
+						SocketManager.REALM_SEND_TOO_MANY_PLAYER_ERROR(_out);
+						return;
 					}
 					String ip = _s.getInetAddress().getHostAddress();
 					//Verification Multi compte

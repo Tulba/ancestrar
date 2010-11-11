@@ -11,6 +11,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import objects.Compte;
+import objects.Personnage;
 
 import common.*;
 
@@ -23,6 +24,7 @@ public class GameServer implements Runnable{
 	private Timer _saveTimer;
 	private Timer _loadActionTimer;
 	private Timer _reloadMobTimer;
+	private Timer _lastPacketTimer;
 	private long _startTime;
 	private int _maxPlayer = 0;
 	
@@ -61,6 +63,27 @@ public class GameServer implements Runnable{
 					GameServer.addToLog("La recharge des mobs est finie");
 				}
 			}, Ancestra.CONFIG_RELOAD_MOB_DELAY,Ancestra.CONFIG_RELOAD_MOB_DELAY);
+			
+			_lastPacketTimer = new Timer();
+			_lastPacketTimer.schedule(new TimerTask()
+			{
+				public void run()
+				{
+					for(Personnage perso : World.getOnlinePersos()) 
+					{ 
+						if (perso.getLastPacketTime() + Ancestra.CONFIG_MAX_IDLE_TIME < System.currentTimeMillis())
+						{
+							
+							if(perso.isOnline())
+							{
+								GameServer.addToLog("Kick pour inactiviter de : "+perso.get_name());
+								perso.get_compte().getGameThread().closeSocket();
+							}
+						}
+						
+					}
+				}
+			}, 60000,60000);
 			
 			_SS = new ServerSocket(Ancestra.CONFIG_GAME_PORT);
 			if(Ancestra.CONFIG_USE_IP)

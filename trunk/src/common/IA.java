@@ -296,15 +296,35 @@ public class IA {
 			{
 				if(_fighter.isInvocation())
 				{
-					apply_type5(_fighter,_fight);
+					apply_type6(_fighter,_fight);
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(2000);
 					} catch (InterruptedException e) {};
 					_fight.endTurn();
-				}else
-				{
-					return;	
 				}
+				if(_fighter.isPerco())
+				{
+					System.out.println("Lancement PERCEPTEUR");
+					apply_type4(_fighter,_fight);
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {};
+					_fight.endTurn();
+				}
+				else
+				{
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {};
+					_fight.endTurn();
+				}
+			}
+			if(_fighter.getMob().getTemplate() == null)
+			{
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {};
+				_fight.endTurn();
 			}
 			switch(_fighter.getMob().getTemplate().getIAType())
 			{

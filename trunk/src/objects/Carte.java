@@ -1184,13 +1184,9 @@ public class Carte {
 		}
 		if(_cases.size() == 0)return;
 		
-		for(int id : Constants.NO_MOBS_MAP)
-		{
-			if(id == _id)return;
-		}
-		
 		if (Ancestra.CONFIG_USE_MOBS)
 		{
+			if(_maxGroup == 0)return;
 			spawnGroup(Constants.ALIGNEMENT_NEUTRE,_maxGroup,false,-1);//Spawn des groupes d'alignement neutre 
 			spawnGroup(Constants.ALIGNEMENT_BONTARIEN,1,false,-1);//Spawn du groupe de gardes bontarien s'il y a
 			spawnGroup(Constants.ALIGNEMENT_BRAKMARIEN,1,false,-1);//Spawn du groupe de gardes brakmarien s'il y a

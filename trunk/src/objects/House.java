@@ -171,7 +171,14 @@ public class House
 				String packet = "P"+house.getValue().get_id()+"|";
 				if(house.getValue().get_owner_id() > 0)
 				{
-					packet += World.getCompte(house.getValue().get_owner_id()).get_name()+";";
+					Compte C = World.getCompte(house.getValue().get_owner_id());
+					if(C == null)
+					{
+						packet += "undefined;";
+					}else
+					{
+						packet += World.getCompte(house.getValue().get_owner_id()).get_pseudo()+";";
+					}
 				}else
 				{
 					packet+=";";
