@@ -1084,12 +1084,12 @@ public class Personnage {
 		perso += ";";//LevelMax
 		return "|"+perso;
 	}
-
+	
 	public void remove()
 	{
 		SQLManager.DELETE_PERSO_IN_BDD(this);
 	}
-
+	
 	public void OnJoinGame()
 	{
 		if(_compte.getGameThread() == null)return;

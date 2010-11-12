@@ -294,7 +294,6 @@ public class Compte {
 	{
 		if(!_persos.containsKey(guid))return;
 		World.deletePerso(_persos.get(guid));
-		_persos.get(guid).remove();
 		_persos.remove(guid);
 	}
 

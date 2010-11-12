@@ -1,3 +1,7 @@
+[12/11/2010]
+- GameThread : Correction de la commande TOOGLEAGGRO.
+- Compte/World : Correction de la supression des personnages.
+
 [11/11/2010]
 - Commands : Ajout de la commande BLOCK args : [GMLevel] [KickPlayer]
 BLOCK 4 1 : Kick et bloque le serveur aux joueurs inférieur au GmLevel 4.

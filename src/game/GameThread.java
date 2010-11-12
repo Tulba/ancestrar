@@ -3161,7 +3161,8 @@ public class GameThread implements Runnable
 			if(target == null || !target.isOnline() || target.get_fight() != null
 			|| target.get_curCarte().get_id() != _perso.get_curCarte().get_id()
 			|| target.get_align() == _perso.get_align()
-			|| _perso.get_curCarte().get_placesStr().equalsIgnoreCase("|"))
+			|| _perso.get_curCarte().get_placesStr().equalsIgnoreCase("|")
+			|| !target.canAggro())
 				return;
 			
 			if(target.get_align() == 0) 
