@@ -847,10 +847,9 @@ public class World {
 
 	public static void deletePerso(Personnage perso)
 	{
-		Persos.remove(perso.get_GUID());
-		SQLManager.DELETE_PERSO_IN_BDD(perso);
-		World.unloadPerso(perso.get_GUID());
-		//TODO : Remove vente hdv etc ...
+		perso.remove();//Supression BDD Perso, items ...
+		World.unloadPerso(perso.get_GUID());//UnLoad du perso+item
+		//TODO : Remove des ventes en hdv etc ...
 	}
 
 	public static String getSousZoneStateString()
@@ -896,8 +895,7 @@ public class World {
 	
 	public synchronized static int getNewItemGuid()
 	{
-		nextObjetID++;
-		return nextObjetID;
+		return nextObjetID++;
 	}
 
 	public static void addMobTemplate(int id,Monstre mob)
@@ -1231,6 +1229,7 @@ public class World {
 		toRem = null;
 		Persos.remove(g);
 	}
+	
 	public static boolean isArenaMap(int mapID)
 	{
 		for(int curID : Ancestra.arenaMap)
