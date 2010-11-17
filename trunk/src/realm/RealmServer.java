@@ -4,14 +4,18 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Calendar;
 
-
 import common.Ancestra;
 
 public class RealmServer implements Runnable{
 
 	private ServerSocket _SS;
 	private Thread _t;
-
+	
+	public static int _totalNonAbo = 0;//Total de connections non abo
+	public static int _totalAbo = 0;//Total de connections abo
+	public static int _queueID = -1;//Numéro de la queue
+	public static int _subscribe = 1;//File des non abonnées (0) ou abonnées (1)
+	
 	public RealmServer()
 	{
 		try {

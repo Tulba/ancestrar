@@ -1779,6 +1779,39 @@ public class Commands {
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Les joueurs de GmLevel inferieur a "+GmAccess+" ont ete kicks.");
 			}
 		}else
+		if(command.equalsIgnoreCase("BANIP"))
+		{
+			Personnage P = null;
+			try
+			{
+				P = World.getPersoByName(infos[1]);
+			}catch(Exception e){};
+			if(P == null)
+			{
+				String str = "Le personnage n'a pas ete trouve.";
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
+				return;
+			}
+			
+			if(!Constants.IPcompareToBanIP(P.get_compte().get_curIP()))
+			{
+				Constants.BAN_IP += ","+P.get_compte().get_curIP();
+				if(SQLManager.ADD_BANIP(P.get_compte().get_curIP()))
+				{
+					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "L'IP a ete banni.");
+				}
+				if(P.isOnline()){
+					P.get_compte().getGameThread().kick();
+					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Le joueur a ete kick.");
+				}
+			}else
+			{
+				String str = "L'IP existe deja.";
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
+				return;
+			}
+			
+		}else
 		{
 			this.commandGmThree(command, infos, msg);
 		}

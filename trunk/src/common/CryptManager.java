@@ -187,5 +187,40 @@ public class CryptManager {
 	    }
 		return cells;
 	}
+	
+	//Fonction qui convertis tout les textes ANSI(Unicode) en UTF-8. Les fichiers doivent être codé en ANSI sinon les phrases seront illisible.
+	public static String toUtf(String _in)
+	{
+		String _out = "";
+
+		try
+		{
+			_out = new String(_in.getBytes("UTF8"));
+			
+		}catch(Exception e)
+		{
+			System.out.println ("Conversion en UTF-8 échoué! : "+e.getMessage());
+			e.printStackTrace();
+		}
+		
+		return _out;
+	}
+	//Utilisé pour convertir les inputs UTF-8 en String normal.
+	public static String toUnicode(String _in)
+	{
+		String _out = "";
+
+		try
+		{
+			_out = new String(_in.getBytes(),"UTF8");
+			
+		}catch(Exception e)
+		{
+			System.out.println ("Conversion en UTF-8 échoué! : "+e.getMessage());
+			e.printStackTrace();
+		}
+		
+		return _out;
+	}
 
 }

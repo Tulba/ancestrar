@@ -28,9 +28,6 @@ Global :
 
 Invocations :
 
-- Arbre /Déco(Sadida).
-- La bloqueuse /Déco(Sadida).
-
 - Lien Spiritueux /IA-Sorts(Panda).
 - Cadran /IA-Sorts(Xélor).
 - Coffre animé /IA-Sorts(Enu).

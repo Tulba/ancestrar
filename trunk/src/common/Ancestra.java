@@ -43,7 +43,7 @@ public class Ancestra {
 	public static int CONFIG_DROP = 1;
 	public static boolean CONFIG_ZAAP = false;
 	public static int CONFIG_LOAD_DELAY = 60000;
-	public static int CONFIG_RELOAD_MOB_DELAY = 18000000;// 5heures ça me parait correct :)
+	public static int CONFIG_RELOAD_MOB_DELAY = 18000000;// 5heures Ã§a me parait correct :)
 	public static int CONFIG_PLAYER_LIMIT = 30;
 	public static boolean CONFIG_IP_LOOPBACK = true;
 	public static int XP_PVP = 10;
@@ -73,7 +73,7 @@ public class Ancestra {
 	public static int CONFIG_ARENA_TIMER = 10*60*1000;// 10 minutes
 	//BDD
 	public static int CONFIG_DB_COMMIT = 30*1000;
-	//Inactivité
+	//InactivitÃ©
 	public static int CONFIG_MAX_IDLE_TIME = 1800000;//En millisecondes
 	
 	public static void main(String[] args)
@@ -342,9 +342,9 @@ public class Ancestra {
 			}
 		}catch(IOException e)
 		{
-			/*On créer les dossiers*/
+			/*On crÃ©er les dossiers*/
 			System.out.println("Les fichiers de logs n'ont pas pu etre creer");
-			System.out.println("Création des dossiers");
+			System.out.println("CrÃ©ation des dossiers");
 			new File("Shop_logs").mkdir(); 
 			new File("Game_logs").mkdir(); 
 			new File("Realm_logs").mkdir(); 
@@ -357,7 +357,7 @@ public class Ancestra {
 	
 	public static void closeServers()
 	{
-		System.out.println("Arret du serveur demandé ...");
+		System.out.println("Arret du serveur demandÃ© ...");
 		if(isRunning)
 		{
 			isRunning = false;

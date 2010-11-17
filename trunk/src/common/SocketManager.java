@@ -71,7 +71,8 @@ public class SocketManager {
 		PrintWriter out = p.get_compte().getGameThread().get_out();
 		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
 		{
-			out.print(packet+(char)0x00);
+			packet = CryptManager.toUtf(packet);
+			out.print((packet)+(char)0x00);
 			out.flush();
 		}
 	}
@@ -80,12 +81,13 @@ public class SocketManager {
 	{
 		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
 		{
-			out.print(packet+(char)0x00);
+			packet = CryptManager.toUtf(packet);
+			out.print((packet)+(char)0x00);
 			out.flush();
 		}
 	}
 
-	public static void MULTI_SEND_Af_PACKET(PrintWriter out,int position, int totalAbo, int totalNonAbo, int subscribe,
+	public static void MULTI_SEND_Af_PACKET(PrintWriter out,int position, int totalAbo, int totalNonAbo, String subscribe,
 			int queueID)
 	{
 		String packet = "Af"+position+"|"+totalAbo+"|"+totalNonAbo+"|"+subscribe+"|"+queueID;

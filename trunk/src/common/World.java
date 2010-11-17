@@ -683,45 +683,49 @@ public class World {
 		SQLManager.LOGGED_ZERO();
 		System.out.println("Ok !");
 
-		System.out.println("Chargement des items:");
+		System.out.println("Chargement des items: ");
 		SQLManager.LOAD_ITEMS_FULL();
 		System.out.println("OK");
 		
-		System.out.println("Chargement des comptes:");
+		System.out.println("Chargement des comptes: ");
 		SQLManager.LOAD_COMPTES();
 		System.out.println(Comptes.size()+" comptes charges");
 		
-		System.out.println("Chargement des personnages:");//Obligatoire pour les HDV, sinon le seller peut etre innexistant
+		System.out.println("Chargement des personnages: ");//Obligatoire pour les HDV, sinon le seller peut etre innexistant
 		SQLManager.LOAD_PERSOS();
 		System.out.println(Persos.size()+" personnages charges");
 
-	    System.out.print("Chargement des guildes:");
+	    System.out.print("Chargement des guildes: ");
 		SQLManager.LOAD_GUILDS();
 		System.out.println(Guildes.size()+" guildes ont ete chargees");
 
-		System.out.print("Chargement des dragodindes:");
+		System.out.print("Chargement des dragodindes: ");
 		SQLManager.LOAD_MOUNTS();
 		System.out.println(Dragodindes.size()+" dragodindes ont ete chargees");
 		
-		System.out.print("Chargement des membres de guildes:");
+		System.out.print("Chargement des membres de guildes: ");
 		SQLManager.LOAD_GUILD_MEMBERS();
 		System.out.println("Ok !");
 		
-		System.out.print("Chargement des donnees d'enclos:");
+		System.out.print("Chargement des donnees d'enclos: ");
 		SQLManager.LOAD_MOUNTPARKS();
 		System.out.println("Ok !");
 		
-		System.out.print("Chargement des percepteurs:");
+		System.out.print("Chargement des percepteurs: ");
 		nbr = SQLManager.LOAD_PERCEPTEURS();
 		System.out.println(nbr+" percepteurs charges");
 		
-		System.out.print("Chargement des maisons:");
+		System.out.print("Chargement des maisons: ");
 		nbr = SQLManager.LOAD_HOUSES();
 		System.out.println(nbr+" maisons chargees");
 		
-		System.out.print("Chargement des zaaps:");
+		System.out.print("Chargement des zaaps: ");
 		nbr = SQLManager.LOAD_ZAAPS();
 		System.out.println(nbr+" zaaps chargees");
+		
+		System.out.print("Chargement des BAN_IP: ");
+		nbr = SQLManager.LOAD_BANIP();
+		System.out.println(nbr+" BAN_IP chargees");
 		
 		nextObjetID = SQLManager.getNextObjetID();
 	}
@@ -1163,7 +1167,7 @@ public class World {
 	}
 	public static long getGuildXpMax(int _lvl)
 	{
-		if(_lvl >= 100) 	_lvl = 100-1;
+		if(_lvl >= 200) 	_lvl = 200-1;
 		if(_lvl <= 1)	 	_lvl = 1;
 		return ExpLevels.get(_lvl+1).guilde;
 	}

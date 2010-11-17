@@ -2772,5 +2772,45 @@ public class SQLManager {
 			}
 			return 0;
 		}
+		
+		public static int LOAD_BANIP() 
+		{
+			int i = 0;
+			try
+			{
+				ResultSet RS = SQLManager.executeQuery("SELECT ip from banip;",Ancestra.OTHER_DB_NAME); 
+			      while (RS.next()) 
+			      { 
+			    	  	if(!RS.isLast())
+			    	  		Constants.BAN_IP += RS.getString("ip")+",";
+			    	  	else
+			    	  		Constants.BAN_IP += RS.getString("ip");
+						
+			    	  	i++;
+			      }
+					closeResultSet(RS);
+			}catch(SQLException e)
+			{
+				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+			}
+			return i;
+		}
+		public static boolean ADD_BANIP(String ip)
+		{
+			String baseQuery = "INSERT INTO `banip`" +
+					" VALUES (?);";
+			try {
+				PreparedStatement p = newTransact(baseQuery, othCon);
+				p.setString(1, ip);
+				p.execute();
+				closePreparedStatement(p);
+				return true;
+			} catch (SQLException e) {
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				GameServer.addToLog("Game: Query: "+baseQuery);
+			}
+			return false;
+		}
 }
 
