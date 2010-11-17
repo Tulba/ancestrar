@@ -219,6 +219,7 @@ public class GameServer implements Runnable{
 	{
 		_waitings.add(_compte);
 	}
+	
 	public static String getServerTime()
 	{
 		Date actDate = new Date();

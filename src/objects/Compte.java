@@ -40,6 +40,7 @@ public class Compte {
 	private ArrayList<Dragodinde> _stable = new ArrayList<Dragodinde>();
 	private boolean _mute = false;
 	private Timer _muteTimer;
+	public int _position = -1;//Position du joueur
 	
 	private Map<Integer, Personnage> _persos = new TreeMap<Integer, Personnage>();
 	
@@ -183,6 +184,11 @@ public class Compte {
 	public GameThread getGameThread()
 	{
 		return _gameThread;
+	}
+	
+	public RealmThread getRealmThread()
+	{
+		return _realmThread;
 	}
 	
 	public int get_GUID() {

@@ -654,8 +654,7 @@ public class Monstre
 		}
 		return null;
 	}
-
-
+	
 	public MobGrade getRandomGrade()
 	{
 		int randomgrade = (int)(Math.random() * (6-1)) + 1; 

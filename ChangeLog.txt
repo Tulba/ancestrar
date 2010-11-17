@@ -1,3 +1,17 @@
+[17/11/2010]
+- RealmThread : Correction d'un bug qui permettait de se connecter a deux sur un compte en même temps.
+- RealmThread/RealmServer/Pending : Ajout d'un systeme de file d'attente.
+- World : Correction de l'UP guilde des niveaux 100 à 199.
+- Commands : Ajout de la commande BANIP args : [Nom du joueur]
+BANIP Death
+(Patch 93 a appliquer)
+
+[16/11/2010]
+- GameThread/SocketManager/CryptManager : Ajout des conversion UTF/UNICODE (THX MARTHIEUBEAN).
+- Guild : Correction des champs sorts/Stats lors de la création d'une guilde (THX rapha-35).
+- BDD : Débug de la bloqueuse et de l'arbre.
+(Patch 92 a appliquer)
+
 [12/11/2010]
 - GameThread : Correction de la commande TOOGLEAGGRO.
 - Compte/World : Correction de la supression des personnages.

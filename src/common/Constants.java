@@ -30,6 +30,20 @@ public class Constants
 	//ZAAP
 	public static Map<Integer, Integer> ZAAPS = new TreeMap<Integer, Integer>();
 	
+	//BANIP
+	public static String BAN_IP = "";
+	
+	public static boolean IPcompareToBanIP(String ip)
+	{
+		String[] split = BAN_IP.split(",");
+		for(String ipsplit : split)
+		{
+			if(ip.compareTo(ipsplit) == 0) return true;
+		}
+		
+		return false;
+	}
+	
 	//Valeur des droits de guilde
 	public static int G_BOOST = 2;			//Gérer les boost
 	public static int G_RIGHT = 4;			//Gérer les droits

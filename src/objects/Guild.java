@@ -242,6 +242,8 @@ public class Guild {
 		_emblem = emblem;
 		_lvl = 1;
 		_xp= 0;
+		decompileSpell("462;0|461;0|460;0|459;0|458;0|457;0|456;0|455;0|454;0|453;0|452;0|451;0|"); 
+		decompileStats("176;100|158;1000|124;100|"); 
 	}
 	public Guild(int id,String name, String emblem,int lvl,long xp,
 			int capital, int nbrmax,

@@ -17,7 +17,7 @@ import common.World;
 public class RealmThread implements Runnable{
 	private BufferedReader _in;
 	private Thread _t;
-	private PrintWriter _out;
+	public PrintWriter _out;
 	private Socket _s;
 	private String _hashKey;
 	private int _packetNum = 0;
@@ -52,7 +52,7 @@ public class RealmThread implements Runnable{
 		}
 	}
 
-	public  void run()
+	public void run()
 	{
 		try
     	{
@@ -109,6 +109,7 @@ public class RealmThread implements Runnable{
 	    	}catch(IOException e1){};
     	}
 	}
+	
 	private void parsePacket(String packet)
 	{
 		switch(_packetNum)
@@ -142,8 +143,9 @@ public class RealmThread implements Runnable{
 						_compte.getGameThread().closeSocket();
 					}else if(_compte.isOnline() && _compte.getGameThread() == null)
 					{
-						//REALMTHREAD OK, mais pas en jeu => Choix du serveur
-						//FIXME
+						SocketManager.REALM_SEND_ALREADY_CONNECTED(_out);
+						SocketManager.REALM_SEND_ALREADY_CONNECTED(_compte.getRealmThread()._out);
+						return;
 					}
 					if(_compte.isBanned())
 					{
@@ -171,6 +173,11 @@ public class RealmThread implements Runnable{
 						return;
 					}
 					String ip = _s.getInetAddress().getHostAddress();
+					if(Constants.IPcompareToBanIP(ip))
+					{
+						SocketManager.REALM_SEND_BANNED(_out);
+						return;
+					}
 					//Verification Multi compte
 					if(!Ancestra.CONFIG_ALLOW_MULTI)
 					{
@@ -185,6 +192,8 @@ public class RealmThread implements Runnable{
 					}
 					_compte.setRealmThread(this);
 					_compte.setCurIP(ip);
+					RealmServer._totalAbo++;//On incrémente le total
+					_compte._position = RealmServer._totalAbo;//On lui donne une position
 					SocketManager.REALM_SEND_Ad_Ac_AH_AlK_AQ_PACKETS(_out, _compte.get_pseudo(),(_compte.get_gmLvl()>0?(1):(0)), _compte.get_question() ); 
 				}else//Si le compte n'a pas été reconnu
 				{
@@ -192,27 +201,15 @@ public class RealmThread implements Runnable{
 					if(Compte.COMPTE_LOGIN(_accountName,_hashPass,_hashKey))
 					{
 						_compte = World.getCompteByName(_accountName);
-						if(Ancestra.CONFIG_PLAYER_LIMIT != 0 && Ancestra.CONFIG_PLAYER_LIMIT <= Ancestra.gameServer.getPlayerNumber())
+						if(_compte.isOnline() && _compte.getGameThread() != null)
 						{
-							//Seulement si joueur
-							if(_compte.get_gmLvl() == 0)
-							{
-								SocketManager.REALM_SEND_TOO_MANY_PLAYER_ERROR(_out);
-								try {
-									_s.close();
-								} catch (IOException e) {}
-								return;
-							}
-						}
-						if(_compte.isOnline())
+							_compte.getGameThread().closeSocket();
+						}else if(_compte.isOnline() && _compte.getGameThread() == null)
 						{
 							SocketManager.REALM_SEND_ALREADY_CONNECTED(_out);
-							try {
-								this._s.close();
-							} catch (IOException e) {}
+							SocketManager.REALM_SEND_ALREADY_CONNECTED(_compte.getRealmThread()._out);
 							return;
 						}
-						
 						if(_compte.isBanned())
 						{
 							SocketManager.REALM_SEND_BANNED(_out);
@@ -221,7 +218,29 @@ public class RealmThread implements Runnable{
 							} catch (IOException e) {}
 							return;
 						}
+						if(Ancestra.CONFIG_PLAYER_LIMIT != -1 && Ancestra.CONFIG_PLAYER_LIMIT <= Ancestra.gameServer.getPlayerNumber())
+						{
+							//Seulement si joueur
+							if(_compte.get_gmLvl() == 0  && _compte.get_vip() == 0)
+							{
+								SocketManager.REALM_SEND_TOO_MANY_PLAYER_ERROR(_out);
+								try {
+									_s.close();
+								} catch (IOException e) {}
+								return;
+							}
+						}
+						if(World.getGmAccess() > _compte.get_gmLvl())
+						{
+							SocketManager.REALM_SEND_TOO_MANY_PLAYER_ERROR(_out);
+							return;
+						}
 						String ip = _s.getInetAddress().getHostAddress();
+						if(Constants.IPcompareToBanIP(ip))
+						{
+							SocketManager.REALM_SEND_BANNED(_out);
+							return;
+						}
 						//Verification Multi compte
 						if(!Ancestra.CONFIG_ALLOW_MULTI)
 						{
@@ -236,6 +255,8 @@ public class RealmThread implements Runnable{
 						}
 						_compte.setCurIP(ip);
 						_compte.setRealmThread(this);
+						RealmServer._totalAbo++;//On incrémente le total
+						_compte._position = RealmServer._totalAbo;//On lui donne une position
 						SocketManager.REALM_SEND_Ad_Ac_AH_AlK_AQ_PACKETS(_out, _compte.get_pseudo(),(_compte.get_gmLvl()>0?(1):(0)), _compte.get_question() ); 
 					}else//Si le compte n'a pas été reconnu
 					{
@@ -249,10 +270,8 @@ public class RealmThread implements Runnable{
 			default:
 				if(packet.substring(0,2).equals("Af"))
 				{
-					int queueID = 1;
-					int position = 1;
 					_packetNum--;
-					SocketManager.MULTI_SEND_Af_PACKET(_out,position,1,1,0,queueID);
+					Pending.PendingSystem(_compte);
 				}else
 				if(packet.substring(0,2).equals("Ax"))
 				{

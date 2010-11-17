@@ -85,6 +85,7 @@ public class GameThread implements Runnable
 	    			packet += charCur[0];
 		    	}else if(packet != "")
 		    	{
+		    		packet = CryptManager.toUnicode(packet);
 		    		GameServer.addToSockLog("Game: Recv << "+packet);
 		    		parsePacket(packet);
 		    		packet = "";
@@ -3485,7 +3486,7 @@ public class GameThread implements Runnable
 			case 'f':
 				int queueID = 1;
 				int position = 1;
-				SocketManager.MULTI_SEND_Af_PACKET(_out,position,1,1,0,queueID);
+				SocketManager.MULTI_SEND_Af_PACKET(_out,position,1,1,""+1,queueID);
 			break;
 			
 			case 'i':
