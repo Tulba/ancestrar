@@ -359,7 +359,7 @@ public class Commands {
 			target.set_gfxID(morphID);
 			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(target.get_curCarte(), target.get_GUID());
 			SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(target.get_curCarte(), target);
-			String str = "Le joueur a ete transformé";
+			String str = "Le joueur a ete transforme";
 			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
 		}
 		else
@@ -376,7 +376,7 @@ public class Commands {
 			int cellID = P.get_curCell().getID();
 			
 			Personnage target = _perso;
-			if(infos.length > 2)//Si un nom de perso est spécifié 
+			if(infos.length > 2)//Si un nom de perso est spécifié
 			{
 				target = World.getPersoByName(infos[2]);
 				if(target == null)
@@ -859,7 +859,7 @@ public class Commands {
 			StatsMetier SM = target.getMetierByID(job);
 			if(SM== null)
 			{
-				String str = "Le joueur ne connais pas le métier demandé";
+				String str = "Le joueur ne connais pas le metier demande";
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
 				return;
 			}
@@ -985,7 +985,7 @@ public class Commands {
 			target.set_gfxID(morphID);
 			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(target.get_curCarte(), target.get_GUID());
 			SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(target.get_curCarte(), target);
-			String str = "Le joueur a ete transformé";
+			String str = "Le joueur a ete transforme";
 			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
 		}if(command.equalsIgnoreCase("MOVENPC"))
 		{
@@ -1036,7 +1036,7 @@ public class Commands {
 				return;
 			}
 			boolean useMax = false;
-			if(infos.length == 3)useMax = infos[2].equals("MAX");//Si un jet est spécifiée
+			if(infos.length == 3)useMax = infos[2].equals("MAX");//Si un jet est spécifié
 
 			
 			for(ObjTemplate t : IS.getItemTemplates())
@@ -1058,7 +1058,7 @@ public class Commands {
 				if(count < 1)	count = 1;
 				if(count > 200)	count = 200;
 				Personnage perso = _perso;
-				if(infos.length == 3)//Si le nom du perso est spécifier
+				if(infos.length == 3)//Si le nom du perso est spécifié
 				{
 					String name = infos[2];
 					perso = World.getPersoByName(name);
@@ -1127,7 +1127,7 @@ public class Commands {
 			if(count == 0)return;
 			
 			Personnage perso = _perso;
-			if(infos.length == 3)//Si le nom du perso est spécifier
+			if(infos.length == 3)//Si le nom du perso est spécifié
 			{
 				String name = infos[2];
 				perso = World.getPersoByName(name);
@@ -1174,7 +1174,7 @@ public class Commands {
 				}catch(Exception e){};
 			}
 			boolean useMax = false;
-			if(infos.length == 4 && !isOffiCmd)//Si un jet est spécifiée
+			if(infos.length == 4 && !isOffiCmd)//Si un jet est spécifié
 			{
 				if(infos[3].equalsIgnoreCase("MAX"))useMax = true;
 			}
@@ -1200,6 +1200,7 @@ public class Commands {
 			{
 				Mob = infos[1];
 			}catch(Exception e){};
+            if(Mob == null) return;
 			_perso.get_curCarte().spawnGroupOnCommand(_perso.get_curCell().getID(), Mob);
 		}else
 		if (command.equalsIgnoreCase("TITLE"))
@@ -1786,7 +1787,7 @@ public class Commands {
 			{
 				P = World.getPersoByName(infos[1]);
 			}catch(Exception e){};
-			if(P == null)
+			if(P == null || !P.isOnline())
 			{
 				String str = "Le personnage n'a pas ete trouve.";
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);

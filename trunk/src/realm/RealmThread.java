@@ -68,7 +68,7 @@ public class RealmThread implements Runnable{
 	    		if (charCur[0] != '\u0000' && charCur[0] != '\n' && charCur[0] != '\r')
 		    	{
 	    			packet += charCur[0];
-		    	}else if(packet != "")
+		    	}else if(!packet.isEmpty())
 		    	{
 		    		RealmServer.addToSockLog("Realm: Recv << "+packet);
 		    		_packetNum++;

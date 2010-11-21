@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import objects.Carte.Case;
-import objects.Fight;
 import objects.Fight.Fighter;
 import objects.Fight.Glyphe;
 import objects.Fight.Piege;
@@ -268,7 +267,7 @@ public class SpellEffect
 						break;
 						
 						default:
-							GameServer.addToLog("Effect id "+id+" définie comme ON_HIT_BUFF mais n'a pas d'effet définie dans ce gestionnaire.");
+							GameServer.addToLog("Effect id "+id+" definie comme ON_HIT_BUFF mais n'a pas d'effet definie dans ce gestionnaire.");
 						break;
 					}
 				}
@@ -326,7 +325,7 @@ public class SpellEffect
 				case 78://Bonus PM
 					applyEffect_78(cibles,fight);
 				break;
-				case 79:// + X chance(%) dommage subis * Y sinon soigné de dommage *Z 
+				case 79:// + X chance(%) dommage subis * Y sinon soigné de dommage *Z
 					applyEffect_79(cibles,fight);
 				break;
 				
@@ -653,7 +652,7 @@ public class SpellEffect
 				break;
 				
 				default:
-					GameServer.addToLog("effet non implanté : "+effectID+" args: "+args);
+					GameServer.addToLog("effet non implante : "+effectID+" args: "+args);
 				break;
 			}
 		}
@@ -897,7 +896,7 @@ public class SpellEffect
 			Case tcase = fight.get_map().getCase(tcellID);
 			if(tcase == null)return;
 			//S'il n'y a personne sur la case, on arrete
-			if(tcase.getFighters().size() == 0)return;
+			if(tcase.getFighters().isEmpty())return;
 			//On prend le Fighter ciblé
 			Fighter target = tcase.getFirstFighter();
 			//On verifie qu'il peut aller sur la case ciblé en ligne droite
@@ -939,7 +938,7 @@ public class SpellEffect
 
 		private void applyEffect_8(ArrayList<Fighter> cibles, Fight fight)
 		{
-			if(cibles.size() == 0)return;
+			if(cibles.isEmpty())return;
 			Fighter target = cibles.get(0);
 			if(target == null)return;//ne devrait pas arriver
 			switch(spell)
@@ -1640,7 +1639,7 @@ public class SpellEffect
 			};
 			
 			if(mobID == -1 || level == -1 || MG == null)return;
-			int id = fight.getNextLowerFighterGuid();
+            int id = fight.getNextLowerFighterGuid()-caster._nbInvoc;
 			MG.setInFightID(id);
 			MG.modifStatByInvocator(caster);
 			Fighter F = new Fighter(fight,MG);
@@ -1654,7 +1653,7 @@ public class SpellEffect
 			String gtl = fight.getGTL();
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 181, caster.getGUID() + "", gm);
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 999, caster.getGUID()+"", gtl);
-			
+			caster._nbInvoc++;
 			ArrayList<Piege> P = (new ArrayList<Piege>());
 			P.addAll(fight.get_traps());
 			for(Piege p : P)
@@ -1965,7 +1964,7 @@ public class SpellEffect
 				}
 			}else
 			{
-				if(cibles.size() == 0 && spell == 120 && caster.get_oldCible() != null) 
+				if(cibles.isEmpty() && spell == 120 && caster.get_oldCible() != null)
 				{
 					caster.get_oldCible().addBuff(effectID, value, turns, turns, false, spell, args, caster);
 					if(turns <= 1 || duration <= 1)

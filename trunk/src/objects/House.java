@@ -250,7 +250,7 @@ public class House
 		}
 		else if(h.get_owner_id() > 0) //Une personne autre la acheter, il faut le code pour rentrer
 		{
-			SocketManager.GAME_SEND_KODE(P, "CK0|8");//8 étant le nombre de chiffre du code	
+			SocketManager.GAME_SEND_KODE(P, "CK0|8");//8 étant le nombre de chiffre du code
 		}
 		else if(h.get_owner_id() == 0) //Maison non acheter, mais achetable, on peut rentrer sans code
 		{
@@ -322,7 +322,7 @@ public class House
 		//Achat de la maison
 		SQLManager.HOUSE_BUY(P, h);
 
-		//Rafraichir la map aprés l'achat
+		//Rafraichir la map après l'achat
 		for(Personnage z:P.get_curCarte().getPersos())
 		{
 			LoadHouse(z, z.get_curCarte().get_id());
@@ -359,7 +359,7 @@ public class House
 			//Vente de la maison
 			SQLManager.HOUSE_SELL(h, price);
 
-			//Rafraichir la map aprés la mise en vente
+			//Rafraichir la map après la mise en vente
 			for(Personnage z:P.get_curCarte().getPersos())
 			{
 				LoadHouse(z, z.get_curCarte().get_id());

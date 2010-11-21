@@ -384,7 +384,7 @@ public class Metier {
 				if(obj.getQuantity() < e.getValue())
 				{
 					SocketManager.GAME_SEND_Ec_PACKET(_P,"EI");
-					GameServer.addToLog("/!\\ "+_P.get_name()+" essaye de crafter avec un objet dont la quantité est trop faible");
+					GameServer.addToLog("/!\\ "+_P.get_name()+" essaye de crafter avec un objet dont la quantite est trop faible");
 					return;
 				}
 				//On calcule la nouvelle quantité
@@ -979,7 +979,7 @@ public class Metier {
 			{
 				int poidActual = 1;
 				int ActualJet = 1;
-				if(obj.parseStatsString() != "")
+				if(!obj.parseStatsString().isEmpty())
 				{
 					poidActual = Objet.getPoidOfActualItem(obj.parseStatsString().replace(";","#"));//Poid de l'item actuel
 					ActualJet = getActualJet(obj, stats);//Jet actuel de l'item
@@ -1102,11 +1102,11 @@ public class Metier {
 						statsnegatif += ",99#"+Integer.toHexString(1)+"#0#0#0d0+1";	
 					}
 				}
-				if(obj.parseStatsString() == "" && statsnegatif != "")//Si l'item est vide et que l'on a l'ajout de stats négatifs
+				if(obj.parseStatsString().isEmpty() && !statsnegatif.isEmpty())//Si l'item est vide et que l'on a l'ajout de stats négatifs
 				{
 					obj.setStats(obj.generateNewStatsFromTemplate((statsnegatif.substring(1)), false));	
 				}
-				else if(obj.parseStatsString() != "")//Si l'item possède déjà des stats
+				else if(!obj.parseStatsString().isEmpty())//Si l'item possède déjà des stats
 				{	
 					obj.setStats(obj.generateNewStatsFromTemplate((obj.parseFMEchecStatsString(obj, poid).replace(";","#")+statsnegatif), false));
 				}
@@ -1198,7 +1198,7 @@ public class Metier {
 					else//L'item ne possède pas le stats.
 					{
 						if(Ancestra.CONFIG_DEBUG) System.out.println("Ajout d'un stat inexistant : "+stats+". Ajout de "+add); 
-						if(obj.parseStatsString() == "")//Si l'item est vide
+						if(obj.parseStatsString().isEmpty())//Si l'item est vide
 						{
 							obj.setStats(obj.generateNewStatsFromTemplate((stats+"#"+Integer.toHexString(add)+"#0#0#0d0+"+add), false));	
 						}
@@ -1286,7 +1286,7 @@ public class Metier {
 		{
 			if(_P == null)return;
 			if(_lastCraft == null)return;
-			if(_ingredients.size() != 0)return;//OffiLike, mais possible de faire un truc plus propre en enlevant les objets présent et en rajoutant ceux de la recette
+			if(!_ingredients.isEmpty())return;//OffiLike, mais possible de faire un truc plus propre en enlevant les objets présent et en rajoutant ceux de la recette
 			_ingredients.clear();
 			_ingredients.putAll(_lastCraft);
 			for(Entry<Integer,Integer> e : _ingredients.entrySet())
@@ -1359,7 +1359,7 @@ public class Metier {
 	}
 	public static byte ViewActualStatsItem(Objet obj, String stats)//retourne vrai si le stats est actuellement sur l'item
 	{
-		if(obj.parseStatsString() != "")
+		if(!obj.parseStatsString().isEmpty())
 		{
 		for(Entry<Integer,Integer> entry : obj.getStats().getMap().entrySet())
 		{

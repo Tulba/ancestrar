@@ -109,7 +109,7 @@ public class SQLManager {
 			statCon.close();
 		}catch (Exception e)
 		{
-			System.out.println("Erreur à la fermeture des connexions SQL:"+e.getMessage());
+			System.out.println("Erreur a la fermeture des connexions SQL:"+e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -125,7 +125,7 @@ public class SQLManager {
 			
 			if(!statCon.isValid(1000) || !othCon.isValid(1000))
 			{
-				GameServer.addToLog("SQLError : Connexion à la BD invalide!");
+				GameServer.addToLog("SQLError : Connexion a la BD invalide!");
 				return false;
 			}
 			
@@ -971,7 +971,7 @@ public class SQLManager {
 					break;
 						
 					default:
-						GameServer.addToLog("Action Event "+RS.getInt("EventID")+" non implanté");
+						GameServer.addToLog("Action Event "+RS.getInt("EventID")+" non implante");
 					break;
 				}
 				nbr++;
@@ -1108,12 +1108,12 @@ public class SQLManager {
 				UPDATE_GUILDMEMBER(_perso.getGuildMember());
 			if(_perso.getMount() != null)
 				UPDATE_MOUNT_INFOS(_perso.getMount());
-			GameServer.addToLog("Personnage "+_perso.get_name()+" sauvegardé");
+			GameServer.addToLog("Personnage "+_perso.get_name()+" sauvegarde");
 		}catch(Exception e)
 		{
 			System.out.println("Game: SQL ERROR: "+e.getMessage());
 			System.out.println("Requete: "+baseQuery);
-			System.out.println("Le personnage n'a pas été sauvegardé");
+			System.out.println("Le personnage n'a pas ete sauvegarde");
 			System.exit(1);
 		};
 		if(saveItem)
@@ -2271,7 +2271,7 @@ public class SQLManager {
 					perso = World.getPersonnage(RS.getInt("PlayerID"));
 					if(perso == null)
 					{
-						Ancestra.addToShopLog("Personnage "+RS.getInt("PlayerID")+" non trouvé, personnage non chargé ?");
+						Ancestra.addToShopLog("Personnage "+RS.getInt("PlayerID")+" non trouve, personnage non charge ?");
 						continue;
 					}
 					if(!perso.isOnline())
@@ -2281,12 +2281,12 @@ public class SQLManager {
 					}
 					if(perso.get_compte() == null)
 					{
-						Ancestra.addToShopLog("Le Personnage "+RS.getInt("PlayerID")+" n'est attribué a aucun compte chargé");
+						Ancestra.addToShopLog("Le Personnage "+RS.getInt("PlayerID")+" n'est attribue a aucun compte charge");
 						continue;
 					}
 					if(perso.get_compte().getGameThread() == null)
 					{
-						Ancestra.addToShopLog("Le Personnage "+RS.getInt("PlayerID")+" n'a pas thread associé, le personnage est il hors ligne ?");
+						Ancestra.addToShopLog("Le Personnage "+RS.getInt("PlayerID")+" n'a pas thread associe, le personnage est il hors ligne ?");
 						continue;
 					}
 					if(perso.get_fight() != null) continue; // Perso en combat  @ Nami-Doc
@@ -2337,7 +2337,7 @@ public class SQLManager {
 							if(obj == null)continue;
 							if(perso.addObjet(obj, true))//Si le joueur n'avait pas d'item similaire
 								World.addObjet(obj,true);
-							GameServer.addToSockLog("Objet "+nombre+" ajouté à "+perso.get_name()+" avec des stats MAX");
+							GameServer.addToSockLog("Objet "+nombre+" ajoute a "+perso.get_name()+" avec des stats MAX");
 							SocketManager.GAME_SEND_MESSAGE(perso,"L'objet \""+t.getName()+"\" avec des stats maximum, viens d'etre ajoute a votre personnage",couleur);
 							break;
 						case 118://Force
@@ -2375,13 +2375,13 @@ public class SQLManager {
 					SocketManager.GAME_SEND_STATS_PACKET(perso);
 					if(action < 20 || action >100) SocketManager.GAME_SEND_MESSAGE(perso,sortie+" a votre personnage",couleur); //Si l'action n'est pas un ajout d'objet on envoye un message a l'utilisateur
 					
-					Ancestra.addToShopLog("(Commande "+id+")Action "+action+" Nombre: "+nombre+" appliquée sur le personnage "+RS.getInt("PlayerID")+"("+perso.get_name()+")");
+					Ancestra.addToShopLog("(Commande "+id+")Action "+action+" Nombre: "+nombre+" appliquee sur le personnage "+RS.getInt("PlayerID")+"("+perso.get_name()+")");
 				try
 				{
 					String query = "DELETE FROM live_action WHERE ID="+id+";";
 					p = newTransact(query, othCon);
 					p.execute();
-					Ancestra.addToShopLog("Commande "+id+" supprimée.");
+					Ancestra.addToShopLog("Commande "+id+" supprimee.");
 				}catch(SQLException e)
 				{
 					GameServer.addToLog("SQL ERROR: "+e.getMessage());

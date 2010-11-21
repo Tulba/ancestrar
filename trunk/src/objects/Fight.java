@@ -166,6 +166,7 @@ public class Fight
 		private Map<Integer,Integer> _chatiValue = new TreeMap<Integer,Integer>();
 		private int _orientation; 
 		private Fighter _invocator;
+		public int _nbInvoc = 0;
 		private int _PDVMAX;
 		private int _PDV;
 		private boolean _isDead;
@@ -504,7 +505,7 @@ public class Fight
 		
 		public int getPDV()
 		{
-			int pdv = _PDV + getBuffValue(Constants.STATS_ADD_VITA);;
+			int pdv = _PDV + getBuffValue(Constants.STATS_ADD_VITA);
 			return pdv;
 		}
 		
@@ -692,15 +693,15 @@ public class Fight
 
 				case 98://Poison insidieux
 				case 107://Mot d'épine (2à3), Contre(3)
-				case 100://Flèche Empoisonnée, Tout ou rien	
+				case 100://Flèche Empoisonnée, Tout ou rien
 				case 108://Mot de Régénération, Tout ou rien
 				case 165://Maîtrises
 					val = Integer.parseInt(args.split(";")[0]);
 					String valMax1 = args.split(";")[1];
-					if(valMax1 == "-1" || spellID == 82 || spellID == 94)
+					if(valMax1.compareTo("-1") == 0 || spellID == 82 || spellID == 94)
 					{
 					SocketManager.GAME_SEND_FIGHT_GIE_TO_FIGHT(_fight, 7, id, getGUID(), val, "", "", "", duration, spellID);		
-					}else if(valMax1 != "-1")
+					}else if(valMax1.compareTo("-1") != 0)
 					{
 					SocketManager.GAME_SEND_FIGHT_GIE_TO_FIGHT(_fight, 7, id, getGUID(), val, valMax1, "", "", duration, spellID);
 					}
@@ -872,6 +873,11 @@ public class Fight
 		public boolean isPerco()
 		{
 			return (_Perco!=null);
+		}
+
+        public boolean isDouble()
+		{
+			return (_double!=null);
 		}
 
 		public void debuff()
@@ -1435,17 +1441,17 @@ public class Fight
 	{
 		Random rand = new Random();
 		Case cell;
-		if(cells.size() == 0)return null;
+		if(cells.isEmpty())return null;
 		int limit = 0;
 		do
 		{
 			int id = rand.nextInt(cells.size()-1);
 			cell = cells.get(id);
 			limit++;
-		}while((cell == null || cell.getFighters().size() != 0) && limit < 80);
+		}while((cell == null || !cell.getFighters().isEmpty()) && limit < 80);
 		if(limit == 80)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Case non trouvé dans la liste");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Case non trouve dans la liste");
 			return null;
 		}
 		return cell;		
@@ -1602,7 +1608,7 @@ public class Fight
 					endTurn();
 				}
 			});
-		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Début du combat");
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Debut du combat");
 		for(Fighter F : getFighters(3))
 		{
 			Personnage perso = F.getPersonnage();
@@ -1698,7 +1704,7 @@ public class Fight
 			endTurn();
 			return;
 		}
-		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Début du tour de Fighter ID= "+_ordreJeu.get(_curPlayer).getGUID());
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Debut du tour de Fighter ID= "+_ordreJeu.get(_curPlayer).getGUID());
 		SocketManager.GAME_SEND_GAMETURNSTART_PACKET_TO_FIGHT(this,7,_ordreJeu.get(_curPlayer).getGUID(),Constants.TIME_BY_TURN);
 		_turnTimer.restart();
 		try {
@@ -2012,13 +2018,13 @@ public class Fight
 		if(_init0.getGUID() == guid)
 		{
 			locked0 = !locked0;
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(locked0?"L'équipe 1 devient bloquée":"L'équipe 1 n'est plus bloquée");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(locked0?"L'equipe 1 devient bloquee":"L'equipe 1 n'est plus bloquee");
 			SocketManager.GAME_SEND_FIGHT_CHANGE_OPTION_PACKET_TO_MAP(_init0.getPersonnage().get_curCarte(), locked0?'+':'-', 'A', guid);
 			SocketManager.GAME_SEND_Im_PACKET_TO_FIGHT(this,1,locked0?"095":"096");
 		}else if(_init1.getGUID() == guid)
 		{
 			locked1 = !locked1;
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(locked1?"L'équipe 2 devient bloquée":"L'équipe 2 n'est plus bloquée");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(locked1?"L'equipe 2 devient bloquee":"L'equipe 2 n'est plus bloquee");
 			SocketManager.GAME_SEND_FIGHT_CHANGE_OPTION_PACKET_TO_MAP(_init1.getPersonnage().get_curCarte(), locked1?'+':'-', 'A', guid);
 			SocketManager.GAME_SEND_Im_PACKET_TO_FIGHT(this,2,locked1?"095":"096");
 		}
@@ -2029,13 +2035,13 @@ public class Fight
 		if(_init0 != null && _init0.getGUID() == guid)
 		{
 			onlyGroup0 = !onlyGroup0;
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(locked0?"L'équipe 1 n'accepte que les membres du groupe":"L'équipe 1 n'est plus bloquée");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(locked0?"L'equipe 1 n'accepte que les membres du groupe":"L'equipe 1 n'est plus bloquee");
 			SocketManager.GAME_SEND_FIGHT_CHANGE_OPTION_PACKET_TO_MAP(_init0.getPersonnage().get_curCarte(), onlyGroup0?'+':'-', 'P', guid);
 			SocketManager.GAME_SEND_Im_PACKET_TO_FIGHT(this,1,onlyGroup0?"093":"094");
 		}else if(_init1 != null && _init1.getGUID() == guid)
 		{
 			onlyGroup1 = !onlyGroup1;
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(locked1?"L'équipe 2 n'accepte que les membres du groupe":"L'équipe 2 n'est plus bloquée");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(locked1?"L'equipe 2 n'accepte que les membres du groupe":"L'equipe 2 n'est plus bloquee");
 			SocketManager.GAME_SEND_FIGHT_CHANGE_OPTION_PACKET_TO_MAP(_init1.getPersonnage().get_curCarte(), onlyGroup1?'+':'-', 'P', guid);
 			SocketManager.GAME_SEND_Im_PACKET_TO_FIGHT(this,2,onlyGroup1?"095":"096");
 		}
@@ -2058,23 +2064,23 @@ public class Fight
 		if(_init0.getGUID() == guid)
 		{
 			help1 = !help1;
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(help2?"L'équipe 1 demande de l'aide":"L'équipe 1s ne demande plus d'aide");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(help2?"L'equipe 1 demande de l'aide":"L'equipe 1s ne demande plus d'aide");
 			SocketManager.GAME_SEND_FIGHT_CHANGE_OPTION_PACKET_TO_MAP(_init0.getPersonnage().get_curCarte(), locked0?'+':'-', 'H', guid);
 			SocketManager.GAME_SEND_Im_PACKET_TO_FIGHT(this,1,help1?"0103":"0104");
 		}else if(_init1.getGUID() == guid)
 		{
 			help2 = !help2;
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(help2?"L'équipe 2 demande de l'aide":"L'équipe 2 ne demande plus d'aide");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(help2?"L'equipe 2 demande de l'aide":"L'equipe 2 ne demande plus d'aide");
 			SocketManager.GAME_SEND_FIGHT_CHANGE_OPTION_PACKET_TO_MAP(_init1.getPersonnage().get_curCarte(), locked1?'+':'-', 'H', guid);
 			SocketManager.GAME_SEND_Im_PACKET_TO_FIGHT(this,2,help2?"0103":"0104");
 		}
 	}
 	
-	public void set_state(int _state) {
+	private void set_state(int _state) {
 		this._state = _state;
 	}
 	
-	public void set_guildID(int guildID) {
+	private void set_guildID(int guildID) {
 		this._guildID = guildID;
 	}
 
@@ -2100,7 +2106,7 @@ public class Fight
 		}
 		if(_ordreJeu.size() <= _curPlayer)return false;
 		if(_ordreJeu.get(_curPlayer) == null)return false;
-		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Tentative de déplacement de Fighter ID= "+f.getGUID()+" a partir de la case "+f.get_fightCell().getID());
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Tentative de deplacement de Fighter ID= "+f.getGUID()+" a partir de la case "+f.get_fightCell().getID());
 		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Path: "+path);
 		if(!_curAction.equals("")|| _ordreJeu.get(_curPlayer).getGUID() != f.getGUID() || _state!= Constants.FIGHT_STATE_ACTIVE)
 		{
@@ -2116,7 +2122,7 @@ public class Fight
 		Fighter tacle = Pathfinding.getEnnemyFighterArround(f.get_fightCell().getID(), _map, this);
 		if(tacle != null)//Tentative de Tacle
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le personnage est a coté d'un ennemi ("+tacle.getPacketsName()+","+tacle.get_fightCell().getID()+") => Tentative de tacle:");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le personnage est a cote d'un ennemi ("+tacle.getPacketsName()+","+tacle.get_fightCell().getID()+") => Tentative de tacle:");
 			int chance = Formulas.getTacleChance(f, tacle);
 			int rand = Formulas.getRandomValue(0, 99);
 			if(rand > chance)
@@ -2193,7 +2199,7 @@ public class Fight
       	}
         
 		_ordreJeu.get(_curPlayer).get_fightCell().getFighters().clear();
-		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Fighter ID= "+f.getGUID()+" se déplace de la case "+_ordreJeu.get(_curPlayer).get_fightCell().getID()+" vers "+CryptManager.cellCode_To_ID(newPath.substring(newPath.length() - 2)));
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Fighter ID= "+f.getGUID()+" se deplace de la case "+_ordreJeu.get(_curPlayer).get_fightCell().getID()+" vers "+CryptManager.cellCode_To_ID(newPath.substring(newPath.length() - 2)));
         _ordreJeu.get(_curPlayer).set_fightCell(_map.getCase(nextCellID));
         _ordreJeu.get(_curPlayer).get_fightCell().addFighter(_ordreJeu.get(_curPlayer));
        if(nStep < 0) 
@@ -2241,7 +2247,7 @@ public class Fight
 	public void onGK(Personnage perso)
 	{
 		if(_curAction.equals("")|| _ordreJeu.get(_curPlayer).getGUID() != perso.get_GUID() || _state!= Constants.FIGHT_STATE_ACTIVE)return;
-		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Fin du déplacement de Fighter ID= "+perso.get_GUID());
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Fin du deplacement de Fighter ID= "+perso.get_GUID());
 		SocketManager.GAME_SEND_GAMEACTION_TO_FIGHT(this,7,_curAction);
 		SocketManager.GAME_SEND_GAF_PACKET_TO_FIGHT(this,7,2,_ordreJeu.get(_curPlayer).getGUID());
 		//copie
@@ -2376,7 +2382,7 @@ public class Fight
 		//Si la cellule visée n'existe pas
 		if(cell == null)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La cellule visée n'existe pas");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La cellule visee n'existe pas");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1172");
@@ -2386,7 +2392,7 @@ public class Fight
 		//Si la cellule visée n'est pas alignée avec le joueur alors que le sort le demande
 		if(spell.isLineLaunch() && !Pathfinding.casesAreInSameLine(_map, fighter.get_fightCell().getID(), cell.getID(), 'z'))
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande un lancer en ligne, or la case n'est pas alignée avec le joueur");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande un lancer en ligne, or la case n'est pas alignee avec le joueur");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1173");
@@ -2396,7 +2402,7 @@ public class Fight
 		//Si le sort demande une ligne de vue et que la case demandée n'en fait pas partie
 		if(spell.hasLDV() && !Pathfinding.checkLoS(_map,fighter.get_fightCell().getID(),cell.getID(),fighter))
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande une ligne de vue, mais la case visée n'est pas visible pour le joueur");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande une ligne de vue, mais la case visee n'est pas visible pour le joueur");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1174");
@@ -2410,7 +2416,7 @@ public class Fight
 		//Vérification Portée mini / maxi
 		if(dist < spell.getMinPO() || dist > MaxPO)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop éloignée Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop eloignee Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1171;" + spell.getMinPO() + "~" + spell.getMaxPO() + "~" + dist);
@@ -2460,19 +2466,19 @@ public class Fight
 		//Si la cellule visée n'existe pas
 		if(cell == null)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La cellule visée n'existe pas");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La cellule visee n'existe pas");
 			return false;
 		}
 		//Si la cellule visée n'est pas alignée avec le joueur alors que le sort le demande
 		if(spell.isLineLaunch() && !Pathfinding.casesAreInSameLine(_map, launchCase, cell.getID(), 'z'))
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande un lancer en ligne, or la case n'est pas alignée avec le joueur");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande un lancer en ligne, or la case n'est pas alignee avec le joueur");
 			return false;
 		}
 		//Si le sort demande une ligne de vue et que la case demandée n'en fait pas partie
 		if(spell.hasLDV() && !Pathfinding.checkLoS(_map,launchCase,cell.getID(),fighter))
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande une ligne de vue, mais la case visée n'est pas visible pour le joueur");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande une ligne de vue, mais la case visee n'est pas visible pour le joueur");
 			return false;
 		}
 		int dist = Pathfinding.getDistanceBetween(_map, launchCase, cell.getID());
@@ -2482,7 +2488,7 @@ public class Fight
 		//Vérification Portée mini / maxi
 		if(dist < spell.getMinPO() || dist > MaxPO)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop éloignée Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop eloignee Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
 			return false;
 		}
 		
@@ -2928,18 +2934,10 @@ public class Fight
 			_curPlayer = -1;
 			for(Entry<Integer, Fighter> entry : _team0.entrySet())
 			{
-				if(entry.getValue()._double != null)
-				{
-					World.deletePerso(entry.getValue()._double);
-				}
 				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_map, entry.getValue().getGUID());
 			}
 			for(Entry<Integer, Fighter> entry : _team1.entrySet())
 			{
-				if(entry.getValue()._double != null)
-				{
-					World.deletePerso(entry.getValue()._double);
-				}
 				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_map, entry.getValue().getGUID());
 			}
 			this._init0.getPersonnage().get_curCarte().removeFight(this._id);
@@ -3110,26 +3108,8 @@ public class Fight
 					onFighterDie(entry.getValue());
 					int index = _ordreJeu.indexOf(entry.getValue());
 					if(index != -1)_ordreJeu.remove(index);
-					if(_team0.containsKey(entry.getValue().getGUID()))
-					{
-						if(entry.getValue()._double != null)
-						{
-							_team0.remove(entry.getValue().getGUID());
-						}else
-						{
-							_team0.remove(entry.getValue());
-						}
-					}
-					else if (_team1.containsKey(entry.getValue().getGUID()))
-					{
-						if(entry.getValue()._double != null)
-						{
-							_team1.remove(entry.getValue().getGUID());
-						}else
-						{
-							_team1.remove(entry.getValue());
-						}
-					}
+					if(_team0.containsKey(entry.getValue().getGUID()))_team0.remove(entry.getValue().getGUID());
+					else if (_team1.containsKey(entry.getValue().getGUID()))_team1.remove(entry.getValue().getGUID());
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 999, target.getGUID()+"", getGTL());
 				}
 			}
@@ -3144,30 +3124,14 @@ public class Fight
 				if(entry.getValue().getInvocator().getGUID() == target.getGUID())//si il a été invoqué par le joueur mort
 				{
 					onFighterDie(entry.getValue());
+
 					int index = _ordreJeu.indexOf(entry.getValue());
 					if(index != -1)_ordreJeu.remove(index);
-					if(_team0.containsKey(entry.getValue().getGUID()))
-					{
-						if(entry.getValue()._double != null)
-						{
-							_team0.remove(entry.getValue().getGUID());
-						}else
-						{
-							_team0.remove(entry.getValue());
-						}
-					}
-					else if (_team1.containsKey(entry.getValue().getGUID()))
-					{
-						if(entry.getValue()._double != null)
-						{
-							_team1.remove(entry.getValue().getGUID());
-						}else
-						{
-							_team1.remove(entry.getValue());
-						}
-					}
+
+					if(_team0.containsKey(entry.getValue().getGUID()))_team0.remove(entry.getValue().getGUID());
+					else if (_team1.containsKey(entry.getValue().getGUID()))_team1.remove(entry.getValue().getGUID());
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 999, target.getGUID()+"", getGTL());
-				}
+              	}
 			}
 		}
 		if(target.getMob() != null)
@@ -3186,6 +3150,7 @@ public class Fight
 						} catch (InterruptedException e1) {}
 						endTurn();
 					}
+
 					int index = _ordreJeu.indexOf(target);
 					//Si le joueur courant a un index plus élevé, on le diminue pour éviter le outOfBound
 					if(_curPlayer > index) _curPlayer--;

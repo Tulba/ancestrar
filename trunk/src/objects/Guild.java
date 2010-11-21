@@ -201,7 +201,7 @@ public class Guild {
 		
 		public void parseIntToRight(int total)
 		{
-			if(haveRight.size() == 0)
+			if(haveRight.isEmpty())
 			{
 				initRight();
 			}

@@ -2862,7 +2862,7 @@ public class Constants
 			SocketManager.GAME_SEND_gn_PACKET(perso);
 		break;
 		default:
-			GameServer.addToLog("PlotIOAction non geré pour la map "+mID+" cell="+cID);
+			GameServer.addToLog("PlotIOAction non gere pour la map "+mID+" cell="+cID);
 		}
 	}
 }

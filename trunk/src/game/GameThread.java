@@ -83,7 +83,7 @@ public class GameThread implements Runnable
 	    		if (charCur[0] != '\u0000' && charCur[0] != '\n' && charCur[0] != '\r')
 		    	{
 	    			packet += charCur[0];
-		    	}else if(packet != "")
+		    	}else if(!packet.isEmpty())
 		    	{
 		    		packet = CryptManager.toUnicode(packet);
 		    		GameServer.addToSockLog("Game: Recv << "+packet);
@@ -742,7 +742,7 @@ public class GameThread implements Runnable
 			SocketManager.GAME_SEND_gK_PACKET(_perso, "Ed");
 			return;
 		}
-		//Si différent : Kick 
+		//Si différent : Kick
 		if(_perso.getGuildMember().getGuid() != toRemMember.getGuid())
 		{
 			if(toRemMember.getRank() == 1) //S'il veut kicker le meneur
@@ -766,7 +766,7 @@ public class GameThread implements Runnable
 			G.removeMember(_perso);
 			_perso.setGuildMember(null);
 			//S'il n'y a plus personne
-			if(G.getMembers().size() == 0)World.removeGuild(G.get_id());
+			if(G.getMembers().isEmpty())World.removeGuild(G.get_id());
 			SocketManager.GAME_SEND_gK_PACKET(_perso, "K"+name+"|"+name);
 		}
 	}
@@ -1018,7 +1018,7 @@ public class GameThread implements Runnable
 					Seller.setBankKamas(NewSellerBankKamas);
 					if(Seller.isOnline())
 					{
-						SocketManager.GAME_SEND_MESSAGE(_perso, "Un enclo a été vendu a "+MP.get_price()+".", Ancestra.CONFIG_MOTD_COLOR);
+						SocketManager.GAME_SEND_MESSAGE(_perso, "Un enclo a ete vendu a "+MP.get_price()+".", Ancestra.CONFIG_MOTD_COLOR);
 					}
 				}
 				MP.set_price(0);//On vide le prix
@@ -2209,14 +2209,14 @@ public class GameThread implements Runnable
 			}
 			if(!_perso.get_curCarte().getNPC(_perso.get_isTradingWith()).get_template().haveItem(tempID))//Si le PNJ ne vend pas l'objet voulue
 			{
-				GameServer.addToLog(_perso.get_name()+" tente d'acheter l'itemTemplate "+tempID+" que le présent PNJ ne vend pas");
+				GameServer.addToLog(_perso.get_name()+" tente d'acheter l'itemTemplate "+tempID+" que le present PNJ ne vend pas");
 				SocketManager.GAME_SEND_BUY_ERROR_PACKET(_out);
 				return;
 			}
 			int prix = template.getPrix() * qua;
 			if(_perso.get_kamas()<prix)//Si le joueur n'a pas assez de kamas
 			{
-				GameServer.addToLog(_perso.get_name()+" tente d'acheter l'itemTemplate "+tempID+" mais n'a pas l'argent nécessaire");
+				GameServer.addToLog(_perso.get_name()+" tente d'acheter l'itemTemplate "+tempID+" mais n'a pas l'argent necessaire");
 				SocketManager.GAME_SEND_BUY_ERROR_PACKET(_out);
 				return;
 			}
@@ -2800,7 +2800,7 @@ public class GameThread implements Runnable
 				String nom = packet.substring(2).split("\\|")[0];
 				msg = packet.split("\\|",2)[1];
 				if(nom.length() <= 1)
-					GameServer.addToLog("ChatHandler: Chanel non géré : "+nom);
+					GameServer.addToLog("ChatHandler: Chanel non gere : "+nom);
 				else
 				{
 					Personnage target = World.getPersoByName(nom);
@@ -3335,7 +3335,7 @@ public class GameThread implements Runnable
 			//Si le path est invalide
 			if(result == -1000)
 			{
-				GameServer.addToLog(_perso.get_name()+"("+_perso.get_GUID()+") Tentative de  déplacement avec un path invalide");
+				GameServer.addToLog(_perso.get_name()+"("+_perso.get_GUID()+") Tentative de  deplacement avec un path invalide");
 				path = CryptManager.getHashedValueByInt(_perso.get_orientation())+CryptManager.cellID_To_Code(_perso.get_curCell().getID());	
 			}
 			//On sauvegarde le path dans la variable

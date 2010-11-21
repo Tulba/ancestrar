@@ -336,7 +336,7 @@ public class Action {
 					short newMapID = Short.parseShort(args.split(",")[0]);
 					int newCellID = Integer.parseInt(args.split(",")[1]);
 					int ObjetNeed = Integer.parseInt(args.split(",")[2]);
-					int MapNeed = Integer.parseInt(args.split(",")[3]);;
+					int MapNeed = Integer.parseInt(args.split(",")[3]);
 					if(ObjetNeed == 0)
 					{
 						//Téléportation sans objets
@@ -353,7 +353,7 @@ public class Action {
 					{
 						//Le perso a l'item
 						//Le perso est sur la bonne map
-						//On téléporte, on supprime aprés
+						//On téléporte, on supprime après
 						perso.teleport(newMapID,newCellID);
 						perso.removeByTemplateID(ObjetNeed, 1);
 						SocketManager.GAME_SEND_Ow_PACKET(perso);
@@ -472,7 +472,7 @@ public class Action {
 					GameThread GT = Ancestra.gameServer.getClients().get(b);
 					Personnage P = GT.getPerso();
 					if(P == null || P == perso)continue;
-					if(P.get_compte().get_curIP() == perso.get_compte().get_curIP())continue;
+					if(P.get_compte().get_curIP().compareTo(perso.get_compte().get_curIP()) == 0)continue;
 					//SI pas sériane ni neutre et si alignement opposé
 					if(P.get_align() == perso.get_align() || P.get_align() == 0 || P.get_align() == 3)continue;
 					
@@ -568,7 +568,7 @@ public class Action {
 
 			break;
 			default:
-				GameServer.addToLog("Action ID="+ID+" non implantée");
+				GameServer.addToLog("Action ID="+ID+" non implantee");
 			break;
 		}
 	}

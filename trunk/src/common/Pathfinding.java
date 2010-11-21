@@ -193,7 +193,7 @@ public class Pathfinding {
 		for(int a = 0; a<value;a++)
 		{
 			int nextCase = GetCaseIDFromDirrection(id, c, map, true);
-			if(map.getCase(nextCase).isWalkable(true) && map.getCase(nextCase).getFighters().size()==0)
+			if(map.getCase(nextCase).isWalkable(true) && map.getCase(nextCase).getFighters().isEmpty())
 				id = nextCase;
 			else
 				return -(value-a);
@@ -561,7 +561,7 @@ public class Pathfinding {
 				curPath2.add(curCase);
 			}
 		}
-		if((curPath2.size() < curPath.size() && curPath2.size() > 0) || curPath.size() == 0)
+		if((curPath2.size() < curPath.size() && curPath2.size() > 0) || curPath.isEmpty())
 			curPath = curPath2;
 		
 		return curPath;
@@ -812,11 +812,11 @@ public class Pathfinding {
 		System.out.println("test min = " + min + " ,max = "+ max);
 		double x1 = getCellXCoord(map, cell1), x2 = getCellXCoord(map, cell2);
 		double y1 = getCellYCoord(map, cell1), y2 = getCellYCoord(map, cell2);
-		System.out.println("test coordonnés , x1 = " + x1 + " ,y1 = " + y1 + " ,x2 = "+x2+" ,y2 ="+y2);
+		System.out.println("test coordonnes , x1 = " + x1 + " ,y1 = " + y1 + " ,x2 = "+x2+" ,y2 ="+y2);
 		double a = (y2 - y1)/(x2-x1);
 		System.out.println("test division : (y2-y1) = " + (y2-y1) + ", (x2-x1) = " + (x2-x1));
 		double b = y2 - (x2 * a);
-		System.out.println("test équation : y = "+ a + " x + "+b + "      (x1 * a) = " + (x2 *a));
+		System.out.println("test equation : y = "+ a + " x + "+b + "      (x1 * a) = " + (x2 *a));
 		
 		int i = 0;
 		while (i <= 479)

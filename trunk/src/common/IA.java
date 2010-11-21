@@ -294,36 +294,25 @@ public class IA {
 			stop = false;
 			if(_fighter.getMob() == null)
 			{
-				if(_fighter.isInvocation())
+				if(_fighter.isInvocation() && !_fighter.isDouble())
 				{
 					apply_type6(_fighter,_fight);
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {};
-					_fight.endTurn();
 				}
+                if(_fighter.isDouble())
+                {
+                	apply_type5(_fighter,_fight);
+                }
 				if(_fighter.isPerco())
 				{
-					System.out.println("Lancement PERCEPTEUR");
 					apply_type4(_fighter,_fight);
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {};
-					_fight.endTurn();
 				}
 				else
 				{
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {};
 					_fight.endTurn();
 				}
 			}
 			if(_fighter.getMob().getTemplate() == null)
 			{
-				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e) {};
 				_fight.endTurn();
 			}
 			switch(_fighter.getMob().getTemplate().getIAType())
@@ -663,7 +652,8 @@ public class IA {
 				}
 			}
 			System.out.println("Test MOVEFAR : cell = " + destCase);
-			if(destCase < 0 || destCase > 478 || destCase == F.get_fightCell().getID())return false;
+			if(destCase < 0 || destCase > 478 || destCase == F.get_fightCell().getID() || !fight.get_map().getCase(destCase).isWalkable(false))return false;
+			if(F.getPM() <= 0)return false;
 			ArrayList<Case> path = Pathfinding.getShortestPathBetween(fight.get_map(),F.get_fightCell().getID(),destCase, 0);
 			if(path == null)return false;
 			
@@ -881,7 +871,7 @@ public class IA {
 				}
 			}
 			ArrayList<Case> path = Pathfinding.getShortestPathBetween(fight.get_map(),F.get_fightCell().getID(),cellID,0);
-			if(path == null || path.size() == 0)return false;
+			if(path == null || path.isEmpty())return false;
 			// DEBUG PATHFINDING
 			/*System.out.println("DEBUG PATHFINDING:");
 			System.out.println("startCell: "+F.get_fightCell().getID());

@@ -897,7 +897,7 @@ public class Carte {
 		{
 			if(_persos == null) return;
 			_persos.remove(_guid);
-			if(_persos.size() == 0) _persos = null;
+			if(_persos.isEmpty()) _persos = null;
 		}
 		public Map<Integer, Personnage> getPersos()
 		{
@@ -1045,7 +1045,7 @@ public class Carte {
 				break;
 				
 				default:
-					GameServer.addToLog("Case.startAction non définie pour l'actionID = "+actionID);
+					GameServer.addToLog("Case.startAction non definie pour l'actionID = "+actionID);
 				break;
 			}
 		}
@@ -1090,7 +1090,7 @@ public class Carte {
 				break;
 				
 				default:
-					GameServer.addToLog("[FIXME]Case.finishAction non définie pour l'actionID = "+actionID);
+					GameServer.addToLog("[FIXME]Case.finishAction non definie pour l'actionID = "+actionID);
 				break;
 			}
 		}
@@ -1136,7 +1136,7 @@ public class Carte {
 			System.exit(0);
 		}
 		
-		if(dData != "")
+		if(!dData.isEmpty())
 		{
 		_cases = CryptManager.DecompileMapData(this,dData);
 		}else
@@ -1182,7 +1182,7 @@ public class Carte {
 			if(World.getMonstre(id).getGradeByLevel(lvl) == null)continue;
 			_mobPossibles.add(World.getMonstre(id).getGradeByLevel(lvl));
 		}
-		if(_cases.size() == 0)return;
+		if(_cases.isEmpty())return;
 		
 		if (Ancestra.CONFIG_USE_MOBS)
 		{
@@ -1266,11 +1266,11 @@ public class Carte {
 		for(int a = 1; a<=nbr;a++)
 		{
 			MobGroup group  = new MobGroup(_nextObjectID,align,_mobPossibles,this,cellID,this._maxSize);
-			if(group.getMobs().size() == 0)continue;
+			if(group.getMobs().isEmpty())continue;
 			_mobGroups.put(_nextObjectID, group);
 			if(log)
 			{
-				GameServer.addToLog("Groupe de monstres ajoutés sur la map: "+_id+" alignement: "+align+" ID: "+_nextObjectID);
+				GameServer.addToLog("Groupe de monstres ajoutes sur la map: "+_id+" alignement: "+align+" ID: "+_nextObjectID);
 				SocketManager.GAME_SEND_MAP_MOBS_GM_PACKET(this, group);
 			}
 			_nextObjectID--;
@@ -1280,12 +1280,12 @@ public class Carte {
 	public void spawnNewGroup(boolean timer,int cellID,String groupData,String condition)
 	{
 		MobGroup group = new MobGroup(_nextObjectID, cellID, groupData);
-		if(group.getMobs().size() == 0)return;
+		if(group.getMobs().isEmpty())return;
 		_mobGroups.put(_nextObjectID, group);
 		group.setCondition(condition);
 		group.setIsFix(false);
 		
-		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Groupe de monstres ajoutés sur la map: "+_id+" ID: "+_nextObjectID);
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Groupe de monstres ajoutes sur la map: "+_id+" ID: "+_nextObjectID);
 		
 		SocketManager.GAME_SEND_MAP_MOBS_GM_PACKET(this, group);
 		_nextObjectID--;
@@ -1297,11 +1297,11 @@ public class Carte {
 	public void spawnGroupOnCommand(int cellID,String groupData)
 	{
 		MobGroup group = new MobGroup(_nextObjectID, cellID, groupData);
-		if(group.getMobs().size() == 0)return;
+		if(group.getMobs().isEmpty())return;
 		_mobGroups.put(_nextObjectID, group);
 		group.setIsFix(false);
 
-		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Groupe de monstres ajoutés sur la map: "+_id+" ID: "+_nextObjectID);
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Groupe de monstres ajoutes sur la map: "+_id+" ID: "+_nextObjectID);
 
 		SocketManager.GAME_SEND_MAP_MOBS_GM_PACKET(this, group);
 		_nextObjectID--;
@@ -1310,7 +1310,7 @@ public class Carte {
 	public void addStaticGroup(int cellID,String groupData)
 	{
 		MobGroup group = new MobGroup(_nextObjectID,cellID,groupData);
-		if(group.getMobs().size() == 0)return;
+		if(group.getMobs().isEmpty())return;
 		_mobGroups.put(_nextObjectID, group);
 		_nextObjectID--;
 		_fixMobGroups.put(-1000+_nextObjectID, group);
@@ -1397,7 +1397,7 @@ public class Carte {
 	}
 	public String getMobGroupGMsPackets()
 	{
-		if(_mobGroups.size() == 0)return "";
+		if(_mobGroups.isEmpty())return "";
 		String packets = "GM|";
 		boolean isFirst = true;
 		for(MobGroup entry : _mobGroups.values())
@@ -1416,7 +1416,7 @@ public class Carte {
 	
 	public String getNpcsGMsPackets()
 	{
-		if(_npcs.size() == 0)return "";
+		if(_npcs.isEmpty())return "";
 		String packets = "GM|";
 		boolean isFirst = true;
 		for(Entry<Integer,NPC> entry : _npcs.entrySet())
@@ -1463,7 +1463,7 @@ public class Carte {
 	public Fight newFight(Personnage init1,Personnage init2,int type)
 	{
 		int id = 1;
-		if(_fights.size() != 0)
+		if(!_fights.isEmpty())
 			id = ((Integer)(_fights.keySet().toArray()[_fights.size()-1]))+1;
 		
 		Fight f = new Fight(type,id,this,init1,init2);
@@ -1496,11 +1496,11 @@ public class Carte {
 			}
 			if(!ok)continue;
 			//Si la case est prise par un joueur
-			if(entry.getValue().getPersos().size() != 0)continue;
+			if(!entry.getValue().getPersos().isEmpty())continue;
 			//Sinon
 			freecell.add(entry.getValue().getID());
 		}
-		if(freecell.size() == 0)
+		if(freecell.isEmpty())
 		{
 			GameServer.addToLog("Aucune cellulle libre n'a ete trouve sur la map "+_id+" : groupe non spawn");
 			return -1;
@@ -1595,7 +1595,7 @@ public class Carte {
 	private void startFigthVersusMonstres(Personnage perso, MobGroup group)
 	{
 		int id = 1;
-		if(_fights.size() != 0)
+		if(!_fights.isEmpty())
 			id = ((Integer)(_fights.keySet().toArray()[_fights.size()-1]))+1;
 		
 		if(!group.isFix())_mobGroups.remove(group.getID());
@@ -1607,7 +1607,7 @@ public class Carte {
 	public void startFigthVersusPercepteur(Personnage perso, Percepteur perco)
 	{
 		int id = 1;
-		if(_fights.size() != 0)
+		if(!_fights.isEmpty())
 			id = ((Integer)(_fights.keySet().toArray()[_fights.size()-1]))+1;
 
 		_fights.put(id, new Fight(id,this,perso,perco));

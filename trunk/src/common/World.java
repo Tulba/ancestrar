@@ -618,34 +618,34 @@ public class World {
 	
 	public static void createWorld()
 	{
-		System.out.println("====>Données statique<====");
-		System.out.println("Chargement des niveaux d'expériences:");
+		System.out.println("====>Donnees statique<====");
+		System.out.println("Chargement des niveaux d'experiences:");
 		SQLManager.LOAD_EXP();
-		System.out.println(ExpLevels.size()+" niveaux ont ete chargés");
+		System.out.println(ExpLevels.size()+" niveaux ont ete charges");
 		System.out.println("Chargement des sorts:");
 		SQLManager.LOAD_SORTS();
-		System.out.println(Sorts.size()+" sorts ont ete chargés");
+		System.out.println(Sorts.size()+" sorts ont ete charges");
 		System.out.println("Chargement des templates de monstre:");
 		SQLManager.LOAD_MOB_TEMPLATE();
-		System.out.println(MobTemplates.size()+" templates de monstre ont ete chargées");
+		System.out.println(MobTemplates.size()+" templates de monstre ont ete chargees");
 		System.out.println("Chargement des templates d'objet:");
 		SQLManager.LOAD_OBJ_TEMPLATE();
-		System.out.println(ObjTemplates.size()+" templates d'objet ont ete chargées");
+		System.out.println(ObjTemplates.size()+" templates d'objet ont ete chargees");
 		System.out.println("Chargement des templates de NPC:");
 		SQLManager.LOAD_NPC_TEMPLATE();
-		System.out.println(NPCTemplates.size()+" templates de NPC ont ete chargées");
+		System.out.println(NPCTemplates.size()+" templates de NPC ont ete chargees");
 		System.out.println("Chargement des questions de NPC:");
 		SQLManager.LOAD_NPC_QUESTIONS();
 		System.out.println(NPCQuestions.size()+" questions de NPC ont ete charges");
-		System.out.println("Chargement des réponses de NPC:");
+		System.out.println("Chargement des reponses de NPC:");
 		SQLManager.LOAD_NPC_ANSWERS();
-		System.out.println(NPCReponses.size()+" réponses de NPC ont ete chargees");
+		System.out.println(NPCReponses.size()+" reponses de NPC ont ete chargees");
 		System.out.println("Chargement des zones:");
 		SQLManager.LOAD_AREA();
-		System.out.println(Areas.size()+" zones ont ete chargées");
+		System.out.println(Areas.size()+" zones ont ete chargees");
 		System.out.println("Chargement des sous-zone:");
 		SQLManager.LOAD_SUBAREA();
-		System.out.println(SubAreas.size()+" sous-zones ont ete chargées");
+		System.out.println(SubAreas.size()+" sous-zones ont ete chargees");
 		System.out.println("Chargement des template d'objet interactifs:");
 		SQLManager.LOAD_IOTEMPLATE();
 		System.out.println(IOTemplate.size()+" template d'IO ont ete charges");
@@ -657,10 +657,10 @@ public class World {
 		System.out.println(Jobs.size()+" metiers ont ete charges");
 		System.out.println("Chargement des panolies:");
 		SQLManager.LOAD_ITEMSETS();
-		System.out.println(ItemSets.size()+" panoplies ont ete chargées");
+		System.out.println(ItemSets.size()+" panoplies ont ete chargees");
 		System.out.println("Chargement des maps:");
 		SQLManager.LOAD_MAPS();
-		System.out.println(Cartes.size()+" maps ont ete chargées");
+		System.out.println(Cartes.size()+" maps ont ete chargees");
 		System.out.println("Chargement des Triggers:");
 		int nbr = SQLManager.LOAD_TRIGGERS();
 		System.out.println(nbr+" triggers ont ete charges");
@@ -669,7 +669,7 @@ public class World {
 		System.out.println(nbr+" actions ont ete charges");
 		System.out.println("Chargement des npcs:");
 		nbr = SQLManager.LOAD_NPCS();
-		System.out.println(nbr+" npcs ont ete chargées");
+		System.out.println(nbr+" npcs ont ete chargees");
 		System.out.println("Chargement des actions des objets:");
 		nbr = SQLManager.LOAD_ITEM_ACTIONS();
 		System.out.println(nbr+" actions ont ete chargees");
@@ -677,7 +677,7 @@ public class World {
 		SQLManager.LOAD_DROPS();
 		System.out.println("Ok !");
 		
-		System.out.println("====>Données dynamique<====");
+		System.out.println("====>Donnees dynamique<====");
 		
 		System.out.print("Mise a 0 des logged: ");
 		SQLManager.LOGGED_ZERO();
@@ -1017,7 +1017,7 @@ public class World {
 			{
 				set_state((short)1);
 				//TODO : Rafraichir 
-				String mess = "Échec de la sauvegarde après " + saveTry + " tentatives";
+				String mess = "Echec de la sauvegarde apres " + saveTry + " tentatives";
 				if(saver != null && _out != null)
 					SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
 				GameServer.addToLog(mess);
@@ -1142,7 +1142,7 @@ public class World {
 	}
 	public static int getNextHighestGuildID()
 	{
-		if(Guildes.size() == 0)return 1;
+		if(Guildes.isEmpty())return 1;
 		int n = 0;
 		for(int x : Guildes.keySet())if(n<x)n = x;
 		return n+1;
@@ -1219,7 +1219,7 @@ public class World {
 
 	public static boolean ipIsUsed(String ip)
 	{
-		for(Compte c : Comptes.values())if(c.get_curIP() == ip)return true;
+		for(Compte c : Comptes.values())if(c.get_curIP().compareTo(ip) == 0)return true;
 		return false;
 	}
 

@@ -675,7 +675,7 @@ public class SocketManager {
 	
 	public static void GAME_SEND_ON_EQUIP_ITEM(Carte map, Personnage _perso)
 	{
-		String packet = _perso.parseToOa();;
+		String packet = _perso.parseToOa();
 		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
@@ -1472,7 +1472,7 @@ public class SocketManager {
 
 	public static void GAME_SEND_EMOTICONE_TO_FIGHT(Fight fight, int teams, int guid, int id)
 	{
-		String packet = "cS"+guid+"|"+id;;
+		String packet = "cS"+guid+"|"+id;
 		for(Fighter f : fight.getFighters(teams))
 		{
 			if(f.hasLeft())continue;
@@ -1762,7 +1762,7 @@ public class SocketManager {
 
 	public static void GAME_SEND_FIGHT_SHOW_CASE(ArrayList<PrintWriter> PWs, int guid, int cellID)
 	{
-		String packet = "Gf"+guid+"|"+cellID;;
+		String packet = "Gf"+guid+"|"+cellID;
 		for(PrintWriter PW : PWs)
 		{
 			send(PW,packet);
@@ -2159,7 +2159,7 @@ public class SocketManager {
 	
 	public static void GAME_SEND_LISTING_SELL(Personnage perso, String str)
 	{
-		if(str != "")
+		if(!str.isEmpty())
 		{
 		String packet = "EL"+str;
 		send(perso, packet);
