@@ -200,7 +200,7 @@ public class Monstre
 					List<MobGrade> mgs = new ArrayList<MobGrade>();
 					//on ajoute a la liste les grades possibles
 					for(MobGrade MG : m.getGrades().values())if(MG.level >=min && MG.level<=max)mgs.add(MG);
-					if(mgs.size() == 0)continue;
+					if(mgs.isEmpty())continue;
 					//On prend un grade au hasard entre 0 et size -1 parmis les mobs possibles
 					_Mobs.put(guid, mgs.get(Formulas.getRandomValue(0, mgs.size()-1)));
 					guid--;
@@ -265,7 +265,7 @@ public class Monstre
 			String colors = "";
 			
 			boolean isFirst = true;
-			if(_Mobs.size() == 0)return "";
+			if(_Mobs.isEmpty())return "";
 			
 			for(Entry<Integer,MobGrade> entry : _Mobs.entrySet())
 			{

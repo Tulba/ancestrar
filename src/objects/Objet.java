@@ -672,7 +672,7 @@ public class Objet {
 			e.printStackTrace();
 		}
 
-		if(NaturalStatsItem == "" || NaturalStatsItem == null) return 0;
+		if(NaturalStatsItem == null || NaturalStatsItem.isEmpty()) return 0;
 		String[] splitted = NaturalStatsItem.split(",");
 		for(String s : splitted)
 		{

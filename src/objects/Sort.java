@@ -12,7 +12,6 @@ import common.Pathfinding;
 import common.World;
 import objects.Carte.Case;
 import objects.Fight.Fighter;
-import objects.Fight;
 
 public class Sort {
 	private int spellID;
@@ -180,7 +179,7 @@ public class Sort {
 		
 		public void applySpellEffectToFight(Fight fight, Fighter perso,Case cell,ArrayList<Case> cells,boolean isCC)
 		{
-			//Seulement appellé par les pieges, or les sorts de piege 
+			//Seulement appellé par les pieges, or les sorts de piege
 			ArrayList<SpellEffect> effets;
 			
 			if(isCC)

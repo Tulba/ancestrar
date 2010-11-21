@@ -729,7 +729,7 @@ public class Personnage {
 	public String parseSpellToDB()
 	{
 		String sorts = "";
-		if(_sorts.size() == 0)return "";
+		if(_sorts.isEmpty())return "";
 		for(int key : _sorts.keySet())
 		{
 			//3;1;a,4;3;b
@@ -959,7 +959,7 @@ public class Personnage {
 	{
 		if(World.getSort(spellID).getStatsByLevel(level)==null)
 		{
-			GameServer.addToLog("[ERROR]Sort "+spellID+" lvl "+level+" non trouvé.");
+			GameServer.addToLog("[ERROR]Sort "+spellID+" lvl "+level+" non trouve.");
 			return false;
 		}
 		_sorts.put(spellID, World.getSort(spellID).getStatsByLevel(level));
@@ -2225,7 +2225,7 @@ public class Personnage {
 	
 	private String parseDragoList()
 	{
-		if(_compte.getStable().size() == 0)return "~";
+		if(_compte.getStable().isEmpty())return "~";
 		String packet = "";
 		for(Dragodinde DD : _compte.getStable())
 		{

@@ -1,3 +1,12 @@
+[19/11/2010]
+- SpellEffect/Fight : Correction des invocations "Mal ciblables".
+
+[18/11/2010]
+- IA : Correction de quelques bug de passage de tour.
+- Fight : Correction d'un bug de fin de combat avec les doubles.
+- Commands : Correction de la commande BANIP et SPAWN.
+- World : Correction de ipIsUsed et de la variable ALLOW_MULTI_ACCOUNT.
+
 [17/11/2010]
 - RealmThread : Correction d'un bug qui permettait de se connecter a deux sur un compte en même temps.
 - RealmThread/RealmServer/Pending : Ajout d'un systeme de file d'attente.

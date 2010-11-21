@@ -275,7 +275,7 @@ public class NPC_tmpl {
 	public String getItemVendorList()
 	{
 		String items = "";
-		if(_ventes.size() == 0)return items;
+		if(_ventes.isEmpty())return items;
 		for(ObjTemplate obj : _ventes)
 		{
 			items+= obj.parseItemTemplateStats()+"|";

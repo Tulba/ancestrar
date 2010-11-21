@@ -199,8 +199,7 @@ public class CryptManager {
 			
 		}catch(Exception e)
 		{
-			System.out.println ("Conversion en UTF-8 échoué! : "+e.getMessage());
-			e.printStackTrace();
+			System.out.println ("Conversion en UTF-8 echoue! : "+e.getMessage());
 		}
 		
 		return _out;
@@ -216,8 +215,7 @@ public class CryptManager {
 			
 		}catch(Exception e)
 		{
-			System.out.println ("Conversion en UTF-8 échoué! : "+e.getMessage());
-			e.printStackTrace();
+			System.out.println ("Conversion en UTF-8 echoue! : "+e.getMessage());
 		}
 		
 		return _out;
