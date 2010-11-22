@@ -48,6 +48,7 @@ public class RealmThread implements Runnable{
 			{
 				_compte.setRealmThread(null);
 				_compte.setGameThread(null);
+				_compte.setCurIP("");
 			}
 		}
 	}
@@ -87,6 +88,7 @@ public class RealmThread implements Runnable{
 	    			_compte.setCurPerso(null);
 	    			_compte.setGameThread(null);
 	    			_compte.setRealmThread(null);
+	    			_compte.setCurIP("");
 	    		}
 	    		if(!_s.isClosed())_s.close();
 	    		_t.interrupt();
@@ -103,6 +105,7 @@ public class RealmThread implements Runnable{
 	    			_compte.setCurPerso(null);
 	    			_compte.setGameThread(null);
 	    			_compte.setRealmThread(null);
+	    			_compte.setCurIP("");
 	    		}
 	    		if(!_s.isClosed())_s.close();
 	    		_t.interrupt();

@@ -388,6 +388,7 @@ public class Constants
 	public static final int STATS_ADD_PM2			= 	78;
 	
 	public static final int STATS_REM_PA			= 	101;
+	public static final int STATS_ADD_VIE			= 	110;
 	public static final int STATS_ADD_PA			= 	111;
 	public static final int STATS_ADD_DOMA			=	112;
 	

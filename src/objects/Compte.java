@@ -330,6 +330,7 @@ public class Compte {
 		_curPerso = null;
 		_gameThread = null;
 		_realmThread = null;
+		_curIP = "";
 		SQLManager.SETOFFLINE(get_GUID());
 		resetAllChars(true);
 		SQLManager.UPDATE_ACCOUNT_DATA(this);
