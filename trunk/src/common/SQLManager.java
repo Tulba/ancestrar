@@ -596,24 +596,26 @@ public class SQLManager {
 			PreparedStatement p = newTransact(baseQuery, othCon);
 			while(RS.next())
 			{
-				World.addAccount(new Compte(
-				RS.getInt("guid"),
-				RS.getString("account"),
-				RS.getString("pass"),
-				RS.getString("pseudo"),
-				RS.getString("question"),
-				RS.getString("reponse"),
-				RS.getInt("level"),
-				RS.getInt("vip"),
-				(RS.getInt("banned") == 1),
-				RS.getString("lastIP"),
-				RS.getString("lastConnectionDate"),
-				RS.getString("bank"),
-				RS.getInt("bankKamas"),
-				RS.getString("friends"),
-				RS.getString("enemy"),
-				RS.getString("stable")
-				));
+				Compte C = new Compte(
+						RS.getInt("guid"),
+						RS.getString("account").toLowerCase(),
+						RS.getString("pass"),
+						RS.getString("pseudo"),
+						RS.getString("question"),
+						RS.getString("reponse"),
+						RS.getInt("level"),
+						RS.getInt("vip"),
+						(RS.getInt("banned") == 1),
+						RS.getString("lastIP"),
+						RS.getString("lastConnectionDate"),
+						RS.getString("bank"),
+						RS.getInt("bankKamas"),
+						RS.getString("friends"),
+						RS.getString("enemy"),
+						RS.getString("stable")
+						);
+				World.addAccount(C);
+				World.addAccountbyName(C);
 				
 				p.setInt(1, RS.getInt("guid"));
 				p.executeUpdate();
@@ -1630,7 +1632,7 @@ public class SQLManager {
 				
 				Compte C = new Compte(
 						RS.getInt("guid"),
-						RS.getString("account"),
+						RS.getString("account").toLowerCase(),
 						RS.getString("pass"),
 						RS.getString("pseudo"),
 						RS.getString("question"),
@@ -1697,7 +1699,7 @@ public class SQLManager {
 				
 				Compte C = new Compte(
 						RS.getInt("guid"),
-						RS.getString("account"),
+						RS.getString("account").toLowerCase(),
 						RS.getString("pass"),
 						RS.getString("pseudo"),
 						RS.getString("question"),

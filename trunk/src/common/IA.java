@@ -268,7 +268,7 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import objects.*;
-import objects.Sort.*;
+import objects.Sort.SortStats;
 import objects.Carte.Case;
 import objects.Fight.*;
 
@@ -294,55 +294,64 @@ public class IA {
 			stop = false;
 			if(_fighter.getMob() == null)
 			{
-				if(_fighter.isInvocation() && !_fighter.isDouble())
-				{
-					apply_type6(_fighter,_fight);
-				}
                 if(_fighter.isDouble())
                 {
                 	apply_type5(_fighter,_fight);
+    				try {
+    					Thread.sleep(2000);
+    				} catch (InterruptedException e) {};
+    				_fight.endTurn();
                 }
-				if(_fighter.isPerco())
+                else if(_fighter.isPerco())
 				{
-					apply_type4(_fighter,_fight);
+					apply_typePerco(_fighter,_fight);
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {};
+					_fight.endTurn();
 				}
 				else
 				{
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {};
 					_fight.endTurn();
 				}
-			}
+			}else 
 			if(_fighter.getMob().getTemplate() == null)
 			{
 				_fight.endTurn();
-			}
-			switch(_fighter.getMob().getTemplate().getIAType())
+			}else
 			{
-				case 0://Ne rien faire
-					apply_type0(_fighter,_fight);
-				break;
-				case 1://Attaque, Buff sois même, Buff Alliés, Avancer vers ennemis. Si PDV < 15% Auto-Soins, Attaque, soin allié, buff allié, fuite
-					apply_type1(_fighter,_fight);
-				break;
-				case 2://Soutien
-					apply_type2(_fighter,_fight);
-				break;
-				case 3://Avancer vers Alliés, Buff Alliés, Buff sois même
-					apply_type3(_fighter,_fight);
-				break;
-				case 4://Attaque, Fuite, Buff Alliés, Buff sois même
-					apply_type4(_fighter,_fight);
-				break;
-				case 5://Avancer vers ennemis
-					apply_type5(_fighter,_fight);
-				break;
-				case 6://IA type invocations
-					apply_type6(_fighter,_fight);
-				break;
+				switch(_fighter.getMob().getTemplate().getIAType())
+				{
+					case 0://Ne rien faire
+						apply_type0(_fighter,_fight);
+					break;
+					case 1://Attaque, Buff sois même, Buff Alliés, Avancer vers ennemis. Si PDV < 15% Auto-Soins, Attaque, soin allié, buff allié, fuite
+						apply_type1(_fighter,_fight);
+					break;
+					case 2://Soutien
+						apply_type2(_fighter,_fight);
+					break;
+					case 3://Avancer vers Alliés, Buff Alliés, Buff sois même
+						apply_type3(_fighter,_fight);
+					break;
+					case 4://Attaque, Fuite, Buff Alliés, Buff sois même
+						apply_type4(_fighter,_fight);
+					break;
+					case 5://Avancer vers ennemis
+						apply_type5(_fighter,_fight);
+					break;
+					case 6://IA type invocations
+						apply_type6(_fighter,_fight);
+					break;
+				}
+				try {
+					Thread.sleep(2000); // C'est si lent dofus =O
+				} catch (InterruptedException e) {};
+				_fight.endTurn();
 			}
-			try {
-				Thread.sleep(2000); // C'est si lent dofus =O
-			} catch (InterruptedException e) {};
-			_fight.endTurn();
 		}
 		
 		private static void apply_type0(Fighter F, Fight fight)
@@ -551,6 +560,36 @@ public class IA {
 							}
 						}
 					}	
+				}
+			}
+		}
+		
+		private static void apply_typePerco(Fighter F, Fight fight) //IA propre La Folle
+		{
+			while(!stop && F.canPlay())
+			{
+				Fighter T = getNearestEnnemy(fight, F);
+				if(T == null) return;
+				int attack = attackIfPossiblePerco(fight,F);
+				if(attack != 0)//Attaque
+				{
+					if(attack == 5) stop = true;//EC
+					if(!moveFarIfPossible(fight, F))//fuite
+					{
+							if(!HealIfPossiblePerco(fight,F,false))//soin allié
+							{
+								if(!buffIfPossiblePerco(fight,F,T))//buff allié
+								{
+									if(!HealIfPossiblePerco(fight,F,true))//auto-soin
+									{
+										if(!buffIfPossiblePerco(fight,F,F))//auto-buff
+										{
+												stop = true;
+										}
+									}
+								}
+							}
+					}
 				}
 			}
 		}
@@ -804,10 +843,75 @@ public class IA {
 			return true;
 		}
 		
+		private static boolean HealIfPossiblePerco(Fight fight, Fighter f, boolean autoSoin)//boolean pour choisir entre auto-soin ou soin allié
+		{
+			if(autoSoin && (f.getPDV()*100)/f.getPDVMAX() > 95 )return false;
+			Fighter target = null;
+			SortStats SS = null;
+			if(autoSoin)
+			{
+				target = f;			
+				SS = getHealSpell(fight,f,target);
+			}
+			else//sélection joueur ayant le moins de pv
+			{
+				Fighter curF = null;
+				int PDVPERmin = 100;
+				SortStats curSS = null;
+				for(Fighter F : fight.getFighters(3))
+				{					
+					if(f.isDead())continue;
+					if(F == f)continue;
+					if(F.getTeam() == f.getTeam())
+					{
+						int PDVPER = (F.getPDV()*100)/F.getPDVMAX();
+						if( PDVPER < PDVPERmin && PDVPER < 95)
+						{
+							int infl = 0;
+							for(Entry<Integer, SortStats> ss : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
+							{
+								if(ss.getValue() == null) continue;
+								if(infl < calculInfluenceHeal(ss.getValue()) && calculInfluenceHeal(ss.getValue()) != 0 && fight.CanCastSpell(f, ss.getValue(), F.get_fightCell()))//Si le sort est plus interessant
+								{
+									infl = calculInfluenceHeal(ss.getValue());
+									curSS = ss.getValue();
+								}
+							}
+							if(curSS != SS && curSS != null)
+							{
+								curF = F;
+								SS = curSS;
+								PDVPERmin = PDVPER;
+							}
+						}
+					}
+				}
+				target = curF;			
+			}
+			if(target == null)return false;
+			if(SS == null)return false;
+			int heal = fight.tryCastSpell(f, SS, target.get_fightCell().getID());
+			if(heal != 0)
+				return false;
+			
+			return true;
+		}
+		
 		private static boolean buffIfPossible(Fight fight, Fighter fighter,Fighter target) 
 		{		
 			if(target == null)return false;
 			SortStats SS = getBuffSpell(fight,fighter,target);
+			if(SS == null)return false;
+			int buff = fight.tryCastSpell(fighter, SS, target.get_fightCell().getID());
+			if(buff != 0)return false;			
+			
+			return true;	
+		}
+		
+		private static boolean buffIfPossiblePerco(Fight fight, Fighter fighter,Fighter target) 
+		{		
+			if(target == null)return false;
+			SortStats SS = getBuffSpellPerco(fight,fighter,target);
 			if(SS == null)return false;
 			int buff = fight.tryCastSpell(fighter, SS, target.get_fightCell().getID());
 			if(buff != 0)return false;			
@@ -821,6 +925,22 @@ public class IA {
 			SortStats ss = null;
 			for(Entry<Integer, SortStats> SS : F.getMob().getSpells().entrySet())
 			{
+				if(infl < calculInfluence(SS.getValue(),F,T) && calculInfluence(SS.getValue(),F,T) > 0 && fight.CanCastSpell(F, SS.getValue(), T.get_fightCell()))//Si le sort est plus interessant
+				{
+					infl = calculInfluence(SS.getValue(),F,T);
+					ss = SS.getValue();
+				}
+			}
+			return ss;				
+		}
+		
+		private static SortStats getBuffSpellPerco(Fight fight, Fighter F, Fighter T)
+		{
+			int infl = 0;	
+			SortStats ss = null;
+			for(Entry<Integer, SortStats> SS : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
+			{
+				if(SS.getValue() == null) continue;
 				if(infl < calculInfluence(SS.getValue(),F,T) && calculInfluence(SS.getValue(),F,T) > 0 && fight.CanCastSpell(F, SS.getValue(), T.get_fightCell()))//Si le sort est plus interessant
 				{
 					infl = calculInfluence(SS.getValue(),F,T);
@@ -991,7 +1111,7 @@ public class IA {
 		}
 		
 		
-		private static int attackIfPossible(Fight fight, Fighter fighter)//return True si attaqué
+		private static int attackIfPossible(Fight fight, Fighter fighter)
 		{	
 			Map<Integer,Fighter> ennemyList = getLowHpEnnemyList(fight,fighter);
 			SortStats SS = null;
@@ -1009,6 +1129,55 @@ public class IA {
 			SortStats SS2 = null;
 			for(Entry<Integer, SortStats> S : fighter.getMob().getSpells().entrySet())
 			{
+				int targetVal = getBestTargetZone(fight,fighter,S.getValue(),fighter.get_fightCell().getID());
+				if(targetVal == -1 || targetVal == 0)
+					continue;
+				int nbTarget = targetVal / 1000;
+				int cellID = targetVal - nbTarget * 1000;
+				if(nbTarget > curTarget)
+				{
+					curTarget = nbTarget;
+					cell = cellID;
+					SS2 = S.getValue();
+				}
+			}
+			if(curTarget > 0 && cell > 0 && cell < 480 && SS2 != null)
+			{
+				int attack = fight.tryCastSpell(fighter, SS2, cell);
+				if(attack != 0)
+					return attack;
+			}
+			else
+			{
+				if(target == null || SS == null)
+					return 666;
+				int attack = fight.tryCastSpell(fighter, SS, target.get_fightCell().getID());
+				if(attack != 0)
+					return attack;			
+			}		
+			return 0;
+			
+		}
+		
+		private static int attackIfPossiblePerco(Fight fight, Fighter fighter)
+		{	
+			Map<Integer,Fighter> ennemyList = getLowHpEnnemyList(fight,fighter);
+			SortStats SS = null;
+			Fighter target = null;
+			for(Entry<Integer, Fighter> t : ennemyList.entrySet())
+			{
+				SS = getBestSpellForTargetPerco(fight,fighter,t.getValue());
+				if(SS != null)
+				{
+					target = t.getValue();
+					break;
+				}
+			}
+			int curTarget = 0,cell = 0;
+			SortStats SS2 = null;
+			for(Entry<Integer, SortStats> S : World.getGuild(fighter.getPerco().GetPercoGuildID()).getSpells().entrySet())
+			{
+				if(S.getValue() == null) continue;
 				int targetVal = getBestTargetZone(fight,fighter,S.getValue(),fighter.get_fightCell().getID());
 				if(targetVal == -1 || targetVal == 0)
 					continue;
@@ -1242,6 +1411,58 @@ public class IA {
 					{
 						if( (PA - usedPA[0] - usedPA[1]) < SS3.getValue().getPACost())continue;
 						if(!fight.CanCastSpell(F, SS3.getValue(), T.get_fightCell()))continue;
+						curInfl = calculInfluence(SS3.getValue(),F,T);
+						if(curInfl == 0)continue;
+						if((curInfl+Infl1+Infl2) > inflMax)
+						{
+							ss = SS.getValue();
+							inflMax = curInfl + Infl1 + Infl2;
+						}
+					}				
+				}			
+			}
+			return ss;
+		}
+		
+		private static SortStats getBestSpellForTargetPerco(Fight fight, Fighter F,Fighter T)
+		{
+			int inflMax = 0;
+			SortStats ss = null;
+			System.out.println("SIZE SPELL : "+World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().size());
+			for(Entry<Integer, SortStats> SS : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
+			{
+				if(SS.getValue() == null) continue;
+				int curInfl = 0, Infl1 = 0, Infl2 = 0;
+				int PA = 6;
+				int usedPA[] = {0,0};
+				if(!fight.CanCastSpell2(F, SS.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
+				curInfl = calculInfluence(SS.getValue(),F,T);
+				if(curInfl == 0)continue;
+				if(curInfl > inflMax)
+				{
+					ss = SS.getValue();
+					usedPA[0] = ss.getPACost();
+					Infl1 = curInfl;
+					inflMax = Infl1;
+				}
+				
+				for(Entry<Integer, SortStats> SS2 : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
+				{
+					if( (PA - usedPA[0]) < SS2.getValue().getPACost())continue;
+					if(!fight.CanCastSpell2(F, SS2.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
+					curInfl = calculInfluence(SS2.getValue(),F,T);
+					if(curInfl == 0)continue;
+					if((Infl1 + curInfl) > inflMax)
+					{
+						ss = SS.getValue();
+						usedPA[1] = SS2.getValue().getPACost();
+						Infl2 = curInfl;
+						inflMax = Infl1 + Infl2;
+					}
+					for(Entry<Integer, SortStats> SS3 : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
+					{
+						if( (PA - usedPA[0] - usedPA[1]) < SS3.getValue().getPACost())continue;
+						if(!fight.CanCastSpell2(F, SS3.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
 						curInfl = calculInfluence(SS3.getValue(),F,T);
 						if(curInfl == 0)continue;
 						if((curInfl+Infl1+Infl2) > inflMax)

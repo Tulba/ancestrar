@@ -1,8 +1,8 @@
 --------------------------------------------------------------------------------------------------------
 
-			Ancestra_Remake v0.5.4
+			Ancestra_Remake v0.5.5
 			Commencé le 25/05/2010
-			DeathDown & leCirconcit
+			DeathDown
 				
 --------------------------------------------------------------------------------------------------------
 			
@@ -20,6 +20,7 @@
 			nami-doc
 			Alex
 			mathias52
+			Alleos13
 			
 --------------------------------------------------------------------------------------------------------
 			
@@ -35,12 +36,3 @@
 			Système d'énergie (Tombe, Fantôme+Téléportation au cimetiere, Phoénix).
 			Obvijevans.
 			Optimisation du code.
-			
-			
-			
-			
-			
-			
-			
-			RECHERCHE :
-			Paquet(s) pour l'ouverture du panneau de guilde (lorsque l'on lance la potion de téléportation de maison de guilde).

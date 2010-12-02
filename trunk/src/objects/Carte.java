@@ -874,6 +874,10 @@ public class Carte {
 			if(_fighters == null) _fighters = new TreeMap<Integer, Fighter>();
 			_fighters.put(fighter.getGUID(),fighter);
 		}
+		public void removeFighter(Fighter fighter)
+		{
+			_fighters.remove(fighter.getGUID());
+		}
 		public boolean isWalkable(boolean useObject)
 		{
 			if(_object != null && useObject)return _Walkable && _object.isWalkable();
@@ -1000,11 +1004,41 @@ public class Carte {
 				break;
 				case 176://Achat enclo
 					MountPark MP = perso.get_curCarte().getMountPark();
+					if(MP.get_owner() == -1)//Public
+					{
+						SocketManager.GAME_SEND_Im_PACKET(perso, "196");
+						return;
+					}
+					if(MP.get_price() == 0)//Non en vente
+					{
+						SocketManager.GAME_SEND_Im_PACKET(perso, "197");
+						return;
+					}
+					if(perso.get_guild() == null)//Pas de guilde
+					{
+						SocketManager.GAME_SEND_Im_PACKET(perso, "1135");
+						return;
+					}
+					if(perso.getGuildMember().getRank() != 1)//Non meneur
+					{
+						SocketManager.GAME_SEND_Im_PACKET(perso, "198"); 
+						return;
+					}
 					SocketManager.GAME_SEND_R_PACKET(perso, "D"+MP.get_price()+"|"+MP.get_price());
 				break;
 				case 177://Vendre enclo
 				case 178://Modifier prix de vente
 					MountPark MP1 = perso.get_curCarte().getMountPark();
+					if(MP1.get_owner() == -1)
+					{
+						SocketManager.GAME_SEND_Im_PACKET(perso, "194");
+						return;
+					}
+					if(MP1.get_owner() != perso.get_GUID())
+					{
+						SocketManager.GAME_SEND_Im_PACKET(perso, "195");
+						return;
+					}
 					SocketManager.GAME_SEND_R_PACKET(perso, "D"+MP1.get_price()+"|"+MP1.get_price());
 				break;
 				case 183://Retourner sur Incarnam

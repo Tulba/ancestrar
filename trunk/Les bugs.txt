@@ -12,12 +12,6 @@ Cra :
 Pandawa :
 - Karcham => Si on meurt en portant quelqu'un (la personne porté ne peux plus rien faire .).
 
-Sacri :
-- Châtiment vitalitesque 10%.
-
-Osa :
-- Boost non fonctionnel sur les Invocations.
-
 Global :
 - Libération.
 - Brokle.

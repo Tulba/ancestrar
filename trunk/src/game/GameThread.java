@@ -450,7 +450,21 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_gIB_PACKET(_perso, _perso.get_guild().parsePercotoGuild());
 			break;
 			case 'b'://Sorts
-				//TODO : Les sorts percepteurs
+				if(_perso.get_guild() == null)return;
+				Guild G2 = _perso.get_guild();
+				if(!_perso.getGuildMember().canDo(Constants.G_BOOST))return;
+				int spellID = Integer.parseInt(packet.substring(2));
+				if(G2.getSpells().containsKey(spellID))
+				{
+					if(G2.get_Capital() < 5)return;
+					G2.set_Capital(G2.get_Capital()-5);
+					G2.boostSpell(spellID);
+					SQLManager.UPDATE_GUILD(G2);
+					SocketManager.GAME_SEND_gIB_PACKET(_perso, _perso.get_guild().parsePercotoGuild());
+				}else
+				{
+					GameServer.addToLog("[ERROR]Sort "+spellID+" non trouve.");
+				}
 			break;
 			case 'C'://Creation
 				guild_create(packet);
@@ -494,13 +508,36 @@ public class GameThread implements Runnable
 		{
 			case 'J'://Rejoindre
 				String PercoID = Integer.toString(Integer.parseInt(packet.substring(1)), 36);
-				int TiD = Integer.parseInt(PercoID);
+				
+				int TiD = -1;
+				try
+				{
+					TiD = Integer.parseInt(PercoID);
+				}catch(Exception e){};
+				
 				Percepteur perco = Percepteur.GetPerco(TiD);
 				if(perco == null) return;
-				int FightID = perco.get_inFightID();
-				short MapID = World.getCarte((short)perco.get_mapID()).getFight(FightID).get_map().get_id();
-				int CellID = perco.get_cellID();
-				if(Ancestra.CONFIG_DEBUG) System.out.println("INFOS : TiD:"+TiD+", FightID:"+FightID+", MapID:"+MapID+", CellID"+CellID);
+				
+				int FightID = -1;
+				try
+				{
+					FightID = perco.get_inFightID();
+				}catch(Exception e){};
+				
+				short MapID = -1;
+				try
+				{
+					MapID = World.getCarte((short)perco.get_mapID()).getFight(FightID).get_map().get_id();
+				}catch(Exception e){};
+				
+				int CellID = -1;
+				try
+				{
+					CellID = perco.get_cellID();
+				}catch(Exception e){};
+				
+				if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("[DEBUG] Percepteur INFORMATIONS : TiD:"+TiD+", FightID:"+FightID+", MapID:"+MapID+", CellID"+CellID);
+				if(TiD == -1 || FightID == -1 || MapID == -1 || CellID == -1) return;
 				if(_perso.get_fight() == null)
 				{
 					if(_perso.get_curCarte().get_id() != MapID)
@@ -543,17 +580,25 @@ public class GameThread implements Runnable
 		if(!_perso.getGuildMember().canDo(Constants.G_POSPERCO))return;//Pas le droit de le poser
 		if(_perso.get_guild().getMembers().size() < 10)return;//Guilde invalide
 		short price = (short)(1000+10*_perso.get_guild().get_lvl());//Calcul du prix du percepteur
-		if(_perso.get_kamas() < price) return;//Kamas insuffisants
-		if(Percepteur.GetPercoGuildID(_perso.get_curCarte().get_id()) > 0)return;//La carte possède un perco
-		if(_perso.get_curCarte().get_placesStr().length() < 5)return;//La map ne possède pas de "places"
+		if(_perso.get_kamas() < price)//Kamas insuffisants
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "182");
+			return;
+		}
+		if(Percepteur.GetPercoGuildID(_perso.get_curCarte().get_id()) > 0)//La carte possède un perco
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1168;1");
+			return;
+		}
+		if(_perso.get_curCarte().get_placesStr().length() < 5)//La map ne possède pas de "places"
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "113");
+			return;
+		}
 		if(Percepteur.CountPercoGuild(_perso.get_guild().get_id()) >= _perso.get_guild().get_nbrPerco()) return;//Limite de percepteur
 		//FIXME : Don't Works
-		short lower1 = 1;
-		short higher1 = 129;
-		short random1 = (short) ((short)(Math.random() * (higher1-lower1)) + lower1);
-		short lower2 = 1;
-		short higher2 = 227;
-		short random2 = (short) ((short)(Math.random() * (higher2-lower2)) + lower2);
+		short random1 = (short) (Formulas.getRandomValue(1, 128));
+		short random2 = (short) (Formulas.getRandomValue(1, 226));
 		//Ajout du Perco.
 		int id = SQLManager.GetNewIDPercepteur();
 		Percepteur perco = new Percepteur(id, _perso.get_curCarte().get_id(), _perso.get_curCell().getID(), (byte)3, _perso.get_guild().get_id(), random1, random2, "", 0, 0);
@@ -576,30 +621,59 @@ public class GameThread implements Runnable
 
 	private void guild_enclo(String packet)
 	{
-		if(_perso.get_guild() == null)return;
+		if(_perso.get_guild() == null)
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1135");
+			return;
+		}
 		
 		short MapID = Short.parseShort(packet);
 		MountPark MP = World.getCarte(MapID).getMountPark();
-		if(MP.get_guild().get_id() != _perso.get_guild().get_id()) return;
+		if(MP.get_guild().get_id() != _perso.get_guild().get_id())
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1135");
+			return;
+		}
 		int CellID = World.getEncloCellIdByMapId(MapID);
 		if (_perso.hasItemTemplate(9035, 1))
 		{
 			_perso.removeByTemplateID(9035,1);
 			_perso.teleport(MapID, CellID);
+		}else
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1159");
+			return;
 		}
 	}
 	
 	private void guild_house(String packet)
 	{
-		if(_perso.get_guild() == null)return;
+		if(_perso.get_guild() == null)
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1135");
+			return;
+		}
+		
 		int HouseID = Integer.parseInt(packet);
 		House h = House.get_HouseID(HouseID);
-		if(_perso.get_guild().get_id() != h.get_guild_id()) return;
-		if(!h.canDo(h.get_id(), Constants.H_GTELE)) return;
+		if(_perso.get_guild().get_id() != h.get_guild_id()) 
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1135");
+			return;
+		}
+		if(!h.canDo(Constants.H_GTELE))
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1136");
+			return;
+		}
 		if (_perso.hasItemTemplate(8883, 1))
 		{
 			_perso.removeByTemplateID(8883,1);
 			_perso.teleport((short)h.get_mapid(), h.get_caseid());
+		}else
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1137");
+			return;
 		}
 	}
 	
@@ -802,6 +876,11 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_gJ_PACKET(_perso, "Ed");
 				return;
 			}
+			if(_perso.get_guild().getMembers().size() >= (40+_perso.get_guild().get_lvl()))//Limite membres max
+			{
+				SocketManager.GAME_SEND_Im_PACKET(_perso, "155;"+(40+_perso.get_guild().get_lvl()));
+				return;
+			}
 			
 			_perso.setInvitation(P.get_GUID());
 			P.setInvitation(_perso.get_GUID());
@@ -993,21 +1072,36 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_R_PACKET(_perso, "v");//Fermeture du panneau
 				MountPark MP = _perso.get_curCarte().getMountPark();
 				Personnage Seller = World.getPersonnage(MP.get_owner());
+				if(MP.get_owner() == -1)
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "196");
+					return;
+				}
+				if(MP.get_price() == 0)
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "197");
+					return;
+				}
 				if(_perso.get_guild() == null)
 				{
-					SocketManager.GAME_SEND_MESSAGE(_perso, "Vous ne possedez pas de guilde.", Ancestra.CONFIG_MOTD_COLOR);
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "1135");
+					return;
+				}
+				if(_perso.getGuildMember().getRank() != 1)
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "198"); 
 					return;
 				}
 				byte enclosMax = (byte)Math.floor(_perso.get_guild().get_lvl()/10);
 				byte TotalEncloGuild = SQLManager.TotalMPGuild(_perso.get_guild().get_id()); 
 				if(TotalEncloGuild >= enclosMax)
 				{
-					SocketManager.GAME_SEND_MESSAGE(_perso, "Votre guilde ne possede pas le niveau necessaire.", Ancestra.CONFIG_MOTD_COLOR);
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "1103");
 					return;
 				}
 				if(_perso.get_kamas() < MP.get_price())
 				{
-					SocketManager.GAME_SEND_MESSAGE(_perso, "Vous ne possedez pas assez de kamas.", Ancestra.CONFIG_MOTD_COLOR);
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "182");
 					return;
 				}
 				long NewKamas = _perso.get_kamas()-MP.get_price();
@@ -1048,6 +1142,16 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_R_PACKET(_perso, "v");//Fermeture du panneau
 				int price = Integer.parseInt(packet.substring(2));
 				MountPark MP1 = _perso.get_curCarte().getMountPark();
+				if(MP1.get_owner() == -1)
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "194");
+					return;
+				}
+				if(MP1.get_owner() != _perso.get_GUID())
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "195");
+					return;
+				}
 				MP1.set_price(price);
 				SQLManager.SAVE_MOUNTPARK(MP1);
 				SQLManager.SAVE_PERSONNAGE(_perso, true);
@@ -2651,7 +2755,7 @@ public class GameThread implements Runnable
 		String msg = "";
 		if(_perso.isMuted())
 		{
-			SocketManager.GAME_SEND_MESSAGE(_perso,"Vous etes mute.", Ancestra.CONFIG_MOTD_COLOR);
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1124;"+_perso.get_compte()._muteTimer.getInitialDelay());//FIXME
 			return;
 		}
 		packet = packet.replace("<", "");
@@ -2712,7 +2816,7 @@ public class GameThread implements Runnable
 						_timeLastsave = System.currentTimeMillis();
 						if(_perso.get_fight() != null)return;
 						SQLManager.SAVE_PERSONNAGE(_perso,true);
-						SocketManager.GAME_SEND_MESSAGE(_perso,  _perso.get_name()+" sauvegarde.", Ancestra.CONFIG_MOTD_COLOR);
+						SocketManager.GAME_SEND_MESSAGE(_perso,  _perso.get_name()+" sauvegardé.", Ancestra.CONFIG_MOTD_COLOR);
 						return;
 					}
 				}
@@ -2789,7 +2893,7 @@ public class GameThread implements Runnable
 				if((k = System.currentTimeMillis() - _timeLastAlignMsg) < Ancestra.FLOOD_TIME)
 				{
 					k = (Ancestra.FLOOD_TIME  - k)/1000;//On calcul la différence en secondes
-					SocketManager.GAME_SEND_MESSAGE(_perso, "Pour parler de nouveau, il faut attendre : "+((int)Math.ceil(k)+1)+" s", "009900");
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "0115;"+((int)Math.ceil(k)+1));
 					return;
 				}
 				_timeLastAlignMsg = System.currentTimeMillis();
@@ -2896,10 +3000,11 @@ public class GameThread implements Runnable
 			}catch(Exception e){};
 		}
 		if(_perso.get_fight() == null)return;
-		if(targetID > 0)
+		if(targetID > 0)//Expulsion d'un joueurs autre que soi-meme
 		{
 			Personnage target = World.getPersonnage(targetID);
-			if(target == null || target.get_fight() == null)return;
+			//On ne quitte pas un joueur qui : est null, ne combat pas, n'est pas de ça team.
+			if(target == null || target.get_fight() == null || target.get_fight().getTeamID(target.get_GUID()) != _perso.get_fight().getTeamID(_perso.get_GUID()))return;
 			_perso.get_fight().leftFight(_perso, target);
 			
 		}else

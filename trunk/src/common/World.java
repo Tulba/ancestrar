@@ -18,6 +18,7 @@ import objects.Personnage.Stats;
 public class World {
 
 	private static Map<Integer,Compte> 	Comptes	= new TreeMap<Integer,Compte>();
+	private static Map<String,Integer> 	ComptebyName	= new TreeMap<String,Integer>();
 	private static Map<Integer,Personnage> 	Persos	= new TreeMap<Integer,Personnage>();
 	private static Map<Short,Carte> 	Cartes	= new TreeMap<Short,Carte>();
 	private static Map<Integer,Objet> 	Objets	= new TreeMap<Integer,Objet>();
@@ -818,12 +819,7 @@ public class World {
 	
 	public static Compte getCompteByName(String name)
 	{
-		for(int a = 0; a< Comptes.keySet().size(); a++)
-		{
-			if(Comptes.get(Comptes.keySet().toArray()[a]).get_name().equalsIgnoreCase(name))
-				return Comptes.get(Comptes.keySet().toArray()[a]);
-		}
-		return null;
+		return (ComptebyName.get(name.toLowerCase())!=null?Comptes.get(ComptebyName.get(name.toLowerCase())):null);
 	}
 	
 	public static Personnage getPersonnage(int guid)
@@ -834,6 +830,11 @@ public class World {
 	public static void addAccount(Compte compte)
 	{
 		Comptes.put(compte.get_GUID(), compte);
+	}
+	
+	public static void addAccountbyName(Compte compte)
+	{
+		ComptebyName.put(compte.get_name(), compte.get_GUID());
 	}
 
 	public static void addPersonnage(Personnage perso)

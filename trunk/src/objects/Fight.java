@@ -324,6 +324,13 @@ public class Fight
 				return _perso;
 			return null;
 		}
+		
+		public Percepteur getPerco()
+		{
+			if(_type == 5)
+				return _Perco;
+			return null;
+		}
 		public boolean testIfCC(int tauxCC)
 		{
 			if(tauxCC < 2)return false;
@@ -606,6 +613,24 @@ public class Fight
 					if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Suppression du buff "+entry.getEffectID()+" sur le joueur Fighter ID= "+getGUID());
 					switch(entry.getEffectID())
 					{
+						case 108:
+							if(entry.getSpell() == 441)
+							{
+								//Baisse des pdvs max
+								_PDVMAX = (_PDVMAX-entry.getValue());
+								
+								//Baisse des pdvs actuel
+								int pdv = 0;
+								if(_PDV-entry.getValue() <= 0){
+									pdv = 0;
+									_fight.onFighterDie(this);
+									_fight.verifIfTeamAllDead();
+								}
+								else pdv = (_PDV-entry.getValue());
+								_PDV = pdv;
+							}
+						break;
+					
 						case 150://Invisibilité
 							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, 7, 150, entry.getCaster().getGUID()+"",getGUID()+",0");
 						break;
@@ -687,6 +712,7 @@ public class Fight
 				case 788://Fait apparaitre message le temps de buff sacri Chatiment de X sur Y tours
 					val = Integer.parseInt(args.split(";")[1]);
 					String valMax2 = args.split(";")[2];
+					if(Integer.parseInt(args.split(";")[0]) == 108)return;
 					SocketManager.GAME_SEND_FIGHT_GIE_TO_FIGHT(_fight, 7, id, getGUID(), val, ""+val, ""+valMax2, "", duration, spellID);		
 					
 				break;
@@ -967,6 +993,11 @@ public class Fight
 		{
 			if(_mob != null)return _mob.getBaseXp();
 			return 0;
+		}
+		public void addPDV(int max) 
+		{
+			_PDVMAX = (_PDVMAX+max);
+			_PDV = (_PDV+max);
 		}
 
 	}
@@ -2049,7 +2080,7 @@ public class Fight
 	
 	public void toggleLockSpec(int guid)
 	{
-		if(_init0.getGUID() == guid || _init1.getGUID() == guid)
+		if((_init0 != null && _init0.getGUID() == guid) || (_init1 != null &&  _init1.getGUID() == guid))
 		{
 			specOk = !specOk;
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog(specOk?"Le combat accepte les spectateurs":"Le combat n'accepte plus les spectateurs");
@@ -2783,15 +2814,17 @@ public class Fight
         		// Si c'est un neutre, on ne gagne pas de points
         		int winH = 0;
         		int winD = 0;
-        		if(_init1.getPersonnage().get_align() != 0 && _init0.getPersonnage().get_align() != 0)
-    			{
-        			if(_init1.getPersonnage().get_compte().get_curIP().compareTo(_init0.getPersonnage().get_compte().get_curIP()) != 0 || Ancestra.ALLOW_MULE_PVP)
-        			{
-            			winH = Formulas.calculHonorWin(TEAM1,TEAM2,i);
-        			}
-        			if(i.getPersonnage().getDeshonor() > 0) winD = -1;
-    			}
-        		
+        		if(type == Constants.FIGHT_TYPE_AGRESSION)
+        		{
+	        		if(_init1.getPersonnage().get_align() != 0 && _init0.getPersonnage().get_align() != 0)
+	    			{
+	        			if(_init1.getPersonnage().get_compte().get_curIP().compareTo(_init0.getPersonnage().get_compte().get_curIP()) != 0 || Ancestra.ALLOW_MULE_PVP)
+	        			{
+	            			winH = Formulas.calculHonorWin(TEAM1,TEAM2,i);
+	        			}
+	        			if(i.getPersonnage().getDeshonor() > 0) winD = -1;
+	    			}
+        		}
         		Personnage P = i.getPersonnage();
         		if(P.get_honor()+winH<0)winH = -P.get_honor();
         		P.addHonor(winH);
@@ -3403,10 +3436,12 @@ public class Fight
 								//On le supprime de la team
 								if(_team0.containsKey(T.getGUID()))
 								{
+									T._cell.removeFighter(T);
 									_team0.remove(T.getGUID());
 								}
 								else if(_team1.containsKey(T.getGUID()))
 								{
+									T._cell.removeFighter(T);
 									_team1.remove(T.getGUID());
 								}
 							}
@@ -3470,10 +3505,12 @@ public class Fight
 								//On le supprime de la team
 								if(_team0.containsKey(F.getGUID()))
 								{
+									F._cell.removeFighter(F);
 									_team0.remove(F.getGUID());
 								}
 								else if(_team1.containsKey(F.getGUID()))
 								{
+									F._cell.removeFighter(F);
 									_team1.remove(F.getGUID());
 								}
 							}
@@ -3712,11 +3749,13 @@ public class Fight
 		{
 			if(_team0.containsKey(F.getGUID()))
 			{
+				F._cell.removeFighter(F);
 				SocketManager.GAME_SEND_REMOVE_IN_TEAM_PACKET_TO_MAP(_mapOld, _init0.getGUID(), F);
 				_team0.remove(F.getGUID());
 			}
 			else if(_team1.containsKey(F.getGUID()))
 			{
+				F._cell.removeFighter(F);
 				SocketManager.GAME_SEND_REMOVE_IN_TEAM_PACKET_TO_MAP(_mapOld, _init1.getGUID(), F);
 				_team1.remove(F.getGUID());
 			}

@@ -1,3 +1,37 @@
+[02/12/2010]
+Ancestra_Remake 0.5.5
+- GameThread : Ajout de la limite des membres de guilde.
+
+[01/12/2010]
+- SpellEffect/Fight : Correction du sort Chatiment vitalesque (Sacri).
+- GameThread : Il est désormais impossible de kick un joueur de la team adverse avec l'option "Expulser".
+- Carte/Fight : Correction des fightcells indisponibles suite au kick d'un joueur.
+- SpellEffect : Correction du sort Mot d'épine (Eni).
+- Action : Ajout de l'action 19 (Téléportation maison de guilde (ouverture du panneau de guilde)) 
+et 26 (Téléportation enclo de guilde (ouverture du panneau de guilde)) pas d'arguments.
+(THX Alleos13)
+(Patch 94 a appliquer)
+- House : Correction/Simplification des droits des maisons.
+
+[30/11/2010]
+- GameThread/Carte : Seul le meneur d'une guilde peut désormais acheter un enclo/Correction de nombreuses failles.
+- Action : Correction d'un Im paquet lors de l'ouverture de la banque quand on n'a pas assez de kamas.
+- GameServer : Ajout de la message box lors du kick d'inactivité (THX Alleos13).
+- [...] : Remplacement des GAME_SEND_MESSAGE(s) par les Im(s) paquets associés.
+- Metier : Supression de l'utilisation des requetes SQL.
+
+[26/11/2010]
+- GameThread/Guild : Ajout des boosts spells percepteur.
+- Formulas : Correction d'un NullPointerException lié au lancer de sorts du percepteur.
+- Compte : Correction de la gestion du Timer pour la commande "mute" (THX Alleos13).
+
+[25/11/2010]
+- IA/Guild/Percepteur : Ajout de l'IA du percepteur, refonte des spells.
+- IA : Correction de l'IA en fin de tours.
+
+[24/11/2010]
+- [...] : Correction de quelques NullPointerException/ConcurrentModificationException.
+
 [22/11/2010]
 - RealmThread : Correction des problèmes liés a la reconnexion.
 
