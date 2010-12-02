@@ -39,7 +39,7 @@ public class Compte {
 	private ArrayList<Integer> _EnemyGuids = new ArrayList<Integer>();
 	private ArrayList<Dragodinde> _stable = new ArrayList<Dragodinde>();
 	private boolean _mute = false;
-	private Timer _muteTimer;
+	public Timer _muteTimer;
 	public int _position = -1;//Position du joueur
 	
 	private Map<Integer, Personnage> _persos = new TreeMap<Integer, Personnage>();
@@ -134,8 +134,9 @@ public class Compte {
 			_muteTimer = null;
 		}else
 		{
-			_muteTimer.setDelay(time*1000);
-			_muteTimer.restart();
+			if (_muteTimer.isRunning()) _muteTimer.stop(); 
+			_muteTimer.setInitialDelay(time*1000); 
+			_muteTimer.start(); 
 		}
 	}
 	

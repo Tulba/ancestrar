@@ -18,8 +18,8 @@ public class Constants
 	//DEBUG
 	public static int DEBUG_MAP_LIMIT 	=	20000;
 	//Server
-	public static final String SERVER_VERSION	=	"0.5.4";
-	public static final String SERVER_MAKER		=	"DeathDown & leCirconcit";
+	public static final String SERVER_VERSION	=	"0.5.5";
+	public static final String SERVER_MAKER		=	"DeathDown";
 	//Versions
 	public static final	String CLIENT_VERSION	=	"1.29.1";
 	public static final boolean IGNORE_VERSION 		= false;

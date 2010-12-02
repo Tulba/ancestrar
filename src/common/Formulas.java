@@ -271,7 +271,7 @@ public class Formulas {
 		if(num < 1)num=0;
 		
 		// Début Formule pour les MOBs
-		if(caster.getPersonnage() == null)
+		if(caster.getPersonnage() == null && !caster.isPerco())
 		{
 			if(caster.getMob().getTemplate().getID() == 116)//Sacrifié Dommage = PDV*2
 			{

@@ -6,6 +6,7 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import objects.Personnage.Stats;
+import objects.Sort.SortStats;
 
 import org.joda.time.LocalDate;
 import org.joda.time.Days;
@@ -24,7 +25,7 @@ public class Guild {
 	//Percepteur
 	private int _capital = 0;
 	private int _nbrPerco = 0;
-	private Map<Integer, Integer> sorts = new TreeMap<Integer, Integer>();	//<ID, Level>
+	private Map<Integer, SortStats> Spells = new TreeMap<Integer, SortStats>();	//<ID, Level>
 	private Map<Integer, Integer> stats = new TreeMap<Integer, Integer>(); //<Effet, Quantité>
 	//Stats en combat
 	private Map<Integer,Integer> statsFight = new TreeMap<Integer,Integer>();
@@ -310,8 +311,8 @@ public class Guild {
 		_capital = nbr;
 	}
 	
-	public Map<Integer, Integer> getSorts() {
-		return sorts;
+	public Map<Integer,SortStats> getSpells() {
+		return Spells;
 	}
 	public Map<Integer, Integer> getStats() {
 		return stats;
@@ -322,11 +323,11 @@ public class Guild {
 		
 		stats.put(stat, old + qte);
 	}
-	public void boostSort(int ID)
+	public void boostSpell(int ID)
 	{
-		int old = sorts.get(ID);
-		
-		sorts.put(ID, old + 1);
+		SortStats SS = Spells.get(ID);
+		if(SS != null && SS.getLevel() == 5)return;
+		Spells.put(ID, ((SS == null)?World.getSort(ID).getStatsByLevel(1):World.getSort(ID).getStatsByLevel(SS.getLevel()+1)));
 	}
 	public Stats getStatsFight()
 	{
@@ -445,7 +446,7 @@ public class Guild {
 			id = Integer.parseInt(split.split(";")[0]);
 			lvl = Integer.parseInt(split.split(";")[1]);
 			
-			sorts.put(id, lvl);
+			Spells.put(id, World.getSort(id).getStatsByLevel(lvl));
 		}
 	}
 	
@@ -468,12 +469,12 @@ public class Guild {
 		String toReturn = "";
 		boolean isFirst = true;
 		
-		for(Entry<Integer, Integer> curSpell : sorts.entrySet())
+		for(Entry<Integer, SortStats> curSpell : Spells.entrySet())
 		{
 			if(!isFirst)
 				toReturn += "|";
 			
-			toReturn += curSpell.getKey() + ";" + curSpell.getValue();
+			toReturn += curSpell.getKey() + ";" + ((curSpell.getValue() == null)?0:curSpell.getValue().getLevel());
 			
 			isFirst = false;
 		}

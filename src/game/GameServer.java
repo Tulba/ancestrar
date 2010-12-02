@@ -77,6 +77,7 @@ public class GameServer implements Runnable{
 							if(perso.isOnline())
 							{
 								GameServer.addToLog("Kick pour inactiviter de : "+perso.get_name());
+								SocketManager.REALM_SEND_MESSAGE(perso.get_compte().getGameThread().get_out(),"01|"); 
 								perso.get_compte().getGameThread().closeSocket();
 							}
 						}

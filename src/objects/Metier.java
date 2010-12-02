@@ -5,8 +5,6 @@ import game.GameThread.GameAction;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -1409,17 +1407,8 @@ public class Metier {
 	
 	public static byte ViewBaseStatsItem(Objet obj, String ItemStats)//retourne vrai si le stats existe de base sur l'item
 	{
-		String NaturalStatsItem = "";
-		ResultSet RS;
-		try {
-			RS = SQLManager.executeQuery("SELECT statsTemplate from `item_template` WHERE `id`='"+obj.getTemplate().getID()+"';",Ancestra.STATIC_DB_NAME);
-			RS.next();
-				NaturalStatsItem = RS.getString("statsTemplate");
-		} catch (SQLException e) {
-			System.out.println("Erreur SQL : "+e.getMessage());
-			e.printStackTrace();
-		}
-		String[] splitted = NaturalStatsItem.split(",");
+		
+		String[] splitted = obj.getTemplate().getStrTemplate().split(",");
 		for(String s : splitted)
 		{
 			String[] stats = s.split("#");
@@ -1464,18 +1453,8 @@ public class Metier {
 	
 	public static int getBaseMaxJet(int templateID, String statsModif)
 	{
-		
-		String NaturalStatsItem = "";
-		ResultSet RS;
-		try {
-			RS = SQLManager.executeQuery("SELECT statsTemplate from `item_template` WHERE `id`='"+templateID+"';",Ancestra.STATIC_DB_NAME);
-			RS.next();
-				NaturalStatsItem = RS.getString("statsTemplate");
-		} catch (SQLException e) {
-			System.out.println("Erreur SQL : "+e.getMessage());
-			e.printStackTrace();
-		}
-		String[] splitted = NaturalStatsItem.split(",");
+		ObjTemplate t = World.getObjTemplate(templateID);
+		String[] splitted = t.getStrTemplate().split(",");
 		for(String s : splitted)
 		{
 			String[] stats = s.split("#");
@@ -1486,7 +1465,7 @@ public class Metier {
 			else if(stats[0].compareTo(statsModif) == 0)//L'effet existe bien !
 			{
 				int max = Integer.parseInt(stats[2],16);
-				if(max == 0) max = Integer.parseInt(stats[1],16);
+				if(max == 0) max = Integer.parseInt(stats[1],16);//Pas de jet maximum on prend le minimum
 				return max;
 			}
 		}

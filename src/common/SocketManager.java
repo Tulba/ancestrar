@@ -2060,14 +2060,15 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
-	public static void GAME_SEND_M_PACKET(PrintWriter out, String id, String args)
+	
+	public static void REALM_SEND_MESSAGE(PrintWriter out, String args)
 	{
-		String packet = "M"+id+"|"+args;
+		String packet = "M"+args;
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
-
+	
 	public static void GAME_SEND_WC_PACKET(Personnage perso)
 	{
 		String packet = "WC"+perso.parseZaapList();
@@ -2319,6 +2320,20 @@ public class SocketManager {
 	public static void GAME_SEND_gT_PACKET(Personnage perso, String str) 
 	{ 
 		String packet = "gT"+str; 
+		send(perso,packet); 
+		if(Ancestra.CONFIG_DEBUG) 
+			GameServer.addToSockLog("Game: Send>>"+packet); 
+	}
+	public static void GAME_SEND_GUILDHOUSE_PACKET(Personnage perso) 
+	{ 
+		String packet = "gUT"; 
+		send(perso,packet); 
+		if(Ancestra.CONFIG_DEBUG) 
+			GameServer.addToSockLog("Game: Send>>"+packet); 
+	}	
+	public static void GAME_SEND_GUILDENCLO_PACKET(Personnage perso) 
+	{ 
+		String packet = "gUF"; 
 		send(perso,packet); 
 		if(Ancestra.CONFIG_DEBUG) 
 			GameServer.addToSockLog("Game: Send>>"+packet); 

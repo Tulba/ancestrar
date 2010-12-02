@@ -230,7 +230,13 @@ public class SpellEffect
 							int renvoie = 0;
 							try
 							{
-								renvoie = (int)(coef * Integer.parseInt(args[0]));
+								if(Integer.parseInt(args[1]) != -1)
+								{
+									renvoie = (int)(coef * Formulas.getRandomValue(Integer.parseInt(args[0]), Integer.parseInt(args[1])));
+								}else
+								{
+									renvoie = (int)(coef * Integer.parseInt(args[0]));
+								}
 							}catch(Exception e){return finalDommage;};
 							if(renvoie > finalDommage)renvoie = finalDommage;
 							finalDommage -= renvoie;
@@ -251,7 +257,14 @@ public class SpellEffect
 								max = Integer.parseInt(buff.getArgs().split(";")[1]);
 							}catch(Exception e){};
 							if(max == 0)continue;
-							
+							if(stat == 108)
+							{
+								target.addBuff(stat, max, 5, 1, false, buff.getSpell(), buff.getArgs(), caster);
+								SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, stat, caster.getGUID()+"", target.getGUID()+","+max+","+5);
+								target.addPDV(max);
+								target.get_chatiValue().put(stat, max);
+								break;
+							}
 							//on retire au max possible la valeur déjà gagné sur le chati
 							int a = (target.get_chatiValue().get(stat)==null?0:target.get_chatiValue().get(stat));
 							max -= a;
@@ -263,7 +276,7 @@ public class SpellEffect
 							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, stat, caster.getGUID()+"", target.getGUID()+","+gain+","+5);
 							//On met a jour les valeurs des chatis
 							int value = a + gain;
-							target.get_chatiValue().put(stat, value);	
+							target.get_chatiValue().put(stat, value);
 						break;
 						
 						default:
@@ -821,7 +834,8 @@ public class SpellEffect
 				
 				MG = World.getMonstre(mobID).getGradeByLevel(level).getCopy();
 			}catch(Exception e1){
-				System.out.println("Erreur sur le monstre id:"+mobID);
+				GameServer.addToLog("Erreur sur le monstre id:"+mobID);
+				return;
 			};
 			if(mobID == -1 || level == -1 || MG == null)return;
 			int id = fight.getNextLowerFighterGuid();
@@ -1634,7 +1648,7 @@ public class SpellEffect
 				
 				MG = World.getMonstre(mobID).getGradeByLevel(level).getCopy();
 			}catch(Exception e1){
-				System.out.println("Erreur sur le monstre id:"+mobID);
+				GameServer.addToLog("Erreur sur le monstre id:"+mobID);
 				return;
 			};
 			
@@ -3166,7 +3180,7 @@ public class SpellEffect
 					}
 					if(spell==160 && target==caster)
 					{
-					continue;//Epée de Iop ne tape pas le lanceur.
+						continue;//Epée de Iop ne tape pas le lanceur.
 					}else if(chance > 0 && spell==108)//Esprit félin ?
 					{
 						int fDommage = Formulas.calculFinalDommage(fight,caster, caster,Constants.ELEMENT_TERRE, dmg,false,false,spell);
@@ -3562,21 +3576,24 @@ public class SpellEffect
 		
 		private void applyEffect_108(ArrayList<Fighter> cibles, Fight fight)
 		{
+			if(spell == 441) 
+			{
+				return;
+			}
 			if(turns <= 0)
-			{	
-				if(spell==441)
+			{
+				String [] jet = args.split(";");
+				int dmg = 0;
+				if(jet.length < 6)
 				{
-					/*
-					 * 
-					 * Chatiment vita sacri, a refaire ?
-					 * 
-					 */
-					return;
+					dmg = 1;
+				}else
+				{
+					dmg = Formulas.getRandomJet(jet[5]);
 				}
-				int dmg = Formulas.getRandomJet(args.split(";")[5]);
 				for(Fighter target : cibles)
 				{
-					if(spell==139 && target.getTeam()!= caster.getTeam())//Mot d'altruisme on saute les ennemis ?
+					if(spell == 139 && target.getTeam() != caster.getTeam())//Mot d'altruisme on saute les ennemis ?
 					{
 						continue;
 					}

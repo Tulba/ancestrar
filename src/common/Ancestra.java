@@ -86,9 +86,10 @@ public class Ancestra {
 			}
 		}
 		);
-		System.out.println("Ancestra-R "+Constants.SERVER_VERSION);
-		System.out.println("Par "+Constants.SERVER_MAKER+" pour Dofus "+Constants.CLIENT_VERSION);
-		System.out.println("Thanks Diabu.");
+		System.out.println("\n\t\tAncestra-R v"+Constants.SERVER_VERSION);
+		System.out.println("\tPar "+Constants.SERVER_MAKER+" pour Dofus "+Constants.CLIENT_VERSION);
+		System.out.println("\t\t  Thanks Diabu.");
+		System.out.println("\nhttp://sourceforge.net/projects/ancestrar/");
 		System.out.println("==============================================================");
 		System.out.println("Chargement de la configuration:");
 		loadConfiguration();

@@ -78,8 +78,7 @@ public class HDV
 		String[] infos = Var.split("\\;");
 		if(counter > ((Integer.parseInt(infos[2]))-1))
 		{
-			SocketManager.GAME_SEND_MESSAGE(P, "Limite de vente atteinte.", Ancestra.CONFIG_MOTD_COLOR);
-			//Je ne possède pas le packet associé.
+			SocketManager.GAME_SEND_Im_PACKET(P, "058");
 			return;
 		}
 		//Taxe
@@ -89,8 +88,7 @@ public class HDV
 		int Taxe_int = (int) Math.ceil(Taxe);
 		if(P.get_kamas() < Taxe_int)
 		{
-			SocketManager.GAME_SEND_MESSAGE(P, "Vous ne disposez pas d'assez de kamas.", Ancestra.CONFIG_MOTD_COLOR);
-			//Je ne possède pas le packet associé.
+			SocketManager.GAME_SEND_Im_PACKET(P, "057");
 			return;
 		}
 		if(qua < 1 || qua > 3)

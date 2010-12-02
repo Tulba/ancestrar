@@ -26,9 +26,8 @@ public class House
 	private int _caseid;
 	private static int _selectedHouse;
 	
-	//Droits de chaques maisons double tableau a améliorer ?
-	private static Map<Integer, Map<Integer,Boolean>> houseRight = new TreeMap<Integer, Map<Integer,Boolean>>();
-	private static Map<Integer,Boolean> haveRight = new TreeMap<Integer,Boolean>();
+	//Droits de chaques maisons
+	private Map<Integer,Boolean> haveRight = new TreeMap<Integer,Boolean>();
 
 	
 	public House(int id, short map_id, int cell_id, int owner_id, int sale,
@@ -43,7 +42,7 @@ public class House
 		_access = access;
 		_key = key;
 		_guildRights = guildrights;
-		parseIntToRight(id, guildrights);
+		parseIntToRight(guildrights);
 		_mapid = mapid;
 		_caseid = caseid;
 	}
@@ -201,11 +200,11 @@ public class House
 					}
 					
 					//Affiche le blason pour les membre de guilde OU Affiche le blason pour les non membre de guilde
-					if(P.get_guild() != null && P.get_guild().get_id() == house.getValue().get_guild_id() && house.getValue().canDo(house.getValue().get_id(), Constants.H_GBLASON) && G.getMembers().size() > 9)//meme guilde
+					if(P.get_guild() != null && P.get_guild().get_id() == house.getValue().get_guild_id() && house.getValue().canDo(Constants.H_GBLASON) && G.getMembers().size() > 9)//meme guilde
 					{
 						packet+=";"+Gname+";"+Gemblem;
 					}
-					else if(house.getValue().canDo(house.getValue().get_id(), Constants.H_OBLASON) && G.getMembers().size() > 9)//Pas de guilde/guilde-différente
+					else if(house.getValue().canDo(Constants.H_OBLASON) && G.getMembers().size() > 9)//Pas de guilde/guilde-différente
 					{
 						packet+=";"+Gname+";"+Gemblem;
 					}
@@ -244,7 +243,7 @@ public class House
 		
 		House h = get_selectedHouse();
 		if(h == null) return;
-		if(h.get_owner_id() == P.getAccID() || (P.get_guild() != null && P.get_guild().get_id() == h.get_guild_id() && canDo(h.get_id(), Constants.H_GNOCODE)))//C'est sa maison ou même guilde + droits entrer sans pass
+		if(h.get_owner_id() == P.getAccID() || (P.get_guild() != null && P.get_guild().get_id() == h.get_guild_id() && canDo(Constants.H_GNOCODE)))//C'est sa maison ou même guilde + droits entrer sans pass
 		{
 			OpenHouse(P, "-", true);
 		}
@@ -267,12 +266,12 @@ public class House
 		House h = get_selectedHouse();
 		
 		SQLManager.SAVE_PERSONNAGE(P, true);
-		if((!h.canDo(h.get_id(), Constants.H_OCANTOPEN) && (packet.compareTo(h.get_key()) == 0)) || isHome)//Si c'est chez lui ou que le mot de passe est bon
+		if((!h.canDo(Constants.H_OCANTOPEN) && (packet.compareTo(h.get_key()) == 0)) || isHome)//Si c'est chez lui ou que le mot de passe est bon
 		{
 			P.teleport((short)h.get_mapid(), h.get_caseid());
 			System.out.println(">>>>>>>>>> ENTRER");
 			closeCode(P);
-		}else if((packet.compareTo(h.get_key()) != 0) || h.canDo(h.get_id(), Constants.H_OCANTOPEN))//Mauvais code
+		}else if((packet.compareTo(h.get_key()) != 0) || h.canDo(Constants.H_OCANTOPEN))//Mauvais code
 		{
 			SocketManager.GAME_SEND_KODE(P, "KE");
 			SocketManager.GAME_SEND_KODE(P, "V");
@@ -292,7 +291,7 @@ public class House
 
 		if(AlreadyHaveHouse(P))
 		{
-			SocketManager.GAME_SEND_MESSAGE(P, "Vous ne pouvez pas acheter plus d'une maison.", Ancestra.CONFIG_MOTD_COLOR);
+			SocketManager.GAME_SEND_Im_PACKET(P, "132;1");
 			return;
 		}
 		//On enleve les kamas
@@ -412,7 +411,6 @@ public class House
 	
 	public static String parseHouseToGuild(Personnage P)
 	{
-		//TODO : Compétences ...
 		boolean isFirst = true;
 		String packet = "+";
 		for(Entry<Integer, House> house : _house.entrySet())
@@ -421,11 +419,20 @@ public class House
 			{
 				if(isFirst)
 				{
-					packet += house.getValue().get_id()+";"+World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()+";"+World.getCarte((short)house.getValue().get_mapid()).getX()+","+World.getCarte((short)house.getValue().get_mapid()).getY()+";0;"+house.getValue().get_guild_rights();	
+					packet += house.getKey()+";";
+					packet += World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()+";";
+					packet += World.getCarte((short)house.getValue().get_mapid()).getX()+","+World.getCarte((short)house.getValue().get_mapid()).getY()+";";
+					packet += "0;";//TODO : Compétences ...
+					packet += house.getValue().get_guild_rights();	
 					isFirst = false;
 				}else
 				{
-					packet += "|"+house.getValue().get_id()+";"+World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()+";"+World.getCarte((short)house.getValue().get_mapid()).getX()+","+World.getCarte((short)house.getValue().get_mapid()).getY()+";0;"+house.getValue().get_guild_rights();	
+					packet += "|";
+					packet += house.getKey()+";";
+					packet += World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()+";";
+					packet += World.getCarte((short)house.getValue().get_mapid()).getX()+","+World.getCarte((short)house.getValue().get_mapid()).getY()+";";
+					packet += "0;";//TODO : Compétences ...
+					packet += house.getValue().get_guild_rights();	
 				}
 			}
 		}
@@ -470,7 +477,7 @@ public class House
 			else
 			{
 				SQLManager.HOUSE_GUILD(h, h.get_guild_id(), Integer.parseInt(packet));
-				parseIntToRight(h.get_id(), Integer.parseInt(packet));
+				h.parseIntToRight(Integer.parseInt(packet));
 			}
 		}
 		else if(packet == null)
@@ -498,12 +505,12 @@ public class House
 		return i;
 	}
 
-	public boolean canDo(int houseid, int rightValue)
+	public boolean canDo(int rightValue)
 	{	
-		return houseRight.get(houseid).get(rightValue);
+		return haveRight.get(rightValue);
 	}
 	
-	public static void initRight(int houseid)
+	public void initRight()
 	{
 		haveRight.put(Constants.H_GBLASON, false);
 		haveRight.put(Constants.H_OBLASON,false);
@@ -513,20 +520,21 @@ public class House
 		haveRight.put(Constants.C_OCANTOPEN,false);
 		haveRight.put(Constants.H_GREPOS,false);
 		haveRight.put(Constants.H_GTELE,false);
-		houseRight.put(houseid, haveRight);
 	}
 	
-	public static void parseIntToRight(int houseid, int total)
+	public void parseIntToRight(int total)
 	{
-		initRight(houseid);
-
+		if(haveRight.isEmpty())
+		{
+			initRight();
+		}
 		if(total == 1)
 			return;
 
 		if(haveRight.size() > 0)	//Si les droits contiennent quelque chose -> Vidage (Même si le TreeMap supprimerais les entrées doublon lors de l'ajout)
 			haveRight.clear();
 
-		initRight(houseid);	//Remplissage des droits
+		initRight();	//Remplissage des droits
 
 		Integer[] mapKey = haveRight.keySet().toArray(new Integer[haveRight.size()]);	//Récupère les clef de map dans un tableau d'Integer
 
@@ -538,7 +546,6 @@ public class House
 				{
 					total ^= mapKey[i].intValue();
 					haveRight.put(mapKey[i],true);
-					houseRight.put(houseid, haveRight);
 					break;
 				}
 			}

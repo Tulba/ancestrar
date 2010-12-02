@@ -66,7 +66,7 @@ public class Action {
 					long nKamas = perso.get_kamas() - cost;
 					if(nKamas <0)//Si le joueur n'a pas assez de kamas pour ouvrir la banque
 					{
-						SocketManager.GAME_SEND_MESSAGE(perso, "Vous n'avez pas assez de kamas pour ouvrir la banque.", "009900");
+						SocketManager.GAME_SEND_Im_PACKET(perso, "1128;"+cost);
 						return;
 					}
 					perso.set_kamas(nKamas);
@@ -183,13 +183,15 @@ public class Action {
 					   mID == 56 || mID == 58 ||
 					   mID == 60 || mID == 65)
 					{
-						//On compte les métiers déja acquis si c'est supérieur a 2 on ignore
-						if(perso.totalJobBasic() > 2)
+						if(perso.getMetierByID(mID) != null)//Métier déjà appris
 						{
-							SocketManager.GAME_SEND_MESSAGE(perso, "Vous ne pouvez pas apprendre plus de 3 metiers.", "009900");
+							SocketManager.GAME_SEND_Im_PACKET(perso, "111");
 						}
-						//Si c'est < ou = à 2 on apprend
-						else
+						
+						if(perso.totalJobBasic() > 2)//On compte les métiers déja acquis si c'est supérieur a 2 on ignore
+						{
+							SocketManager.GAME_SEND_Im_PACKET(perso, "19");
+						}else//Si c'est < ou = à 2 on apprend
 						{
 							perso.learnJob(World.getMetier(mID));
 						}
@@ -216,19 +218,23 @@ public class Action {
 						|| perso.getMetierByID(27) != null && perso.getMetierByID(27).get_lvl() >= 65 && mID == 64)
 						{
 							//On compte les specialisations déja acquis si c'est supérieur a 2 on ignore
-							if(perso.totalJobFM() > 2)
+							if(perso.getMetierByID(mID) != null)//Métier déjà appris
 							{
-								SocketManager.GAME_SEND_MESSAGE(perso, "Vous ne pouvez pas apprendre plus de 3 specialisations.", "009900");
+								SocketManager.GAME_SEND_Im_PACKET(perso, "111");
 							}
-							//Si c'est < ou = à 2 on apprend
-							else
+							
+							if(perso.totalJobFM() > 2)//On compte les métiers déja acquis si c'est supérieur a 2 on ignore
+							{
+								SocketManager.GAME_SEND_Im_PACKET(perso, "19");
+							}
+							else//Si c'est < ou = à 2 on apprend
 							{
 								perso.learnJob(World.getMetier(mID));
 								perso.getMetierByID(mID).addXp(perso, 582000);//Level 100 direct
 							}	
 						}else
 						{
-							SocketManager.GAME_SEND_MESSAGE(perso, "Vous ne pouvez pas apprendre cette specialisation (Niveau de metier insuffisant).", "009900");
+							SocketManager.GAME_SEND_Im_PACKET(perso, "12");
 						}
 					}
 				}catch(Exception e){GameServer.addToLog(e.getMessage());};
@@ -402,12 +408,7 @@ public class Action {
 				}
 			break;
 			case 19://Téléportation maison de guilde (ouverture du panneau de guilde)
-				//TODO : Il manque un paquet pour ouvrir la panneau de guilde. /!\ Non fonctionnel
-				/*
-				SocketManager.GAME_SEND_gIG_PACKET(perso, perso.get_guild());
-				SocketManager.GAME_SEND_gIM_PACKET(perso, perso.get_guild(), '+');
-				SocketManager.GAME_SEND_gIH_PACKET(perso, House.parseHouseToGuild(perso));
-				*/
+				SocketManager.GAME_SEND_GUILDHOUSE_PACKET(perso);
 			break;
 			case 20://+Points de sorts
 				int pts = Integer.parseInt(args);
@@ -454,6 +455,9 @@ public class Action {
 				perso.set_gfxID(UnMorphID);
 				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(perso.get_curCarte(), perso.get_GUID());
 				SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(perso.get_curCarte(), perso);
+			break;
+			case 26://Téléportation enclo de guilde (ouverture du panneau de guilde)
+				SocketManager.GAME_SEND_GUILDENCLO_PACKET(perso);
 			break;
 			case 50://Traque
 				if(perso.get_traque() == null)

@@ -278,6 +278,11 @@ public class Percepteur
 		return 0;
 	}
 	
+	public int GetPercoGuildID() {
+		
+		return get_guildID();
+	}
+	
 	public static Percepteur GetPercoByMapID(short _id) {
 		
 		for(Entry<Integer, Percepteur> perco : _perco.entrySet())

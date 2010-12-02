@@ -15,25 +15,27 @@ public class Pending {
         if(C._position <= 1)
         {
             try {
-                Thread.sleep(750);
-                SocketManager.MULTI_SEND_Af_PACKET(C.getRealmThread()._out,1,RealmServer._totalAbo,RealmServer._totalNonAbo,""+1,RealmServer._queueID);
-		C._position = -1;
-		RealmServer._totalAbo--;
-            } catch (InterruptedException e) {
-		SocketManager.REALM_SEND_ALREADY_CONNECTED(C.getRealmThread()._out);
-                RealmServer.addToLog("Erreur : " + e.getMessage());
+                	Thread.sleep(750);
+                	if(C.getRealmThread()._out == null) return;
+                	SocketManager.MULTI_SEND_Af_PACKET(C.getRealmThread()._out,1,RealmServer._totalAbo,RealmServer._totalNonAbo,""+1,RealmServer._queueID);
+                	C._position = -1;
+                	RealmServer._totalAbo--;
+            	} catch (InterruptedException e) {
+            		SocketManager.REALM_SEND_ALREADY_CONNECTED(C.getRealmThread()._out);
+            		RealmServer.addToLog("Erreur : " + e.getMessage());
             }
-	}else
-	{
+        }else
+        {
             try {
-		Thread.sleep(750*C._position);
-		SocketManager.MULTI_SEND_Af_PACKET(C.getRealmThread()._out,1,RealmServer._totalAbo,RealmServer._totalNonAbo,""+1,RealmServer._queueID);
-		C._position = -1;
-		RealmServer._totalAbo--;
-            } catch (InterruptedException e) {
-		SocketManager.REALM_SEND_ALREADY_CONNECTED(C.getRealmThread()._out);
-		RealmServer.addToLog("Erreur : " + e.getMessage());
-            }
-	}
+            		Thread.sleep(750*C._position);
+            		if(C.getRealmThread()._out == null) return;
+            		SocketManager.MULTI_SEND_Af_PACKET(C.getRealmThread()._out,1,RealmServer._totalAbo,RealmServer._totalNonAbo,""+1,RealmServer._queueID);
+            		C._position = -1;
+            		RealmServer._totalAbo--;
+            	} catch (InterruptedException e) {
+            			SocketManager.REALM_SEND_ALREADY_CONNECTED(C.getRealmThread()._out);
+            			RealmServer.addToLog("Erreur : " + e.getMessage());
+            	}
+        }
     }
 }
