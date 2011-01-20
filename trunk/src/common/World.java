@@ -830,6 +830,7 @@ public class World {
 	public static void addAccount(Compte compte)
 	{
 		Comptes.put(compte.get_GUID(), compte);
+		ComptebyName.put(compte.get_name().toLowerCase(), compte.get_GUID());
 	}
 	
 	public static void addAccountbyName(Compte compte)
