@@ -1,3 +1,8 @@
+[20/01/2011]
+- Personnage : Lors du levelup du personnage, la guilde est mise a jour.
+- World : Correction d'un petit bug qui empecher la connection des nouveaux comptes.
+- BDD : La base de donnée patcher est disponible.
+
 [02/12/2010]
 Ancestra_Remake 0.5.5
 - GameThread : Ajout de la limite des membres de guilde.

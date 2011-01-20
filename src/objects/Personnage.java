@@ -1785,6 +1785,11 @@ public class Personnage {
 			_baseStats.addOneStat(Constants.STATS_ADD_PA, 1);
 		Constants.onLevelUpSpells(this,_lvl);
 		if(addXp)_curExp = World.getExpLevel(_lvl).perso;
+		if(get_guild() != null)
+		{
+			SQLManager.UPDATE_GUILDMEMBER(getGuildMember());
+			getGuildMember().setLevel(_lvl);
+		}
 		if(send && _isOnline)
 		{
 			SocketManager.GAME_SEND_NEW_LVL_PACKET(_compte.getGameThread().get_out(),_lvl);
