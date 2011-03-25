@@ -860,7 +860,7 @@ public class Carte {
 			
 			for(Action act : _onCellStop)
 			{
-				act.apply(perso, null, -1);
+				act.apply(perso, null, -1, -1);
 			}
 		}
 		public void addPerso(Personnage perso)
@@ -1230,7 +1230,7 @@ public class Carte {
 	public void applyEndFightAction(int type,Personnage perso)
 	{
 		if(_endFightAction.get(type) == null)return;
-		for(Action A : _endFightAction.get(type))A.apply(perso, null, -1);
+		for(Action A : _endFightAction.get(type))A.apply(perso, null, -1, -1);
 	}
 	public void addEndFightAction(int type,Action A)
 	{

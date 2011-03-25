@@ -1,3 +1,19 @@
+[25/03/2011]
+- GameThread : Correction de la barre d'objet (A tester).
+
+[24/03/2011]
+- Fight : Correction des cooldowns.
+
+[23/03/2011]			
+- Personnage/Commands/Fight : Correction du bug lors du levelup qui permettais de lancer les sorts a l'infini.
+
+[22/03/2011]
+- Action : Ajout de la prise en compte de la cellID.
+- HDV : Ajout des HDV de mancestra.
+- Commands/BDD: Ajout de tout les HDVs manquants(Brakmar, Astrub ...).
+- Ajout de la commande FULLHDV.
+(Patch 95 & 96 a appliquer)
+
 [20/01/2011]
 - Personnage : Lors du levelup du personnage, la guilde est mise a jour.
 - World : Correction d'un petit bug qui empecher la connection des nouveaux comptes.

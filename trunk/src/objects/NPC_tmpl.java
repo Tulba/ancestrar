@@ -175,7 +175,7 @@ public class NPC_tmpl {
 		public void apply(Personnage perso)
 		{
 			for(Action act : _actions)
-			act.apply(perso, null, -1);
+			act.apply(perso, null, -1, -1);
 		}
 		
 		public boolean isAnotherDialog()

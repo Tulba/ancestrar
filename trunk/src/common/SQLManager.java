@@ -21,6 +21,7 @@ import objects.Objet.*;
 import objects.Sort.*;
 import objects.Carte.*;
 import objects.Guild.GuildMember;
+import objects.HDV.HdvEntry;
 import realm.RealmServer;
 
 public class SQLManager {
@@ -1223,7 +1224,9 @@ public class SQLManager {
 							RS.getInt("prix"),
 							RS.getInt("panoplie"),
 							RS.getString("condition"),
-							RS.getString("armesInfos")
+							RS.getString("armesInfos"),
+							RS.getInt("sold"),
+							RS.getInt("avgPrice")
 						)
 					);
 			}
@@ -2501,66 +2504,6 @@ public class SQLManager {
 			return exist;
 		}
 		
-		public static void MakeSell(Personnage P, Objet objvendu, int qua, int price, int time, int HdvId)
-		{
-				String baseQuery = "INSERT INTO `hdv_ventes` " +
-						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
-				try {
-					PreparedStatement p = newTransact(baseQuery, othCon);
-					p.setInt(1, objvendu.getGuid());
-					p.setInt(2, P.get_GUID());
-					p.setInt(3, qua);
-					p.setInt(4, objvendu.getTemplate().getID());
-					p.setString(5, objvendu.getStats().parseToItemSetStats());
-					p.setInt(6, objvendu.getTemplate().getType());
-					p.setInt(7, price);
-					p.setInt(8, time);
-					p.setInt(9, HdvId);
-					p.execute();
-					closePreparedStatement(p);
-				} catch (SQLException e) {
-					GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
-					GameServer.addToLog("Game: Query: "+baseQuery);
-				}
-		}
-		public static void DelSell(int sellerguid, int objguid, int HdvId, int price, int qua)
-		{
-			if(price < 0 || qua < 0)
-			{
-				String baseQuery = "DELETE FROM `hdv_ventes` " +
-						"WHERE `guid` = ? AND `seller` = ? AND `hdv_type` = ?;";
-				try {
-					PreparedStatement p = newTransact(baseQuery, othCon);
-					p.setInt(1, objguid);
-					p.setInt(2, sellerguid);
-					p.setInt(3, HdvId);
-					
-					p.execute();
-					closePreparedStatement(p);
-				} catch (SQLException e) {
-					GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
-					GameServer.addToLog("Game: Query: "+baseQuery);
-				}
-			}else if(sellerguid < 0)
-			{
-				String baseQuery = "DELETE FROM `hdv_ventes` " +
-				"WHERE `guid` = ? AND `hdv_type` = ? AND `KamasSell` = ? AND `quantity` = ?;";
-		try {
-			PreparedStatement p = newTransact(baseQuery, othCon);
-			p.setInt(1, objguid);
-			p.setInt(2, HdvId);
-			p.setInt(3, price);
-			p.setInt(4, qua);
-			
-			p.execute();
-			closePreparedStatement(p);
-		} catch (SQLException e) {
-			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
-			GameServer.addToLog("Game: Query: "+baseQuery);
-		}
-			}
-		}
-		
 		public static void HOUSE_BUY(Personnage P, House h) 
 		{	
 			
@@ -2813,6 +2756,149 @@ public class SQLManager {
 				GameServer.addToLog("Game: Query: "+baseQuery);
 			}
 			return false;
+		}
+		public static void LOAD_HDVS()
+		{
+			try
+			{
+				ResultSet RS = executeQuery("SELECT * FROM `hdvs` ORDER BY id ASC",Ancestra.OTHER_DB_NAME);
+				
+				while(RS.next())
+				{
+					World.addHdv(new HDV(
+									RS.getInt("map"),
+									RS.getFloat("sellTaxe"),
+									RS.getShort("sellTime"),
+									RS.getShort("accountItem"),
+									RS.getShort("lvlMax"),
+									RS.getString("categories")));
+					
+				}
+				
+				RS = executeQuery("SELECT id MAX FROM `hdvs`",Ancestra.OTHER_DB_NAME);
+				RS.first();
+				World.setNextHdvID(RS.getInt("MAX"));
+				
+				closeResultSet(RS);
+			}catch(SQLException e)
+			{
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		public static void LOAD_HDVS_ITEMS()
+		{
+			try
+			{
+				long time1 = System.currentTimeMillis();	//TIME
+				ResultSet RS = executeQuery("SELECT i.*"+
+						" FROM `items` AS i,`hdvs_items` AS h"+
+						" WHERE i.guid = h.itemID",Ancestra.OTHER_DB_NAME);
+				
+				//Load items
+				while(RS.next())
+				{
+					int guid 	= RS.getInt("guid");
+					int tempID 	= RS.getInt("template");
+					int qua 	= RS.getInt("qua");
+					int pos		= RS.getInt("pos");
+					String stats= RS.getString("stats");
+					World.addObjet
+					(
+						World.newObjet
+						(
+							guid,
+							tempID,
+							qua,
+							pos,
+							stats
+						),
+						false
+					);
+				}
+				
+				//Load HDV entry
+				RS = executeQuery("SELECT * FROM `hdvs_items`",Ancestra.OTHER_DB_NAME);
+				while(RS.next())
+				{
+					HDV tempHdv = World.getHdv(RS.getInt("map"));
+					if(tempHdv == null)continue;
+					
+					
+					tempHdv.addEntry(new HDV.HdvEntry(
+											RS.getInt("price"),
+											RS.getByte("count"),
+											RS.getInt("ownerGuid"),
+											World.getObjet(RS.getInt("itemID"))));
+				}
+				System.out.println (System.currentTimeMillis() - time1 + "ms pour loader les HDVS items");	//TIME
+				closeResultSet(RS);
+			}catch(SQLException e)
+			{
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		public static void SAVE_HDVS_ITEMS(ArrayList<HdvEntry> liste)
+		{
+			PreparedStatement queries = null;
+			try
+			{
+				String emptyQuery = "TRUNCATE TABLE `hdvs_items`";
+				PreparedStatement emptyTable = newTransact(emptyQuery, othCon);
+				emptyTable.execute();
+				String baseQuery = "INSERT INTO `hdvs_items` "+
+									"(`map`,`ownerGuid`,`price`,`count`,`itemID`) "+
+									"VALUES(?,?,?,?,?);";
+				queries = newTransact(baseQuery, othCon);
+				for(HdvEntry curEntry : liste)
+				{
+					
+					if(curEntry.getOwner() == -1)continue;
+					queries.setInt(1, curEntry.getHdvID());
+					queries.setInt(2, curEntry.getOwner());
+					queries.setInt(3, curEntry.getPrice());
+					queries.setInt(4, curEntry.getAmount(false));
+					queries.setInt(5, curEntry.getObjet().getGuid());
+					
+					queries.execute();
+				}
+				closePreparedStatement(queries);
+				SAVE_HDV_AVGPRICE();
+				}catch(SQLException e)
+				{
+					GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+					e.printStackTrace();
+				}
+		}
+		public static void SAVE_HDV_AVGPRICE()
+		{
+			String baseQuery = "UPDATE `item_template`"+
+								" SET sold = ?,avgPrice = ?"+
+								" WHERE id = ?;";
+			
+			PreparedStatement queries = null;
+			
+			try
+			{
+				queries = newTransact(baseQuery, statCon);
+				
+				for(ObjTemplate curTemp : World.getObjTemplates())
+				{
+					if(curTemp.getSold() == 0)
+						continue;
+					
+					queries.setLong(1, curTemp.getSold());
+					queries.setInt(2, curTemp.getAvgPrice());
+					queries.setInt(3, curTemp.getID());
+					queries.executeUpdate();
+				}
+				closePreparedStatement(queries);
+			}catch(SQLException e)
+			{
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+			}
 		}
 }
 

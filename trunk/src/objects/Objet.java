@@ -29,8 +29,10 @@ public class Objet {
 		private int PACost,POmin,POmax,TauxCC,TauxEC,BonusCC;
 		private boolean isTwoHanded;
 		private ArrayList<Action> onUseActions = new ArrayList<Action>();
+		private long sold;
+		private int avgPrice;
 		
-		public ObjTemplate(int id, String strTemplate, String name, int type,int level, int pod, int prix, int panopID, String conditions,String armesInfos)
+		public ObjTemplate(int id, String strTemplate, String name, int type,int level, int pod, int prix, int panopID, String conditions,String armesInfos, int sold, int avgPrice)
 		{
 			this.ID = id;
 			this.StrTemplate = strTemplate;
@@ -47,6 +49,8 @@ public class Objet {
 			this.TauxCC = 100;
 			this.TauxEC = 2;
 			this.BonusCC = 0;
+			this.sold = sold;
+			this.avgPrice = avgPrice;
 			
 			try
 			{
@@ -214,9 +218,26 @@ public class Objet {
 			return str;
 		}
 
-		public void applyAction(Personnage perso, Personnage target, int objID)
+		public void applyAction(Personnage perso, Personnage target, int objID, short cellid)
 		{
-			for(Action a : onUseActions)a.apply(perso, target, objID);
+			for(Action a : onUseActions)a.apply(perso, target, objID, cellid);
+		}
+		
+		public int getAvgPrice()
+		{
+			return avgPrice;
+		}
+		
+		public long getSold()
+		{
+			return this.sold;
+		}
+		
+		public synchronized void newSold(int amount, int price)
+		{
+			long oldSold = sold;
+			sold += amount;
+			avgPrice = (int)((avgPrice * oldSold + price) / sold);
 		}
 	}
 

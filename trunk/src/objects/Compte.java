@@ -11,6 +11,8 @@ import java.util.Map.Entry;
 
 import javax.swing.Timer;
 
+import objects.HDV.HdvEntry;
+
 import realm.RealmThread;
 
 import common.*;
@@ -41,6 +43,7 @@ public class Compte {
 	private boolean _mute = false;
 	public Timer _muteTimer;
 	public int _position = -1;//Position du joueur
+	private Map<Integer,ArrayList<HdvEntry>> _hdvsItems;// Contient les items des HDV format : <hdvID,<cheapestID>>
 	
 	private Map<Integer, Personnage> _persos = new TreeMap<Integer, Personnage>();
 	
@@ -58,6 +61,7 @@ public class Compte {
 		this._lastIP	= aLastIp;
 		this._lastConnectionDate = aLastConnectionDate;
 		this._bankKamas = bankKamas;
+		this._hdvsItems = World.getMyItems(_GUID);
 		//Chargement de la banque
 		for(String item : bank.split("\\|"))
 		{
@@ -500,5 +504,56 @@ public class Compte {
 
 	public int get_vip() {
 		return _vip;
+	}
+	
+	public boolean recoverItem(int ligneID, int amount)
+	{
+		if(_curPerso == null)
+			return false;
+		if(_curPerso.get_isTradingWith() >= 0)
+			return false;
+		
+		int hdvID = Math.abs(_curPerso.get_isTradingWith());//Récupère l'ID de l'HDV
+		
+		HdvEntry entry = null;
+		for(HdvEntry tempEntry : _hdvsItems.get(hdvID))//Boucle dans la liste d'entry de l'HDV pour trouver un entry avec le meme cheapestID que spécifié
+		{
+			if(tempEntry.getLigneID() == ligneID)//Si la boucle trouve un objet avec le meme cheapestID, arrete la boucle
+			{
+				entry = tempEntry;
+				break;
+			}
+		}
+		if(entry == null)//Si entry == null cela veut dire que la boucle s'est effectué sans trouver d'item avec le meme cheapestID
+			return false;
+		
+		_hdvsItems.get(hdvID).remove(entry);//Retire l'item de la liste des objets a vendre du compte
+
+		Objet obj = entry.getObjet();
+		
+		boolean OBJ = _curPerso.addObjet(obj,true);//False = Meme item dans l'inventaire donc augmente la qua
+		if(!OBJ)
+		{
+			World.removeItem(obj.getGuid());
+		}
+		
+		World.getHdv(hdvID).delEntry(entry);//Retire l'item de l'HDV
+			
+		return true;
+		//Hdv curHdv = World.getHdv(hdvID);
+		
+	}
+	
+	public HdvEntry[] getHdvItems(int hdvID)
+	{
+		if(_hdvsItems.get(hdvID) == null)
+			return new HdvEntry[1];
+		
+		HdvEntry[] toReturn = new HdvEntry[20];
+		for (int i = 0; i < _hdvsItems.get(hdvID).size(); i++)
+		{
+			toReturn[i] = _hdvsItems.get(hdvID).get(i);
+		}
+		return toReturn;
 	}
 }

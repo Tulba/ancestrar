@@ -1687,7 +1687,8 @@ public class Fight
 			endTurn();
 			return;
 		}
-		
+		//On actualise les sorts launch
+		_ordreJeu.get(_curPlayer).ActualiseLaunchedSort();
 		//reset des Max des Chatis
 		_ordreJeu.get(_curPlayer).get_chatiValue().clear();
 		//Gestion des glyphes
@@ -2314,7 +2315,8 @@ public class Fight
 		
 		Case Cell = _map.getCase(caseID);
 		_curAction = "casting";
-		if(CanCastSpell(fighter,Spell,Cell) || fighter.getPersonnage() != null)
+		
+		if(CanCastSpell(fighter,Spell,Cell))
 		{
 			if(fighter.getPersonnage() != null)
 				SocketManager.GAME_SEND_STATS_PACKET(fighter.getPersonnage());
@@ -2462,7 +2464,6 @@ public class Fight
 		int nbLancer = spell.getMaxLaunchbyTurn();
 		if(nbLancer - LaunchedSort.getNbLaunch(fighter, spell.getSpellID()) <= 0 && nbLancer > 0)
 			return false;
-		
 		//vérification nombre de lancer par cible
 		Fighter target = cell.getFirstFighter();
 		int nbLancerT = spell.getMaxLaunchbyByTarget();

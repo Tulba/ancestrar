@@ -963,6 +963,7 @@ public class Personnage {
 			return false;
 		}
 		_sorts.put(spellID, World.getSort(spellID).getStatsByLevel(level));
+		
 		if(send)
 		{
 			SocketManager.GAME_SEND_SPELL_LIST(this);
@@ -1055,9 +1056,9 @@ public class Personnage {
 			if(_sortsPlaces.get(key)!=null)
 			{
 				if (_sortsPlaces.get(key).equals(Place))
-					{
+				{
 					_sortsPlaces.remove(key);
-					}
+				}
 			}
 		}
 	}
@@ -1794,6 +1795,7 @@ public class Personnage {
 		{
 			SocketManager.GAME_SEND_NEW_LVL_PACKET(_compte.getGameThread().get_out(),_lvl);
 			SocketManager.GAME_SEND_STATS_PACKET(this);
+			SocketManager.GAME_SEND_SPELL_LIST(this);
 		}
 	}
 	
@@ -1802,7 +1804,7 @@ public class Personnage {
 		_curExp += winxp;
 		int exLevel = _lvl;
 		while(_curExp >= World.getPersoXpMax(_lvl) && _lvl<200)
-			levelUp(false,false);
+			levelUp(true,false);
 		if(_isOnline)
 		{
 			if(exLevel < _lvl)SocketManager.GAME_SEND_NEW_LVL_PACKET(_compte.getGameThread().get_out(),_lvl);
