@@ -1250,20 +1250,9 @@ public class Constants
 			case ITEM_TYPE_OBJET_ELEVAGE:
 			case ITEM_TYPE_OBJET_UTILISABLE:
 			case ITEM_TYPE_PRISME:
-				if(place == 35)return true;
-				if(place == 36)return true;
-				if(place == 37)return true;
-				if(place == 38)return true;
-				if(place == 39)return true;
-				if(place == 40)return true;
-				if(place == 41)return true;
-				if(place == 42)return true;
-				if(place == 43)return true;
-				if(place == 44)return true;
-				if(place == 45)return true;
-				if(place == 46)return true;
-				if(place == 47)return true;
-				if(place == 48)return true;
+			case ITEM_TYPE_FEE_ARTIFICE:
+			case ITEM_TYPE_DONS:
+				if(place >= 35 && place <= 48)return true;
 			break;
 				
 			

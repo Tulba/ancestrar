@@ -24,8 +24,11 @@
 			
 --------------------------------------------------------------------------------------------------------
 			
-			TODO :
+			#TODO :
 			Finir les Percepteurs.
+			Implanter les fées.
+			Revoir les dindes et bug lié.
+			Revoir les maisons et bug si compte/perso supprimé.
 			Finir les Maisons : intérieurs (Coffre+Spécialisations+Droits).
 			Finir de corriger les sorts.
 			Finir le PvP(Prismes-Zones/Traques)/PvM.

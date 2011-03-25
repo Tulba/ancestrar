@@ -75,6 +75,8 @@ public class Ancestra {
 	public static int CONFIG_DB_COMMIT = 30*1000;
 	//Inactivité
 	public static int CONFIG_MAX_IDLE_TIME = 1800000;//En millisecondes
+	//HDV
+	public static ArrayList<Integer> NOTINHDV = new ArrayList<Integer>();
 	
 	public static void main(String[] args)
 	{
@@ -299,6 +301,12 @@ public class Ancestra {
 				}else if (param.equalsIgnoreCase("MAX_IDLE_TIME"))
 				{
 					Ancestra.CONFIG_MAX_IDLE_TIME = (Integer.parseInt(value)*60000);
+				}else if (param.equalsIgnoreCase("NOT_IN_HDV"))
+				{
+					for(String curID : value.split(","))
+					{
+						Ancestra.NOTINHDV.add(Integer.parseInt(curID));
+					}
 				}
 			}
 			if(STATIC_DB_NAME == null || OTHER_DB_NAME == null || DB_HOST == null || DB_PASS == null || DB_USER == null)

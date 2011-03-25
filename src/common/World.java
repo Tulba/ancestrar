@@ -4,13 +4,16 @@ import game.GameServer;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import objects.*;
+import objects.HDV.HdvEntry;
 import objects.NPC_tmpl.*;
 import objects.Objet.ObjTemplate;
 import objects.Personnage.Stats;
@@ -40,6 +43,13 @@ public class World {
 	private static Map<Integer,Guild> Guildes = new TreeMap<Integer,Guild>();
 	private static Map<Integer,Percepteur> Percepteur = new TreeMap<Integer,Percepteur>();
 	private static Map<Integer,House> House = new TreeMap<Integer,House>();
+	
+	private static Map<Integer,HDV> Hdvs = new TreeMap<Integer,HDV>();
+	
+	private static Map<Integer,Map<Integer,ArrayList<HdvEntry>>> _hdvsItems = new HashMap<Integer,Map<Integer,ArrayList<HdvEntry>>>();	//Contient tout les items en ventes des comptes dans le format<compteID,<hdvID,items<>>>
+	
+	private static int nextHdvID;	//Contient le derniere ID utilisé pour crée un HDV, pour obtenir un ID non utilisé il faut impérativement l'incrémenter
+	private static int nextLigneID;	//Contient le derniere ID utilisé pour crée une ligne dans un HDV
 	
 	private static int saveTry = 1;
 	//Statut du serveur 1: accesible; 0: inaccesible; 2: sauvegarde
@@ -692,7 +702,7 @@ public class World {
 		SQLManager.LOAD_COMPTES();
 		System.out.println(Comptes.size()+" comptes charges");
 		
-		System.out.println("Chargement des personnages: ");//Obligatoire pour les HDV, sinon le seller peut etre innexistant
+		System.out.println("Chargement des personnages: ");
 		SQLManager.LOAD_PERSOS();
 		System.out.println(Persos.size()+" personnages charges");
 
@@ -727,6 +737,11 @@ public class World {
 		System.out.print("Chargement des BAN_IP: ");
 		nbr = SQLManager.LOAD_BANIP();
 		System.out.println(nbr+" BAN_IP chargees");
+		
+		System.out.print("Chargement des HDV :");
+		SQLManager.LOAD_HDVS();
+		SQLManager.LOAD_HDVS_ITEMS();
+		System.out.println("Ok !");
 		
 		nextObjetID = SQLManager.getNextObjetID();
 	}
@@ -1000,6 +1015,13 @@ public class World {
 					SQLManager.UPDATE_HOUSE(house);
 				}
 			}
+			GameServer.addToLog("Sauvegarde des Hdvs...");
+			ArrayList<HdvEntry> toSave = new ArrayList<HdvEntry>();
+			for(HDV curHdv : Hdvs.values())
+			{
+				toSave.addAll(curHdv.getAllEntry());
+			}
+			SQLManager.SAVE_HDVS_ITEMS(toSave);
 			GameServer.addToLog("Sauvegarde effectuee !");
 			
 			set_state((short)1);
@@ -1280,4 +1302,76 @@ public class World {
 		_GmAccess = GmAccess;
 	}
 
+	public static HDV getHdv(int mapID)
+	{
+		return Hdvs.get(mapID);
+	}
+	
+	public synchronized static int getNextHdvID()//ATTENTION A NE PAS EXECUTER POUR RIEN CETTE METHODE CHANGE LE PROCHAIN ID DE L'HDV LORS DE SON EXECUTION
+	{
+		nextHdvID++;
+		return nextHdvID;
+	}
+	public synchronized static void setNextHdvID(int nextID)
+	{
+		nextHdvID = nextID;
+	}
+	public synchronized static int getNextLigneID()
+	{
+		nextLigneID++;
+		return nextLigneID;
+	}
+	public synchronized static void setNextLigneID(int ligneID)
+	{
+		nextLigneID = ligneID;
+	}
+	
+	public static void addHdvItem(int compteID, int hdvID, HdvEntry toAdd)
+	{
+		if(_hdvsItems.get(compteID) == null)	//Si le compte n'est pas dans la memoire
+			_hdvsItems.put(compteID,new HashMap<Integer,ArrayList<HdvEntry>>());	//Ajout du compte clé:compteID et un nouveau map<hdvID,items<>>
+			
+		if(_hdvsItems.get(compteID).get(hdvID) == null)
+			_hdvsItems.get(compteID).put(hdvID,new ArrayList<HdvEntry>());
+			
+		_hdvsItems.get(compteID).get(hdvID).add(toAdd);
+	}
+	
+	public static void removeHdvItem(int compteID,int hdvID,HdvEntry toDel)
+	{
+		_hdvsItems.get(compteID).get(hdvID).remove(toDel);
+	}
+	
+	public static int getHdvNumber()
+	{
+		return Hdvs.size();
+	}
+	public static int getHdvObjetsNumber()
+	{
+		int size = 0;
+		
+		for(Map<Integer,ArrayList<HdvEntry>> curCompte : _hdvsItems.values())
+		{
+			for(ArrayList<HdvEntry> curHdv : curCompte.values())
+			{
+				size += curHdv.size();
+			}
+		}
+		return size;
+	}
+	public static void addHdv(HDV toAdd)
+	{
+		Hdvs.put(toAdd.getHdvID(),toAdd);
+	}
+	public static Map<Integer, ArrayList<HdvEntry>> getMyItems(int compteID)
+	{
+		if(_hdvsItems.get(compteID) == null)//Si le compte n'est pas dans la memoire
+			_hdvsItems.put(compteID,new HashMap<Integer,ArrayList<HdvEntry>>());//Ajout du compte clé:compteID et un nouveau map<hdvID,items
+			
+		return _hdvsItems.get(compteID);
+	}
+	public static Collection<ObjTemplate> getObjTemplates()
+	{
+		return ObjTemplates.values();
+	}
 }
