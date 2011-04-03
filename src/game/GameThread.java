@@ -25,7 +25,6 @@ import common.*;
 
 public class GameThread implements Runnable
 {
-	private long _LastDateFonctionMoveObject = 0;
 	private BufferedReader _in;
 	private Thread _t;
 	private PrintWriter _out;
@@ -1239,10 +1238,41 @@ public class GameThread implements Runnable
 					 SocketManager.GAME_SEND_BN(_perso);
 					 break;
 				}
-		break;
+			break;
+			case 'J': // Amant
+				FriendLove(packet);
+			break;
 		}
 	}
 
+	private void FriendLove(String packet)
+	{
+		Personnage Wife = World.getPersonnage(_perso.getWife());
+		if(Wife == null) return;
+		if(!Wife.isOnline())
+		{
+			SocketManager.GAME_SEND_MESSAGE(_perso,"Votre amour n'est plus en ligne", Ancestra.CONFIG_MOTD_COLOR);
+			SocketManager.GAME_SEND_FRIENDLIST_PACKET(_perso);
+			return;
+		}
+		switch(packet.charAt(2))
+		{
+			case 'S': // se tp a sa dulcinee..
+				if(_perso.get_fight() != null)
+					return;
+				else
+					_perso.meetWife(Wife);
+			break;
+			case 'C': // Suivre le deplacement de sa mamour...
+				if(packet.charAt(3) == '+'){// Si lancement de la traque
+					SocketManager.GAME_SEND_FLAG_PACKET(_perso, Wife);
+				}else{//On arrete de suivre.
+					SocketManager.GAME_SEND_DELETE_FLAG_PACKET(_perso);
+				}
+			break;
+		}
+	} 
+	
 	private void Friend_delete(String packet) {
 		if(_perso == null)return;
 		int guid = -1;
@@ -1476,15 +1506,7 @@ public class GameThread implements Runnable
 				Object_drop(packet);
 			break;
 			case 'M'://Bouger un objet (Equiper/déséquiper)
-				//Eviter les bug de duplication lors du lag de la console a refaire
-				if((System.currentTimeMillis() - _LastDateFonctionMoveObject) < 500)
-				{
-					return;
-				}else
-				{
-					_LastDateFonctionMoveObject = System.currentTimeMillis();
-					Object_move(packet);
-				}
+				Object_move(packet);
 			break;
 			case 'U'://Utiliser un objet (potions)
 				Object_use(packet);
@@ -1504,10 +1526,17 @@ public class GameThread implements Runnable
 		if(guid == -1 || qua <= 0 || !_perso.hasItemGuid(guid))return;
 		Objet obj = World.getObjet(guid);
 		
+		int cellPosition = Constants.getNearCellidUnused(_perso);
+		if(cellPosition == 0)
+		{
+			SocketManager.GAME_SEND_Im_PACKET(_perso, "1145");
+			return;
+		}
+		
 		if(qua >= obj.getQuantity())
 		{
 			_perso.removeItem(guid);
-			_perso.get_curCell().addDroppedItem(obj);
+			_perso.get_curCarte().getCase(_perso.get_curCell().getID()+cellPosition).addDroppedItem(obj);
 			obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
 			SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso, guid);
 		}else
@@ -1515,20 +1544,16 @@ public class GameThread implements Runnable
 			obj.setQuantity(obj.getQuantity() - qua);
 			Objet obj2 = Objet.getCloneObjet(obj, qua);
 			obj2.setPosition(Constants.ITEM_POS_NO_EQUIPED);
-			_perso.get_curCell().addDroppedItem(obj2);
+			_perso.get_curCarte().getCase(_perso.get_curCell().getID()+cellPosition).addDroppedItem(obj2);
 			SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj);
 		}
-		
 		SocketManager.GAME_SEND_Ow_PACKET(_perso);
-		SocketManager.GAME_SEND_GDO_PACKET_TO_MAP(_perso.get_curCarte(),'+',_perso.get_curCell().getID(),obj.getTemplate().getID(),0);
+		SocketManager.GAME_SEND_GDO_PACKET_TO_MAP(_perso.get_curCarte(),'+',_perso.get_curCarte().getCase(_perso.get_curCell().getID()+cellPosition).getID(),obj.getTemplate().getID(),0);
 		SocketManager.GAME_SEND_STATS_PACKET(_perso);
 	}
 
 	private void Object_use(String packet)
 	{
-		//OU577|1|37
-		// 1 : PGUID
-		// 37 : CellID
 		int guid = -1;
 		int targetGuid = -1;
 		short cellID = -1;
@@ -3244,6 +3269,18 @@ public class GameThread implements Runnable
 				house_action(packet);
 			break;
 			
+			case 618://Mariage oui
+				_perso.setisOK(Integer.parseInt(packet.substring(5,6)));
+				SocketManager.GAME_SEND_cMK_PACKET_TO_MAP(_perso.get_curCarte(), "", _perso.get_GUID(), _perso.get_name(), "Oui");
+				if(World.getMarried(0).getisOK() > 0 && World.getMarried(1).getisOK() > 0)
+					World.Wedding(World.getMarried(0), World.getMarried(1), 1);
+			break;
+			case 619://Mariage non
+				_perso.setisOK(0);
+				SocketManager.GAME_SEND_cMK_PACKET_TO_MAP(_perso.get_curCarte(), "", _perso.get_GUID(), _perso.get_name(), "Non");
+				World.Wedding(World.getMarried(0), World.getMarried(1), 0);
+			break;
+			
 			case 900://Demande Defie
 				game_ask_duel(packet);
 			break;
@@ -3477,6 +3514,7 @@ public class GameThread implements Runnable
 		{
 			if(_perso.getPodUsed() > _perso.getMaxPod())
 			{
+				//TODO : Bug après vidage de l'inventaire
 				SocketManager.GAME_SEND_Im_PACKET(_perso, "112");
 				return;
 			}

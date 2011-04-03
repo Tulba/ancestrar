@@ -2855,4 +2855,34 @@ public class Constants
 			GameServer.addToLog("PlotIOAction non gere pour la map "+mID+" cell="+cID);
 		}
 	}
+	
+	public static int getNearCellidUnused(Personnage _perso)
+	{
+		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()+15).getDroppedItem() == null
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+15).getPersos().isEmpty()
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+15).isWalkable(false))
+		{
+			return 15;
+		}else
+		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()-15).getDroppedItem() == null
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-15).getPersos().isEmpty()
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-15).isWalkable(false))
+		{
+			return -15;
+		}else
+		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()+14).getDroppedItem() == null
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+14).getPersos().isEmpty()
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+14).isWalkable(false))
+		{
+			return 14;
+		}else
+		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()-14).getDroppedItem() == null
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-14).getPersos().isEmpty()
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-14).isWalkable(false))
+		{
+			return -14;
+		}
+		
+		return 0;
+	}
 }

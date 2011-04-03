@@ -1194,6 +1194,7 @@ public class Commands {
 			String str = "Creation de l'item "+tID+" reussie";
 			if(useMax) str += " avec des stats maximums";
 			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
+			SocketManager.GAME_SEND_Ow_PACKET(_perso);
 		}else 
 		if (command.equalsIgnoreCase("SPAWN"))
 		{			

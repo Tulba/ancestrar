@@ -1,0 +1,1 @@
+ALTER TABLE `ancestra_other`.`personnages` ADD `wife` INT( 1 ) NOT NULL DEFAULT '0';

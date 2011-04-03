@@ -13,7 +13,7 @@ public class ConditionParser
 	{
 		if(req == null || req.equals(""))return true;
 		if(req.contains("BI"))return false;
-		if(perso.get_compte().get_gmLvl() >= 5)return true;
+		//if(perso.get_compte().get_gmLvl() >= 5)return true; TODO : OSEF ?
 		
 		Jep jep = new Jep();
 		if(req.contains("PO"))
@@ -45,6 +45,7 @@ public class ConditionParser
 			 	jep.addVariable("PG", perso.get_classe());
 			 	jep.addVariable("PS", perso.get_sexe());
 			 	jep.addVariable("PZ", true);//Abonnement
+			 	jep.addVariable("isMarried", perso.getWife());//Mariage
 			 	//Gérer PO PJ PN
 			 	
 			 	//Les pierres d'ames sont lancables uniquement par le lanceur.

@@ -119,6 +119,9 @@ public class Personnage {
 	private byte _title = 0;
 	//Inactivité
 	protected long _lastPacketTime;
+	//Mariage
+	private int _wife = 0; 
+	private int _isOK = 0; 
 	
 	public static class traque 
 	{ 
@@ -447,7 +450,7 @@ public class Personnage {
 			int _color1, int _color2, int _color3,long _kamas, int pts, int _capital, int _energy, int _lvl, long exp,
 			int _size, int _gfxid, byte alignement, int _compte, Map<Integer,Integer> stats,
 			int seeFriend, byte seeAlign, String canaux, short map, int cell,String stuff,int pdvPer,String spells, String savePos,String jobs,
-			int mountXp,int mount,int honor,int deshonor,int alvl,String z, byte title)
+			int mountXp,int mount,int honor,int deshonor,int alvl,String z, byte title, int wifeGuid)
 	{
 		this._GUID = _guid;
 		this._name = _name;
@@ -474,6 +477,7 @@ public class Personnage {
 		this._accID = _compte;
 		this._compte = World.getCompte(_compte);
 		this._showFriendConnection = seeFriend==1;
+		this._wife = wifeGuid; 
 		if(this.get_align() != 0)
 		{
 			this._showWings = seeAlign==1;
@@ -690,7 +694,8 @@ public class Personnage {
 				0,
 				0,
 				z,
-				(byte)0
+				(byte)0,
+				0
 				);
 		perso._sorts = Constants.getStartSorts(classe);
 		for(int a = 1; a <= perso.get_lvl();a++)
@@ -3150,5 +3155,98 @@ public class Personnage {
 	public void set_traque(traque traq)
 	{
 		_traqued = traq;
+	}
+	
+	//Mariage
+	public void MarryTo(Personnage wife)
+	{
+		_wife = wife.get_GUID();
+		SQLManager.SAVE_PERSONNAGE(this,true);
+	}
+	
+	public String get_wife_friendlist()
+	{
+		Personnage wife = World.getPersonnage(_wife);
+		String str = "";
+		if(wife != null)
+		{
+			str += wife.get_name()+"|"+wife.get_classe()+wife.get_sexe()+"|"+wife.get_color1()+"|"+wife.get_color2()+"|"+wife.get_color3()+"|";
+			if(!wife.isOnline()){
+				str += "|";
+			}else{
+			str += wife.parse_towife() + "|";
+			}
+		}else{
+			str += "|";
+		}
+		return str;
+	}
+	
+	public String parse_towife()
+	{
+		int f = 0;
+		if(_fight != null)
+		{
+			f = 1;
+		}
+		return _curCarte.get_id() + "|" + _lvl + "|" + f;
+	}
+	
+	public void meetWife(Personnage p)// Se teleporter selon les sacro-saintes autorisations du mariage.
+	{
+		if(p == null)return; // Ne devrait theoriquement jamais se produire.
+		
+		int dist = (_curCarte.getX() - p.get_curCarte().getX())*(_curCarte.getX() - p.get_curCarte().getX())
+					+ (_curCarte.getY() - p.get_curCarte().getY())*(_curCarte.getY() - p.get_curCarte().getY());
+		if(dist > 100)// La distance est trop grande...
+		{
+			if(p.get_sexe() == 0)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(this, "178");
+			}else
+			{
+				SocketManager.GAME_SEND_Im_PACKET(this, "179");
+			}
+			return;
+		}
+		
+		int cellPosition = Constants.getNearCellidUnused(p);
+		if(cellPosition == 0)
+		{
+			if(p.get_sexe() == 0)
+			{
+				SocketManager.GAME_SEND_Im_PACKET(this, "141");
+			}else
+			{
+				SocketManager.GAME_SEND_Im_PACKET(this, "142");
+			}
+			return;
+		}
+		
+		teleport(p.get_curCarte().get_id(), cellPosition);
+	}
+	
+	public void Divorce()
+	{
+		if(this.isOnline())
+			SocketManager.GAME_SEND_Im_PACKET(this, "047;"+World.getPersonnage(_wife).get_name());
+		
+		_wife = 0;
+		SQLManager.SAVE_PERSONNAGE(this, true);
+	}
+	
+	public int getWife()
+	{
+		return _wife;
+	}
+	
+	public int setisOK(int ok)
+	{
+		return _isOK = ok;
+	}
+	
+	public int getisOK()
+	{
+		return _isOK;
 	}
 }

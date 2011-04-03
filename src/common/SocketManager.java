@@ -1818,6 +1818,13 @@ public class SocketManager {
 	{
 		String packet = "FL"+perso.get_compte().parseFriendList();
 		send(perso,packet);
+		if(perso.getWife() != 0)
+		{
+			String packet2 = "FS" + perso.get_wife_friendlist();
+			send(perso,packet2);
+			if(Ancestra.CONFIG_DEBUG)
+				GameServer.addToSockLog("Game: Send>>"+packet2);
+		} 
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
@@ -2291,6 +2298,14 @@ public class SocketManager {
 			GameServer.addToSockLog("Game: Send>>"+packet); 
 	}
 	
+	public static void GAME_SEND_DELETE_FLAG_PACKET(Personnage perso) 
+	{ 
+		String packet = "IC|"; 
+		send(perso,packet); 
+		if(Ancestra.CONFIG_DEBUG) 
+			GameServer.addToSockLog("Game: Send>>"+packet); 
+	}
+	
 	public static void GAME_SEND_gT_PACKET(Personnage perso, String str) 
 	{ 
 		String packet = "gT"+str; 
@@ -2383,4 +2398,12 @@ public class SocketManager {
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
 	}
+	public static void GAME_SEND_WEDDING(Carte c, int action, int homme, int femme, int parlant)
+	{
+		String packet = "GA;"+action+";"+homme+";"+homme+","+femme+","+parlant;
+		Personnage Homme = World.getPersonnage(homme);
+		send(Homme,packet);
+		if (Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>" + packet);
+	} 
 }
