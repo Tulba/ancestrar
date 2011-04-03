@@ -1,3 +1,8 @@
+[03/04/2011]
+- GameThread/Constants : Amélioration de la fonction Object_drop().
+- Personnage/Action/GameThread/SocketManager/World : Ajout du mariage de BASKWO avec quelques améliorations.
+(Patch 97, 98 & 99 a appliquer)
+
 [25/03/2011]
 - GameThread : Correction de la barre d'objet (A tester).
 

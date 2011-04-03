@@ -575,6 +575,30 @@ public class Action {
 				}
 
 			break;
+			case 101://Arriver sur case de mariage
+				if((perso.get_sexe() == 0 && perso.get_curCell().getID() == 282) || (perso.get_sexe() == 1 && perso.get_curCell().getID() == 297))
+				{
+					World.AddMarried(perso.get_sexe(), perso);
+				}else 
+				{
+					SocketManager.GAME_SEND_Im_PACKET(perso, "1102");
+				}
+			break;
+			case 102://Marier des personnages
+				World.PriestRequest(perso, perso.get_curCarte(), perso.get_isTalkingWith());
+			break;
+			case 103://Divorce
+				if(perso.get_kamas() < 50000)
+				{
+					return;
+				}else
+				{
+					perso.set_kamas(perso.get_kamas()-50000);
+					Personnage wife = World.getPersonnage(perso.getWife());
+					wife.Divorce();
+					perso.Divorce();
+				}
+			break;
 			default:
 				GameServer.addToLog("Action ID="+ID+" non implantee");
 			break;

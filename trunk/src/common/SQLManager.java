@@ -32,20 +32,6 @@ public class SQLManager {
 	private static Timer timerCommit;
 	private static boolean needCommit;
 	
-	/*
-	public synchronized static boolean execute(String query,String DBNAME) throws SQLException
-	{
-		if(!Ancestra.isInit) return false;
-		
-		Connection DB = DriverManager.getConnection("jdbc:mysql://"+Ancestra.DB_HOST+"/"+DBNAME,Ancestra.DB_USER,Ancestra.DB_PASS);
-		Statement stat = DB.createStatement();
-		stat.setQueryTimeout(0);
-		stat.execute(query);
-		stat.close();
-		DB.close();
-		return true;
-	}
-	*/
 	public synchronized static ResultSet executeQuery(String query,String DBNAME) throws SQLException
 	{
 		if(!Ancestra.isInit)
@@ -698,7 +684,8 @@ public class SQLManager {
 						RS.getInt("deshonor"),
 						RS.getInt("alvl"),
 						RS.getString("zaaps"),
-						RS.getByte("title")
+						RS.getByte("title"),
+						RS.getInt("wife")
 						);
 				//Vérifications pré-connexion
 				perso.VerifAndChangeItemPlace();
@@ -774,7 +761,8 @@ public class SQLManager {
 								RS.getInt("deshonor"),
 								RS.getInt("alvl"),
 								RS.getString("zaaps"),
-								RS.getByte("title")
+								RS.getByte("title"),
+								RS.getInt("wife")
 								);
 						World.addPersonnage(perso);
 						int guildId = isPersoInGuild(RS.getInt("guid"));
@@ -845,7 +833,8 @@ public class SQLManager {
 						RS.getInt("deshonor"),
 						RS.getInt("alvl"),
 						RS.getString("zaaps"),
-						RS.getByte("title")
+						RS.getByte("title"),
+						RS.getInt("wife")
 						);
 				World.addPersonnage(perso);
 				if(World.getCompte(RS.getInt("account")) != null)
@@ -1062,7 +1051,8 @@ public class SQLManager {
 						"`zaaps` = ?,"+
 						"`mount` = ?,"+
 						"`seeAlign` = ?,"+
-						"`title` = ?"+
+						"`title` = ?,"+
+						"`wife` = ?"+
 						" WHERE `personnages`.`guid` = ? LIMIT 1 ;";
 		
 		PreparedStatement p = null;
@@ -1103,7 +1093,8 @@ public class SQLManager {
 			p.setInt(30, (_perso.getMount()!=null?_perso.getMount().get_id():-1));
 			p.setInt(31,(_perso.is_showWings()?1:0));
 			p.setByte(32,(_perso.get_title()));
-			p.setInt(33,_perso.get_GUID());
+			p.setInt(33,_perso.getWife());
+			p.setInt(34,_perso.get_GUID());
 			
 			p.executeUpdate();
 			

@@ -43,10 +43,9 @@ public class World {
 	private static Map<Integer,Guild> Guildes = new TreeMap<Integer,Guild>();
 	private static Map<Integer,Percepteur> Percepteur = new TreeMap<Integer,Percepteur>();
 	private static Map<Integer,House> House = new TreeMap<Integer,House>();
-	
 	private static Map<Integer,HDV> Hdvs = new TreeMap<Integer,HDV>();
-	
 	private static Map<Integer,Map<Integer,ArrayList<HdvEntry>>> _hdvsItems = new HashMap<Integer,Map<Integer,ArrayList<HdvEntry>>>();	//Contient tout les items en ventes des comptes dans le format<compteID,<hdvID,items<>>>
+	private static Map<Integer,Personnage> Married = new TreeMap<Integer,Personnage>(); 
 	
 	private static int nextHdvID;	//Contient le derniere ID utilisé pour crée un HDV, pour obtenir un ID non utilisé il faut impérativement l'incrémenter
 	private static int nextLigneID;	//Contient le derniere ID utilisé pour crée une ligne dans un HDV
@@ -1373,5 +1372,68 @@ public class World {
 	public static Collection<ObjTemplate> getObjTemplates()
 	{
 		return ObjTemplates.values();
+	}
+	
+	public static Personnage getMarried(int ordre)
+	{
+		return Married.get(ordre);
+	}
+	
+	public static void AddMarried(int ordre,Personnage perso)
+	{
+		Personnage Perso = Married.get(ordre);
+		if(Perso != null)
+		{
+			if(perso.get_GUID() == Perso.get_GUID()) // Si c'est le meme joueur...
+				return;
+			if(Perso.isOnline())// Si perso en ligne...
+			{
+				Married.remove(ordre);
+				Married.put(ordre, perso);
+				return;
+			}
+			if(perso.get_curCell() == Perso.get_curCell())
+			{
+				return;
+			}
+			
+			return;
+		}else
+		{
+			Married.put(ordre, perso);
+			return;
+		}
+	}
+	
+	public static void PriestRequest(Personnage perso, Carte carte, int IdPretre)
+	{
+		Personnage Homme = Married.get(0);
+		Personnage Femme = Married.get(1);
+		if(Homme.getWife() != 0){
+			SocketManager.GAME_SEND_MESSAGE_TO_MAP(carte, Homme.get_name()+" est deja marier!", Ancestra.CONFIG_MOTD_COLOR);
+			return;
+		}
+		if(Femme.getWife() != 0){
+			SocketManager.GAME_SEND_MESSAGE_TO_MAP(carte, Femme.get_name()+" est deja marier!", Ancestra.CONFIG_MOTD_COLOR);
+			return;
+		}
+		SocketManager.GAME_SEND_cMK_PACKET_TO_MAP(perso.get_curCarte(), "", -1, "Prêtre", perso.get_name()+" acceptez-vous d'épouser "+getMarried((perso.get_sexe()==1?0:1)).get_name()+" ?");
+		SocketManager.GAME_SEND_WEDDING(carte, 617, (Homme==perso?Homme.get_GUID():Femme.get_GUID()), (Homme==perso?Femme.get_GUID():Homme.get_GUID()), IdPretre);
+	}
+	
+	public static void Wedding(Personnage Homme, Personnage Femme, int isOK)
+	{
+		if(isOK > 0)
+		{
+			SocketManager.GAME_SEND_cMK_PACKET_TO_MAP(Homme.get_curCarte(), "", -1, "Prêtre", "Je déclare "+Homme.get_name()+" et "+Femme.get_name()+" unis par les liens sacrés du mariage.");
+			Homme.MarryTo(Femme);
+			Femme.MarryTo(Homme);
+		}else
+		{
+			SocketManager.GAME_SEND_Im_PACKET_TO_MAP(Homme.get_curCarte(), "048;"+Homme.get_name()+"~"+Femme.get_name());
+		}
+		Married.get(0).setisOK(0);
+		Married.get(1).setisOK(0);
+		Married.clear();
 	}
 }
