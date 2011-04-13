@@ -2891,5 +2891,28 @@ public class SQLManager {
 				e.printStackTrace();
 			}
 		}
+		public static void LOAD_ANIMATIONS()
+		{
+			try
+			{
+				ResultSet RS = SQLManager.executeQuery("SELECT * from animations;",Ancestra.STATIC_DB_NAME);
+				while(RS.next())
+				{
+					World.addAnimation(new Animations(
+							RS.getInt("guid"),
+							RS.getInt("id"),
+							RS.getString("nom"),
+							RS.getInt("area"),
+							RS.getInt("action"),
+							RS.getInt("size")
+					));
+				}
+				closeResultSet(RS);
+			}catch(SQLException e)
+			{
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+			}
+		}
 }
 

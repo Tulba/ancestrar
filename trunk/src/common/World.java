@@ -46,7 +46,8 @@ public class World {
 	private static Map<Integer,HDV> Hdvs = new TreeMap<Integer,HDV>();
 	private static Map<Integer,Map<Integer,ArrayList<HdvEntry>>> _hdvsItems = new HashMap<Integer,Map<Integer,ArrayList<HdvEntry>>>();	//Contient tout les items en ventes des comptes dans le format<compteID,<hdvID,items<>>>
 	private static Map<Integer,Personnage> Married = new TreeMap<Integer,Personnage>(); 
-	
+	 private static Map<Integer,Animations> Animations = new TreeMap<Integer,Animations>();
+	 
 	private static int nextHdvID;	//Contient le derniere ID utilisé pour crée un HDV, pour obtenir un ID non utilisé il faut impérativement l'incrémenter
 	private static int nextLigneID;	//Contient le derniere ID utilisé pour crée une ligne dans un HDV
 	
@@ -686,6 +687,9 @@ public class World {
 		System.out.print("Chargement des Drops: ");
 		SQLManager.LOAD_DROPS();
 		System.out.println("Ok !");
+		System.out.println("Chargement des Animations: ");
+		SQLManager.LOAD_ANIMATIONS();
+		System.out.println(Animations.size() + " ont ete chargees");
 		
 		System.out.println("====>Donnees dynamique<====");
 		
@@ -1435,5 +1439,15 @@ public class World {
 		Married.get(0).setisOK(0);
 		Married.get(1).setisOK(0);
 		Married.clear();
+	}
+	
+	public static Animations getAnimation(int AnimationId)
+	{
+		return Animations.get(AnimationId);
+	}
+	
+	public static void addAnimation(Animations animation)
+	{
+		Animations.put(animation.getId(), animation);
 	}
 }

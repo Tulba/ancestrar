@@ -1,3 +1,14 @@
+[11/04/2011]
+- Extra : Ajout des sorts débug par Tituc, a tester.
+
+[05/04/2011]
+- Compte : La liste d'ennemis ne donne plus le nom de compte du joueur.
+- Annimations/Action/World : Ajout des annimations (Fée etc...). 
+(Patch 100 a appliquer)
+
+[04/04/2011]
+- Compte/GameThread : Correction de la limite des HDVs.
+
 [03/04/2011]
 - GameThread/Constants : Amélioration de la fonction Object_drop().
 - Personnage/Action/GameThread/SocketManager/World : Ajout du mariage de BASKWO avec quelques améliorations.

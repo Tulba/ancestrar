@@ -3249,4 +3249,16 @@ public class Personnage {
 	{
 		return _isOK;
 	}
+	
+	public void changeOrientation(int toOrientation)
+	{
+		if(this.get_orientation() == 0 
+				|| this.get_orientation() == 2 
+				|| this.get_orientation() == 4 
+				|| this.get_orientation() == 6)
+		{
+			this.set_orientation(toOrientation);
+			SocketManager.GAME_SEND_eD_PACKET_TO_MAP(get_curCarte(), this.get_GUID(), toOrientation);
+		}
+	}
 }
