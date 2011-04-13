@@ -2136,6 +2136,11 @@ public class GameThread implements Runnable
 					
 					if(!_perso.hasItemGuid(itmID))//Vérifie si le personnage a bien l'item spécifié et l'argent pour payer la taxe
 						return;
+					if(_perso.get_compte().countHdvItems(curHdv.getHdvID()) >= curHdv.getMaxItemCompte())
+					{
+						SocketManager.GAME_SEND_Im_PACKET(_perso, "058");
+						return;
+					}
 					if(_perso.get_kamas() < taxe)
 					{
 						SocketManager.GAME_SEND_Im_PACKET(_perso, "176");

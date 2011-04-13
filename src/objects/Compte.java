@@ -480,7 +480,7 @@ public class Compte {
 		{
 			Compte C = World.getCompte(i);
 			if(C == null)continue;
-			str += "|"+C.get_name();
+			str += "|"+C.get_pseudo();
 			//on s'arrete la si aucun perso n'est connecté
 			if(!C.isOnline())continue;
 			Personnage P = C.get_curPerso();
@@ -555,5 +555,13 @@ public class Compte {
 			toReturn[i] = _hdvsItems.get(hdvID).get(i);
 		}
 		return toReturn;
+	}
+	
+	public int countHdvItems(int hdvID)
+	{
+		if(_hdvsItems.get(hdvID) == null)
+			return 0;
+		
+		return _hdvsItems.get(hdvID).size();
 	}
 }

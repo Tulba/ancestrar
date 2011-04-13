@@ -599,6 +599,13 @@ public class Action {
 					perso.Divorce();
 				}
 			break;
+			case 228://Faire animation Hors Combat
+				int AnimationId = Integer.parseInt(args);
+				Animations animation = World.getAnimation(AnimationId);
+				if(perso.get_fight() != null) return;
+				perso.changeOrientation(1);
+				SocketManager.GAME_SEND_GA_PACKET_TO_MAP(perso.get_curCarte(), "0", 228, perso.get_GUID()+";"+perso.get_curCell().getID()+","+Animations.PrepareToGA(animation), "");
+			break;
 			default:
 				GameServer.addToLog("Action ID="+ID+" non implantee");
 			break;
