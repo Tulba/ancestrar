@@ -68,7 +68,7 @@ public class SocketManager {
 	
 	public static void send(Personnage p, String packet)
 	{
-		if(p.get_compte() == null)return;
+		if(p == null || p.get_compte() == null)return;
 		if(p.get_compte().getGameThread() == null)return;
 		PrintWriter out = p.get_compte().getGameThread().get_out();
 		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
@@ -505,7 +505,7 @@ public class SocketManager {
 		String packet = "GM|-"+guid;
 		for(Fighter F : f.getFighters(team))
 		{
-			if(F.getPersonnage().get_compte().getGameThread() == null || F.getPersonnage().get_GUID() == guid)continue;
+			if(F.getPersonnage() == null || F.getPersonnage().get_compte().getGameThread() == null || F.getPersonnage().get_GUID() == guid)continue;
 			send(F.getPersonnage().get_compte().getGameThread().get_out(),packet);
 		}
 		if(Ancestra.CONFIG_DEBUG)
@@ -679,6 +679,23 @@ public class SocketManager {
 	{
 		String packet = _perso.parseToOa();
 		for(Personnage z : map.getPersos()) send(z,packet);
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Map: Send>>"+packet);
+	}
+	
+	public static void GAME_SEND_ON_EQUIP_ITEM_FIGHT(Personnage _perso, Fighter f, Fight F)
+	{
+		String packet = _perso.parseToOa();
+		for(Fighter z : F.getFighters(f.getTeam2())) 
+		{
+			if(z.getPersonnage() == null) continue;
+			send(z.getPersonnage(),packet);
+		}
+		for(Fighter z : F.getFighters(f.getOtherTeam())) 
+		{
+			if(z.getPersonnage() == null) continue;
+			send(z.getPersonnage(),packet);
+		}
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}

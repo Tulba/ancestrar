@@ -971,10 +971,9 @@ public class IA {
 				return false;
 			if(Pathfinding.isNextTo(F.get_fightCell().getID(), T.get_fightCell().getID()))
 				return false;
-			if(Ancestra.CONFIG_DEBUG)
-			{
-			GameServer.addToLog("Tentative d'approche par "+F.getPacketsName()+" de "+T.getPacketsName());
-			}
+			
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Tentative d'approche par "+F.getPacketsName()+" de "+T.getPacketsName());
+			
 			int cellID = Pathfinding.getNearestCellAround(fight.get_map(),T.get_fightCell().getID(),F.get_fightCell().getID(),null);
 			//On demande le chemin plus court
 			if(cellID == -1)
@@ -1111,7 +1110,7 @@ public class IA {
 		}
 		
 		
-		private static int attackIfPossible(Fight fight, Fighter fighter)
+		private static int attackIfPossible(Fight fight, Fighter fighter)// 0 = Rien, 5 = EC, 666 = NULL, 10 = SpellNull ou ActionEnCour ou Can'tCastSpell, 0 = AttaqueOK
 		{	
 			Map<Integer,Fighter> ennemyList = getLowHpEnnemyList(fight,fighter);
 			SortStats SS = null;
@@ -1154,9 +1153,8 @@ public class IA {
 				int attack = fight.tryCastSpell(fighter, SS, target.get_fightCell().getID());
 				if(attack != 0)
 					return attack;			
-			}		
+			}
 			return 0;
-			
 		}
 		
 		private static int attackIfPossiblePerco(Fight fight, Fighter fighter)

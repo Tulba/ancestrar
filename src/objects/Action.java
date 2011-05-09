@@ -40,6 +40,7 @@ public class Action {
 			SocketManager.GAME_SEND_Im_PACKET(perso, "119");
 			return;
 		}
+		if(perso.get_compte().getGameThread() == null) return;
 		PrintWriter out = perso.get_compte().getGameThread().get_out();	
 		switch(ID)
 		{

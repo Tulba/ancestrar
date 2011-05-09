@@ -1,3 +1,21 @@
+[05/05/2011]
+- Fight : Correction et simplification de la fonction LeftFight pour les combats contre un percepteur.
+- GameThread/SocketManager : Le changement d'un item pendant la phase "FIGHT_STATE_PLACE" (2, choix des places) du combat rend désormais l'item visible après changement.
+- Divers : Correction de NullPointerException(s).
+
+[04/05/2011]
+- Fight : Correction et simplification de la fonction LeftFight pour les combats de type : PVM, Défie, PVP(agro).
+
+[03/05/2011]
+- Fight : Correction des FightFlag pour percepteur et PVP(agro).
+
+[02/05/2011]
+- IA/Fight : Correction de certains problèmes liés aux invocations des Osas.
+- Pathfinding : Correction d'un problème d'accès des mobs vers le personnage si celui-ci est inaccessible.
+- Fight : Correction de problèmes liés au passage du tours de jeu durant une action.
+- Fight : Correction des fin des combats (kick, expulsion).
+- Personnage : Correction de la luminosité des ailes (THX Tenkai).
+
 [11/04/2011]
 - Extra : Ajout des sorts débug par Tituc, a tester.
 

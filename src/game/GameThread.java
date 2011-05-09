@@ -607,7 +607,7 @@ public class GameThread implements Runnable
 		SQLManager.ADD_PERCO_ON_MAP(id, _perso.get_curCarte().get_id(), _perso.get_guild().get_id(), _perso.get_curCell().getID(), 3, random1, random2);
 		for(Personnage z : _perso.get_guild().getMembers())
 		{
-			if(z.isOnline())
+			if(z != null && z.isOnline())
 			{
 				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
 				String str = "";
@@ -1460,10 +1460,11 @@ public class GameThread implements Runnable
 	{
 		if(_perso == null)return;
 		if(_perso.getInvitation() == 0)return;
-		Personnage t = World.getPersonnage(_perso.getInvitation());
 		_perso.setInvitation(0);
-		t.setInvitation(0);
 		SocketManager.GAME_SEND_BN(_out);
+		Personnage t = World.getPersonnage(_perso.getInvitation());
+		if(t == null) return;
+		t.setInvitation(0);
 		SocketManager.GAME_SEND_PR_PACKET(t);
 	}
 
@@ -1472,6 +1473,7 @@ public class GameThread implements Runnable
 		if(_perso == null)return;
 		if(_perso.getInvitation() == 0)return;
 		Personnage t = World.getPersonnage(_perso.getInvitation());
+		if(t == null) return;
 		Group g = t.getGroup();
 		if(g == null)
 		{
@@ -1578,6 +1580,7 @@ public class GameThread implements Runnable
 		}
 		if(!_perso.hasItemGuid(guid))return;
 		Objet obj = World.getObjet(guid);
+		if(obj == null) return;
 		ObjTemplate T = obj.getTemplate();
 		if(!obj.getTemplate().getConditions().equalsIgnoreCase("") && !ConditionParser.validConditions(_perso,obj.getTemplate().getConditions()))
 		{
@@ -1607,7 +1610,13 @@ public class GameThread implements Runnable
 			if(!_perso.hasItemGuid(guid) || obj == null)
 				return;
 			
-			if(_perso.get_fight() != null && _perso.get_fight().get_state() > 2)return;
+			if(_perso.get_fight() != null)
+			{
+				if(_perso.get_fight().get_state() > 2)
+				{
+					return;
+				}
+			}
 			if(!Constants.isValidPlaceForItem(obj.getTemplate(),pos) && pos != Constants.ITEM_POS_NO_EQUIPED)
 			{
 				return;
@@ -1711,7 +1720,7 @@ public class GameThread implements Runnable
 			if(pos == Constants.ITEM_POS_NO_EQUIPED && _perso.getObjetByPos(Constants.ITEM_POS_ARME) == null)
 				SocketManager.GAME_SEND_OT_PACKET(_out, -1);
 			
-			if(pos == Constants.ITEM_POS_ARME)
+			if(pos == Constants.ITEM_POS_ARME && _perso.getObjetByPos(Constants.ITEM_POS_ARME) != null)
 			{
 				int ID = _perso.getObjetByPos(Constants.ITEM_POS_ARME).getTemplate().getID();
 				for(Entry<Integer,StatsMetier> e : _perso.getMetiers().entrySet())
@@ -1722,7 +1731,11 @@ public class GameThread implements Runnable
 			}
 			//Si objet de panoplie
 			if(obj.getTemplate().getPanopID() > 0)SocketManager.GAME_SEND_OS_PACKET(_perso,obj.getTemplate().getPanopID());
-			
+			//Si en combat
+			if(_perso.get_fight() != null)
+			{
+				SocketManager.GAME_SEND_ON_EQUIP_ITEM_FIGHT(_perso, _perso.get_fight().getFighterByPerso(_perso), _perso.get_fight());
+			}
 		}catch(Exception e)
 		{
 			e.printStackTrace();
@@ -3448,19 +3461,12 @@ public class GameThread implements Runnable
 			try
 			{
 				int guid = Integer.parseInt(infos[1]);
-				if(_perso.is_away()){SocketManager.GAME_SEND_GA903_ERROR_PACKET(_out,'o',guid);return;};
-				if(World.getPersonnage(guid) == null)return;
-				
-				int Fid = Fight.getFightIDByFighter(_perso.get_curCarte(), Integer.parseInt(infos[1]));
-				Fight F = _perso.get_curCarte().getFight(Fid);
-				
-				if(_perso.get_guild() != null)
+				if(_perso.is_away())
 				{
-					if(F != null && F.get_guildID() == _perso.get_guild().get_id()) 
-					{
-						return;
-					}
+					SocketManager.GAME_SEND_GA903_ERROR_PACKET(_out,'o',guid);
+					return;
 				}
+				if(World.getPersonnage(guid) == null)return;
 				World.getPersonnage(guid).get_fight().joinFight(_perso,guid);
 			}catch(Exception e){return;};
 		}
