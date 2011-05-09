@@ -1253,9 +1253,12 @@ public class World {
 	public static void unloadPerso(int g)
 	{
 		Personnage toRem = Persos.get(g);
-		for(Entry<Integer,Objet> curObj : toRem.getItems().entrySet())
+		if(!toRem.getItems().isEmpty())
 		{
-			Objets.remove(curObj.getKey());
+			for(Entry<Integer,Objet> curObj : toRem.getItems().entrySet())
+			{
+				Objets.remove(curObj.getKey());
+			}
 		}
 		toRem = null;
 		Persos.remove(g);

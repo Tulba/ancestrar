@@ -16,7 +16,7 @@ public class Pending {
         {
             try {
                 	Thread.sleep(750);
-                	if(C.getRealmThread()._out == null) return;
+                	if(C == null || C.getRealmThread()._out == null) return;
                 	SocketManager.MULTI_SEND_Af_PACKET(C.getRealmThread()._out,1,RealmServer._totalAbo,RealmServer._totalNonAbo,""+1,RealmServer._queueID);
                 	C._position = -1;
                 	RealmServer._totalAbo--;
@@ -28,7 +28,7 @@ public class Pending {
         {
             try {
             		Thread.sleep(750*C._position);
-            		if(C.getRealmThread()._out == null) return;
+            		if(C == null ||  C.getRealmThread()._out == null) return;
             		SocketManager.MULTI_SEND_Af_PACKET(C.getRealmThread()._out,1,RealmServer._totalAbo,RealmServer._totalNonAbo,""+1,RealmServer._queueID);
             		C._position = -1;
             		RealmServer._totalAbo--;

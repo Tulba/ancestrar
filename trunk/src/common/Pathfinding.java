@@ -193,7 +193,7 @@ public class Pathfinding {
 		for(int a = 0; a<value;a++)
 		{
 			int nextCase = GetCaseIDFromDirrection(id, c, map, true);
-			if(map.getCase(nextCase).isWalkable(true) && map.getCase(nextCase).getFighters().isEmpty())
+			if(map.getCase(nextCase) != null && map.getCase(nextCase).isWalkable(true) && map.getCase(nextCase).getFighters().isEmpty())
 				id = nextCase;
 			else
 				return -(value-a);
@@ -494,7 +494,6 @@ public class Pathfinding {
 		
 		while(!stop && stepNum++ <= limit)
 		{
-			
 			int nearestCell = getNearestCellAround(map,curCase.getID(),dest,closeCells);
 			if(nearestCell == -1)
 			{
@@ -504,17 +503,17 @@ public class Pathfinding {
 				 	curPath.remove(curPath.size()-1);
 				 	if(curPath.size()>0)curCase = curPath.get(curPath.size()-1);
 				 	else curCase = map.getCase(start);
-				 	}
-				 	else
-				 	{
-				 	curCase = map.getCase(start);
-				 }
-			 }else if(distMax == 0 && nearestCell == dest)
-			 	{
+				}
+				else
+				{
+					curCase = map.getCase(start);
+				}
+			}else if(distMax == 0 && nearestCell == dest)
+			{
 			 	curPath.add(map.getCase(dest));
 			 	break;
-			 	}else if(distMax > Pathfinding.getDistanceBetween(map, nearestCell, dest))
-			 	{
+			}else if(distMax > Pathfinding.getDistanceBetween(map, nearestCell, dest))
+			{
 			 	curPath.add(map.getCase(dest));
 			 	break; 
 			}else//on continue
@@ -527,7 +526,10 @@ public class Pathfinding {
 		
 		curCase = map.getCase(start);
 		closeCells.clear();
-		closeCells.add(curPath.get(0));
+		if(!curPath.isEmpty())
+		{
+			closeCells.add(curPath.get(0));
+		}
 		
 		while(!stop && stepNum++ <= limit)
 		{
@@ -538,20 +540,20 @@ public class Pathfinding {
 				closeCells.add(curCase);
 				if(curPath2.size() > 0)
 				{
-				 	curPath2.remove(curPath2.size()-1);
+					curPath2.remove(curPath2.size()-1);
 				 	if(curPath2.size()>0)curCase = curPath2.get(curPath2.size()-1);
 				 	else curCase = map.getCase(start);
-				 	}
-				 	else//Si retour a zero
-				 	{
-				 	curCase = map.getCase(start);
-				 }
-			 }else if(distMax == 0 && nearestCell == dest)
-			 	{
-			 	curPath2.add(map.getCase(dest));
+				}
+				else//Si retour a zero
+				{
+					curCase = map.getCase(start);
+				}
+			}else if(distMax == 0 && nearestCell == dest)
+			{
+				curPath2.add(map.getCase(dest));
 			 	break;
-			 	}else if(distMax > Pathfinding.getDistanceBetween(map, nearestCell, dest))
-			 	{
+			}else if(distMax > Pathfinding.getDistanceBetween(map, nearestCell, dest))
+			{
 			 	curPath2.add(map.getCase(dest));
 			 	break; 
 			}else//on continue
@@ -561,9 +563,9 @@ public class Pathfinding {
 				curPath2.add(curCase);
 			}
 		}
+		
 		if((curPath2.size() < curPath.size() && curPath2.size() > 0) || curPath.isEmpty())
 			curPath = curPath2;
-		
 		return curPath;
 	}
 	

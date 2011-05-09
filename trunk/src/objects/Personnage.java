@@ -209,7 +209,7 @@ public class Personnage {
 			if(_persos.size() == 1)
 			{
 				_persos.get(0).setGroup(null);
-				if(_persos.get(0).get_compte() == null)return;
+				if(_persos.get(0).get_compte() == null || _persos.get(0).get_compte().getGameThread() == null)return;
 				SocketManager.GAME_SEND_PV_PACKET(_persos.get(0).get_compte().getGameThread().get_out(),"");
 			}
 			else
@@ -1194,6 +1194,7 @@ public class Personnage {
 	
 	public void sendGameCreate()
 	{
+		if(_compte.getGameThread() == null) return;
 		PrintWriter out = _compte.getGameThread().get_out();
 		SocketManager.GAME_SEND_GAME_CREATE(out,_name);
 		SocketManager.GAME_SEND_STATS_PACKET(this);
@@ -1230,7 +1231,7 @@ public class Personnage {
 			str+= _align+",";//1,0,0,4055064
 			str+= "0,";//FIXME:?
 			str+= (_showWings?getGrade():"0")+",";
-			str+= _GUID+";";
+			str+= _lvl+";";//_GUID
 			str+= (_color1==-1?"-1":Integer.toHexString(_color1))+";";
 			str+= (_color2==-1?"-1":Integer.toHexString(_color2))+";";
 			str+= (_color3==-1?"-1":Integer.toHexString(_color3))+";";
@@ -1554,7 +1555,7 @@ public class Personnage {
 	public void refreshMapAfterFight()
 	{
 		_curCarte.addPlayer(this);
-		if(_compte.getGameThread().get_out() != null)
+		if(_compte.getGameThread() != null && _compte.getGameThread().get_out() != null)
 		{
 			SocketManager.GAME_SEND_STATS_PACKET(this);
 			SocketManager.GAME_SEND_ILS_PACKET(this, 1000);
@@ -1975,7 +1976,11 @@ public class Personnage {
 	
 	public void teleport(short newMapID, int newCellID)
 	{
-		PrintWriter PW = _compte.getGameThread().get_out();
+		PrintWriter PW = null;
+		if(_compte.getGameThread() != null)
+		{
+			PW = _compte.getGameThread().get_out();
+		}
 		if(World.getCarte(newMapID) == null)return;
 		if(World.getCarte(newMapID).getCase(newCellID) == null)return;
 		if(PW != null)
@@ -1997,6 +2002,7 @@ public class Personnage {
 		_curCarte.addPlayer(this);
 		}
 	}
+	
 	public int getBankCost()
 	{
 		return _compte.getBank().size();
