@@ -76,10 +76,17 @@ public class Formulas {
 		float a = 1;//Calcul
 		float num = 0;
 		float statC = 0, domC = 0, perdomC = 0, resfT = 0, respT = 0;
-		domC = caster.getTotalStats().getEffect(Constants.STATS_ADD_DOMA);
-		perdomC = caster.getTotalStats().getEffect(Constants.STATS_ADD_PERDOM);
+		int multiplier = 0;
+		if(!isHeal)
+		{
+			domC = caster.getTotalStats().getEffect(Constants.STATS_ADD_DOMA);
+			perdomC = caster.getTotalStats().getEffect(Constants.STATS_ADD_PERDOM);
+			multiplier = caster.getTotalStats().getEffect(Constants.STATS_MULTIPLY_DOMMAGE);
+		}else
+		{
+			domC = caster.getTotalStats().getEffect(Constants.STATS_ADD_SOIN);
+		}
 		
-		int multiplier = caster.getTotalStats().getEffect(Constants.STATS_MULTIPLY_DOMMAGE);
 		switch(statID)
 		{
 			case Constants.ELEMENT_NULL://Fixe
@@ -201,7 +208,7 @@ public class Formulas {
 			}
 			if((caster.getSpellValueBool(396) == true) && ArmeType == 8)//PELLE
 			{
-				i =(float) caster.getMaitriseDmg(396);
+				i = caster.getMaitriseDmg(396);
 			}
 			if((caster.getSpellValueBool(397) == true) && ArmeType == 19)//HACHE
 			{
@@ -212,6 +219,57 @@ public class Formulas {
 			
 			num = a*(jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC;//dégats bruts
 		
+		//Poisons
+		if(spellid != -1)
+		{
+			switch(spellid)
+			{
+				/* 
+				 * case [SPELLID]: 
+				 * statC = caster.getTotalStats().getEffect([EFFECT]) 
+				 * num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
+				 * return (int) num; 
+				 */
+				case 66 : statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_AGIL);
+				num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC;
+				break;
+				
+				case 71 : statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC);
+				num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC;
+				break;
+				
+				case 181: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_INTE);
+				num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC;
+				break;
+				
+				case 196: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC);
+				num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC;
+				break;
+				
+				case 200: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_INTE);
+				num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC;
+				break;
+				
+				case 219: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC);
+				num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC;
+				break;
+			}
+			
+			if(target.hasBuff(105))
+			{
+				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 105, caster.getGUID()+"", target.getGUID()+","+target.getBuff(105).getValue());
+				return 0;
+			}
+			else if(target.hasBuff(184))
+			{
+				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 105, caster.getGUID()+"", target.getGUID()+","+target.getBuff(184).getValue());
+				return 0;
+			}
+			else
+			{
+				return (int) num;
+			}
+		}
 		//Renvoie
 		int renvoie = target.getTotalStatsLessBuff().getEffect(Constants.STATS_RETDOM);
 		if(renvoie >0 && !isHeal)
@@ -228,45 +286,10 @@ public class Formulas {
 		if(!isHeal)num -= resfT;//resis fixe
 		int reduc =	(int)((num/(float)100)*respT);//Reduc %resis
 		if(!isHeal)num -= reduc;
-		if(spellid != -1)
-		{
-			switch(spellid) 
-			{ 
-			/* 
-			 * case [SPELLID]: 
-			 * statC = caster.getTotalStats().getEffect([EFFECT]) 
-			 * num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
-			 * return (int) num; 
-			 */ 
-			case 66 : statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_AGIL); 
-			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
-			return (int) num;
-			
-			case 71 : statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC); 
-			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
-			return (int) num; 
-			
-			case 181: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_INTE); 
-			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
-			return (int) num; 
-			
-			case 196: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC); 
-			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
-			return (int) num; 
-			
-			case 200: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_INTE); 
-			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
-			return (int) num; 
-			
-			case 219: statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_FORC); 
-			num = (jet * ((100 + statC + perdomC + (multiplier*100)) / 100 ))+ domC; 
-			return (int) num; 
-			} 
-		}
+		
 		int armor= getArmorResist(target,statID);
 		if(!isHeal)num -= armor;
 		if(!isHeal)if(armor > 0)SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 105, caster.getGUID()+"", target.getGUID()+","+armor);
-
 		//dégats finaux
 		if(num < 1)num=0;
 		

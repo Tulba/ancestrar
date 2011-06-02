@@ -1,3 +1,39 @@
+[02/06/2011]
+- Formulas : Les +dommage, %dommage et mutiplicateur de dommage ne sont plus pris en compte dans le formule de soin.
+
+[01/06/2011]
+- SpellEffect : Correction des gains de PA/PO pendant son tour de jeu.
+- SpellEffect/Formulas/Fight : Les dommages de poussée et de poison ne sont plus subit lorsque le personnage est immunisé ou sous puissance sylvestre.
+- Formulas : Les renvois n'affectent plus les poisons.
+
+[28/05/2011]
+- Extra : Nouvelle correction de sort :
+Mot drainant (Eni) fait perdre des pdvs au lanceur.
+(THX Tiduc).
+
+[25/05/2011]
+- Fight/IA/SpellEffect : Correction de quelques problèmes de "fin de tour/saut de tour" avec la mort d'une invocation pendant son tour de jeu et après celui-ci.
+- Extra : Nouvelle correction de sort :
+Sacrifice (Sacrieur) ne touche plus les adversaires (Niveau 6).
+(THX Tiduc).
+
+[24/05/2011]
+- Extra : Tiduc a apporté de nouvelles correction de sorts :
+Beco du Tofu 75% (Tofu Invoc'), Ajoute de l'agilité au lanceur mais n'en 
+retire pas l'ennemis.
+Ecrasement (Craqueleur Invoc'), Ne donne plus de résistances aux 
+ennemis.
+Dragofeu (Dragonnet Rouge), Ne boost désormais plus les ennemis.
+Etourderie Mortelle (Dragon Cochon), Ne touche plus les alliés.
+Kackitu (Rat Noir), Le Rat Noir ne se suicide plus.
+(THX Tiduc).
+- Fight : Correction de la formule InitOrdreJeu().
+
+[17/05/2011]
+- Fight/IA : Supression de la fonction CanCastSpell2 au profit de CanCastSpell.
+- IA : Correction d'un problème d'IA (passage de tour de certain mob).
+- Fight : Amélioration du passage du tour pendant un déplacement (on attend que l'action soit finit avant de passer le tour, wait() notifyAll()).
+
 [05/05/2011]
 - Fight : Correction et simplification de la fonction LeftFight pour les combats contre un percepteur.
 - GameThread/SocketManager : Le changement d'un item pendant la phase "FIGHT_STATE_PLACE" (2, choix des places) du combat rend désormais l'item visible après changement.

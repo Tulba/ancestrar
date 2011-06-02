@@ -1111,7 +1111,7 @@ public class Metier {
 				SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_P, obj.getGuid());//Supprime l'ancien affichage de l'item
 				SocketManager.GAME_SEND_Ow_PACKET(_P);
 				SocketManager.GAME_SEND_OAKO_PACKET(_P, obj);
-				SocketManager.GAME_SEND_Em_PACKET(_P,"EO+"+obj.getGuid()+"|1|"+tID+"|"+obj.parseStatsString().replace(";","#"));//Si prés du but :)
+				SocketManager.GAME_SEND_Em_PACKET(_P,"EC+"+obj.getGuid()+"|1|"+tID+"|"+obj.parseStatsString().replace(";","#"));//On replace l'item dans l'inventaire
 				SocketManager.GAME_SEND_Ec_PACKET(_P,"EF");
 				SocketManager.GAME_SEND_IO_PACKET_TO_MAP(_P.get_curCarte(),_P.get_GUID(),"-"+tID);
 				SocketManager.GAME_SEND_Im_PACKET(_P, "0183");

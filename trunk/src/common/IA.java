@@ -350,16 +350,17 @@ public class IA {
 				try {
 					Thread.sleep(2000); // C'est si lent dofus =O
 				} catch (InterruptedException e) {};
-				_fight.endTurn();
+				
+				if(!_fighter.isDead())//Mort d'une invocation pendant son tour de jeu : empeche de passer le tour du joueur suivant
+				{
+					_fight.endTurn();
+				}
 			}
 		}
 		
 		private static void apply_type0(Fighter F, Fight fight)
 		{
-			while(!stop && F.canPlay())
-			{
-				stop = true;
-			}		
+			stop = true;
 		}
 
 		private static void apply_type1(Fighter F, Fight fight)
@@ -396,7 +397,7 @@ public class IA {
 								}
 							}
 						}
-					}	
+					}
 				}
 				else
 				{
@@ -415,7 +416,9 @@ public class IA {
 										if(!invocIfPossible(fight,F))
 										{
 											if(!moveFarIfPossible(fight, F))//fuite
+											{
 												stop = true;
+											}
 										}
 									}
 								}
@@ -779,7 +782,7 @@ public class IA {
 			if(fighter.getMob() == null)return null;
 			for(Entry<Integer, SortStats> SS : fighter.getMob().getSpells().entrySet())
 			{
-				if(!fight.CanCastSpell(fighter, SS.getValue(), fight.get_map().getCase(nearestCell)))
+				if(!fight.CanCastSpell(fighter, SS.getValue(), fight.get_map().getCase(nearestCell), -1))
 					continue;
 				for(SpellEffect SE : SS.getValue().getEffects())
 				{
@@ -817,7 +820,7 @@ public class IA {
 							int infl = 0;
 							for(Entry<Integer, SortStats> ss : f.getMob().getSpells().entrySet())
 							{
-								if(infl < calculInfluenceHeal(ss.getValue()) && calculInfluenceHeal(ss.getValue()) != 0 && fight.CanCastSpell(f, ss.getValue(), F.get_fightCell()))//Si le sort est plus interessant
+								if(infl < calculInfluenceHeal(ss.getValue()) && calculInfluenceHeal(ss.getValue()) != 0 && fight.CanCastSpell(f, ss.getValue(), F.get_fightCell(), -1))//Si le sort est plus interessant
 								{
 									infl = calculInfluenceHeal(ss.getValue());
 									curSS = ss.getValue();
@@ -871,7 +874,7 @@ public class IA {
 							for(Entry<Integer, SortStats> ss : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
 							{
 								if(ss.getValue() == null) continue;
-								if(infl < calculInfluenceHeal(ss.getValue()) && calculInfluenceHeal(ss.getValue()) != 0 && fight.CanCastSpell(f, ss.getValue(), F.get_fightCell()))//Si le sort est plus interessant
+								if(infl < calculInfluenceHeal(ss.getValue()) && calculInfluenceHeal(ss.getValue()) != 0 && fight.CanCastSpell(f, ss.getValue(), F.get_fightCell(), -1))//Si le sort est plus interessant
 								{
 									infl = calculInfluenceHeal(ss.getValue());
 									curSS = ss.getValue();
@@ -925,7 +928,7 @@ public class IA {
 			SortStats ss = null;
 			for(Entry<Integer, SortStats> SS : F.getMob().getSpells().entrySet())
 			{
-				if(infl < calculInfluence(SS.getValue(),F,T) && calculInfluence(SS.getValue(),F,T) > 0 && fight.CanCastSpell(F, SS.getValue(), T.get_fightCell()))//Si le sort est plus interessant
+				if(infl < calculInfluence(SS.getValue(),F,T) && calculInfluence(SS.getValue(),F,T) > 0 && fight.CanCastSpell(F, SS.getValue(), T.get_fightCell(), -1))//Si le sort est plus interessant
 				{
 					infl = calculInfluence(SS.getValue(),F,T);
 					ss = SS.getValue();
@@ -941,7 +944,7 @@ public class IA {
 			for(Entry<Integer, SortStats> SS : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
 			{
 				if(SS.getValue() == null) continue;
-				if(infl < calculInfluence(SS.getValue(),F,T) && calculInfluence(SS.getValue(),F,T) > 0 && fight.CanCastSpell(F, SS.getValue(), T.get_fightCell()))//Si le sort est plus interessant
+				if(infl < calculInfluence(SS.getValue(),F,T) && calculInfluence(SS.getValue(),F,T) > 0 && fight.CanCastSpell(F, SS.getValue(), T.get_fightCell(), -1))//Si le sort est plus interessant
 				{
 					infl = calculInfluence(SS.getValue(),F,T);
 					ss = SS.getValue();
@@ -956,7 +959,7 @@ public class IA {
 			SortStats ss = null;
 			for(Entry<Integer, SortStats> SS : F.getMob().getSpells().entrySet())
 			{
-				if(infl < calculInfluenceHeal(SS.getValue()) && calculInfluenceHeal(SS.getValue()) != 0 && fight.CanCastSpell(F, SS.getValue(), T.get_fightCell()))//Si le sort est plus interessant
+				if(infl < calculInfluenceHeal(SS.getValue()) && calculInfluenceHeal(SS.getValue()) != 0 && fight.CanCastSpell(F, SS.getValue(), T.get_fightCell(), -1))//Si le sort est plus interessant
 				{
 					infl = calculInfluenceHeal(SS.getValue());
 					ss = SS.getValue();
@@ -1228,7 +1231,7 @@ public class IA {
 				{
 					for(Fighter T : targets)
 					{
-						if(fight.CanCastSpell2(fighter,S,T.get_fightCell(),i))
+						if(fight.CanCastSpell(fighter,S,T.get_fightCell(),i))
 						{
 							CellDest = i;
 							found = true;
@@ -1240,7 +1243,7 @@ public class IA {
 							int cellID = targetVal - nbTarget * 1000;
 							if(fight.get_map().getCase(cellID) != null)
 							{
-								if(fight.CanCastSpell2(fighter,S,fight.get_map().getCase(cellID),i))
+								if(fight.CanCastSpell(fighter,S,fight.get_map().getCase(cellID),i))
 								{
 									CellDest = i;
 									found = true;
@@ -1381,7 +1384,7 @@ public class IA {
 				int curInfl = 0, Infl1 = 0, Infl2 = 0;
 				int PA = F.getMob().getPA();
 				int usedPA[] = {0,0};
-				if(!fight.CanCastSpell(F, SS.getValue(), T.get_fightCell()))continue;
+				if(!fight.CanCastSpell(F, SS.getValue(), T.get_fightCell(), -1))continue;
 				curInfl = calculInfluence(SS.getValue(),F,T);
 				if(curInfl == 0)continue;
 				if(curInfl > inflMax)
@@ -1395,7 +1398,7 @@ public class IA {
 				for(Entry<Integer, SortStats> SS2 : F.getMob().getSpells().entrySet())
 				{
 					if( (PA - usedPA[0]) < SS2.getValue().getPACost())continue;
-					if(!fight.CanCastSpell(F, SS2.getValue(), T.get_fightCell()))continue;
+					if(!fight.CanCastSpell(F, SS2.getValue(), T.get_fightCell(), -1))continue;
 					curInfl = calculInfluence(SS2.getValue(),F,T);
 					if(curInfl == 0)continue;
 					if((Infl1 + curInfl) > inflMax)
@@ -1408,7 +1411,7 @@ public class IA {
 					for(Entry<Integer, SortStats> SS3 : F.getMob().getSpells().entrySet())
 					{
 						if( (PA - usedPA[0] - usedPA[1]) < SS3.getValue().getPACost())continue;
-						if(!fight.CanCastSpell(F, SS3.getValue(), T.get_fightCell()))continue;
+						if(!fight.CanCastSpell(F, SS3.getValue(), T.get_fightCell(), -1))continue;
 						curInfl = calculInfluence(SS3.getValue(),F,T);
 						if(curInfl == 0)continue;
 						if((curInfl+Infl1+Infl2) > inflMax)
@@ -1426,14 +1429,13 @@ public class IA {
 		{
 			int inflMax = 0;
 			SortStats ss = null;
-			System.out.println("SIZE SPELL : "+World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().size());
 			for(Entry<Integer, SortStats> SS : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
 			{
 				if(SS.getValue() == null) continue;
 				int curInfl = 0, Infl1 = 0, Infl2 = 0;
 				int PA = 6;
 				int usedPA[] = {0,0};
-				if(!fight.CanCastSpell2(F, SS.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
+				if(!fight.CanCastSpell(F, SS.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
 				curInfl = calculInfluence(SS.getValue(),F,T);
 				if(curInfl == 0)continue;
 				if(curInfl > inflMax)
@@ -1447,7 +1449,7 @@ public class IA {
 				for(Entry<Integer, SortStats> SS2 : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
 				{
 					if( (PA - usedPA[0]) < SS2.getValue().getPACost())continue;
-					if(!fight.CanCastSpell2(F, SS2.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
+					if(!fight.CanCastSpell(F, SS2.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
 					curInfl = calculInfluence(SS2.getValue(),F,T);
 					if(curInfl == 0)continue;
 					if((Infl1 + curInfl) > inflMax)
@@ -1460,7 +1462,7 @@ public class IA {
 					for(Entry<Integer, SortStats> SS3 : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
 					{
 						if( (PA - usedPA[0] - usedPA[1]) < SS3.getValue().getPACost())continue;
-						if(!fight.CanCastSpell2(F, SS3.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
+						if(!fight.CanCastSpell(F, SS3.getValue(), F.get_fightCell(), T.get_fightCell().getID()))continue;
 						curInfl = calculInfluence(SS3.getValue(),F,T);
 						if(curInfl == 0)continue;
 						if((curInfl+Infl1+Infl2) > inflMax)
@@ -1476,37 +1478,50 @@ public class IA {
 
 		private static int getBestTargetZone(Fight fight,Fighter fighter,SortStats spell,int launchCell)
 		{
-			if(spell.getPorteeType().charAt(0) == 'P' && spell.getPorteeType().charAt(1) == 'a')
+			if(spell.getPorteeType().isEmpty() || (spell.getPorteeType().charAt(0) == 'P' && spell.getPorteeType().charAt(1) == 'a'))
+			{
 				return 0;
+			}
 			ArrayList<Case> possibleLaunch = new ArrayList<Case>();
 			int CellF = -1;
 			if(spell.getMaxPO() != 0)
 			{
 				char arg1 = 'a';
 				if(spell.isLineLaunch())
+				{	
 					arg1 = 'X';
-				else 
+				}
+				else
+				{
 					arg1 = 'C';
+				}
 				char[] table = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v'};
 				char arg2 = 'a';
 				if(spell.getMaxPO() > 20)
+				{
 					arg2 = 'u';
+				}
 				else
+				{
 					arg2 = table[spell.getMaxPO()];
-				java.lang.String args = Character.toString(arg1) + Character.toString(arg2);
+				}
+				String args = Character.toString(arg1) + Character.toString(arg2);
 				possibleLaunch = Pathfinding.getCellListFromAreaString(fight.get_map(),launchCell,launchCell,args,0,false);
-				
 			}
 			else
+			{
 				possibleLaunch.add(fight.get_map().getCase(launchCell));
+			}
 			
 			if(possibleLaunch == null)
+			{
 				return -1;
+			}
 			int nbTarget = 0;	
 			for(Case cell : possibleLaunch)
 			{
 				try{
-					if(!fight.CanCastSpell2(fighter, spell, cell, launchCell))
+					if(!fight.CanCastSpell(fighter, spell, cell, launchCell))
 						continue;
 					int num = 0;
 					int curTarget = 0;

@@ -71,19 +71,7 @@ public class SQLManager {
 		{
 			GameServer.addToLog("SQL ERROR:"+e.getMessage());
 			e.printStackTrace();
-			//rollBack(con); //Pas de rollBack, la BD sauvegarde ce qu'elle peut
-		}
-	}
-	public synchronized static void rollBack(Connection con)
-	{
-		try
-		{
-			con.rollback();
-		}
-		catch(SQLException e)
-		{
-			System.out.println("SQL ERROR: "+e.getMessage());
-			e.printStackTrace();
+			commitTransacts();
 		}
 	}
 	public synchronized static void closeCons()
