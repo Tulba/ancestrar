@@ -884,6 +884,11 @@ public class Fight
 			fight._curFighterPM = pm;
 		}
 		
+		public void setCurPA(Fight fight, int pa)
+		{
+			fight._curFighterPA = pa;
+		}
+		
 		public void setInvocator(Fighter caster)
 		{
 			_invocator = caster;
@@ -1181,6 +1186,19 @@ public class Fight
 	private int captWinner = -1;
 	private PierreAme pierrePleine;
 	private Percepteur _Perco;
+	
+	public synchronized void waitAction() 
+	{ 
+		try {
+			wait() ;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} 
+	}
+	public synchronized void endAction() 
+	{
+		notifyAll(); 
+	}
 	
 	//TIMER décompte toutes les secondes
 	private Timer TurnTimer (final int timer, final Percepteur perco)
@@ -1766,7 +1784,12 @@ public class Fight
 		if(_ordreJeu.get(_curPlayer) != null)
 		{
 			_ordreJeu.get(_curPlayer).setCanPlay(false);
-			while(!_curAction.equals("")){}//FIXME : Be Bad
+			
+			if(!_curAction.equals("") && _ordreJeu.get(_curPlayer).getPersonnage() != null)
+			{
+				waitAction();
+			}
+			
 			SocketManager.GAME_SEND_GAMETURNSTOP_PACKET_TO_FIGHT(this,7,_ordreJeu.get(_curPlayer).getGUID());
 		}
 		
@@ -1808,7 +1831,17 @@ public class Fight
 							//on applique le boost
 							dgt = (int)(((100+inte+pdom)/100) * dgt);
 						}
-						if(dgt == 0)continue;
+						if(_ordreJeu.get(_curPlayer).hasBuff(184))
+						{
+							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 105, _ordreJeu.get(_curPlayer).getGUID()+"", _ordreJeu.get(_curPlayer).getGUID()+","+_ordreJeu.get(_curPlayer).getBuff(184).getValue());
+							dgt = dgt-_ordreJeu.get(_curPlayer).getBuff(184).getValue();//Réduction physique
+						}
+						if(_ordreJeu.get(_curPlayer).hasBuff(105))
+						{
+							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 105, _ordreJeu.get(_curPlayer).getGUID()+"", _ordreJeu.get(_curPlayer).getGUID()+","+_ordreJeu.get(_curPlayer).getBuff(105).getValue());
+							dgt = dgt-_ordreJeu.get(_curPlayer).getBuff(105).getValue();//Immu
+						}
+						if(dgt <= 0)continue;
 						
 						if(dgt>_ordreJeu.get(_curPlayer).getPDV())dgt = _ordreJeu.get(_curPlayer).getPDV();//va mourrir
 						_ordreJeu.get(_curPlayer).removePDV(dgt);
@@ -1857,12 +1890,11 @@ public class Fight
 	{
 		int curMaxIni = 0;
 		Fighter curMax = null;
-		byte actTeam = 0;
 		boolean team1_ready = false;
 		boolean team2_ready = false;
 		do
 		{
-			if(actTeam == 0 || actTeam == 1 || team2_ready)
+			if(!team1_ready)
 			{
 				team1_ready = true;
 				for(Entry<Integer,Fighter> entry : _team0.entrySet())
@@ -1876,7 +1908,7 @@ public class Fight
 					}
 				}
 			}
-			if(actTeam == 0 || actTeam == 2 || team1_ready)
+			if(!team2_ready)
 			{
 				team2_ready = true;
 				for(Entry<Integer,Fighter> entry : _team1.entrySet())
@@ -1892,10 +1924,6 @@ public class Fight
 			}
 			if(curMax == null)return;
 			_ordreJeu.add(curMax);
-			if(curMax.getTeam() == 0)
-				actTeam = 1;
-			else
-				actTeam = 0;
 			curMaxIni = 0;
 			curMax = null;
 		}while(_ordreJeu.size() != getFighters(3).size());
@@ -2331,6 +2359,7 @@ public class Fight
 		} catch (InterruptedException e) {};
 		
 		_curAction = "";
+		this.endAction();
 	}
 
 	public void playerPass(Personnage _perso)
@@ -2338,7 +2367,7 @@ public class Fight
 		Fighter f = getFighterByPerso(_perso);
 		if(f == null)return;
 		if(!f.canPlay())return;
-		if(!_curAction.equals(""))return;//FIXME
+		if(!_curAction.equals("")) return;//TODO
 		endTurn();
 	}
 
@@ -2350,7 +2379,7 @@ public class Fight
 		Case Cell = _map.getCase(caseID);
 		_curAction = "casting";
 		
-		if(CanCastSpell(fighter,Spell,Cell))
+		if(CanCastSpell(fighter,Spell,Cell, -1))
 		{
 			if(fighter.getPersonnage() != null)
 				SocketManager.GAME_SEND_STATS_PACKET(fighter.getPersonnage());
@@ -2415,14 +2444,23 @@ public class Fight
 		return 0;
 	}
 
-	public boolean CanCastSpell(Fighter fighter, SortStats spell, Case cell)
+	public boolean CanCastSpell(Fighter fighter, SortStats spell, Case cell, int launchCase)
 	{
+		int ValidlaunchCase;
+		if(launchCase <= -1)
+		{
+			ValidlaunchCase = fighter.get_fightCell().getID();
+		}else
+		{
+			ValidlaunchCase = launchCase;
+		}
+		
 		Fighter f = _ordreJeu.get(_curPlayer);
 		Personnage perso = fighter.getPersonnage();
 		//Si le sort n'est pas existant
 		if(spell == null)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Sort non existant");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Sort non existant");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1169");
@@ -2432,7 +2470,7 @@ public class Fight
 		//Si ce n'est pas au joueur de jouer
 		if (f == null || f.getGUID() != fighter.getGUID()) 
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Ce n'est pas au joueur de jouer");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Ce n'est pas au joueur. Doit jouer :("+f.getGUID()+"). Fautif :("+fighter.getGUID()+")");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1175");
@@ -2442,7 +2480,7 @@ public class Fight
 		//Si le joueur n'a pas assez de PA
 		if(_curFighterPA < spell.getPACost())
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le joueur n'a pas assez de PA ("+_curFighterPA+"/"+spell.getPACost()+")");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Le joueur n'a pas assez de PA ("+_curFighterPA+"/"+spell.getPACost()+")");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1170;" + _curFighterPA + "~" + spell.getPACost());
@@ -2452,7 +2490,7 @@ public class Fight
 		//Si la cellule visée n'existe pas
 		if(cell == null)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La cellule visee n'existe pas");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") La cellule visee n'existe pas");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1172");
@@ -2460,9 +2498,9 @@ public class Fight
 			return false;
 		}
 		//Si la cellule visée n'est pas alignée avec le joueur alors que le sort le demande
-		if(spell.isLineLaunch() && !Pathfinding.casesAreInSameLine(_map, fighter.get_fightCell().getID(), cell.getID(), 'z'))
+		if(spell.isLineLaunch() && !Pathfinding.casesAreInSameLine(_map, ValidlaunchCase, cell.getID(), 'z'))
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande un lancer en ligne, or la case n'est pas alignee avec le joueur");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Le sort demande un lancer en ligne, or la case n'est pas alignee avec le joueur");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1173");
@@ -2470,114 +2508,50 @@ public class Fight
 			return false;
 		}
 		//Si le sort demande une ligne de vue et que la case demandée n'en fait pas partie
-		if(spell.hasLDV() && !Pathfinding.checkLoS(_map,fighter.get_fightCell().getID(),cell.getID(),fighter))
+		if(spell.hasLDV() && !Pathfinding.checkLoS(_map, ValidlaunchCase, cell.getID(), fighter))
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande une ligne de vue, mais la case visee n'est pas visible pour le joueur");
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Le sort demande une ligne de vue, mais la case visee n'est pas visible pour le joueur");
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1174");
 			}
 			return false;
 		}
-		int dist = Pathfinding.getDistanceBetween(_map, fighter.get_fightCell().getID(), cell.getID());
+		
+		int dist = Pathfinding.getDistanceBetween(_map, ValidlaunchCase, cell.getID());
 		int MaxPO = spell.getMaxPO();
 		if(spell.isModifPO())
+		{
 			MaxPO += fighter.getTotalStats().getEffect(Constants.STATS_ADD_PO);
+		}
 		//Vérification Portée mini / maxi
 		if(dist < spell.getMinPO() || dist > MaxPO)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop eloignee Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
+			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") La case est trop proche ou trop eloignee Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
 			if(perso != null)
 			{
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1171;" + spell.getMinPO() + "~" + spell.getMaxPO() + "~" + dist);
 			}
 			return false;
 		}
-		
 		//vérification cooldown
 		if(!LaunchedSort.coolDownGood(fighter,spell.getSpellID()))
+		{
 			return false;
+		}
 		//vérification nombre de lancer par tour
 		int nbLancer = spell.getMaxLaunchbyTurn();
 		if(nbLancer - LaunchedSort.getNbLaunch(fighter, spell.getSpellID()) <= 0 && nbLancer > 0)
+		{
 			return false;
+		}
 		//vérification nombre de lancer par cible
 		Fighter target = cell.getFirstFighter();
 		int nbLancerT = spell.getMaxLaunchbyByTarget();
 		if(nbLancerT - LaunchedSort.getNbLaunchTarget(fighter, target, spell.getSpellID()) <= 0 && nbLancerT > 0)
-			return false;
-		
-		return true;
-	}
-	
-	//Utiliser depuis la nouvelle IA
-	public boolean CanCastSpell2(Fighter fighter, SortStats spell, Case cell, int launchCase)
-	{
-		//Si le sort n'est pas existant
-		if(spell == null)
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Sort non existant");
 			return false;
 		}
-		//Si ce n'est pas au joueur de jouer
-		if(_ordreJeu.get(_curPlayer) == null)return false;
-		if(_ordreJeu.get(_curPlayer).getGUID() != fighter.getGUID())
-		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Ce n'est pas au joueur de jouer");
-			return false;
-		}
-		//Si le joueur n'a pas assez de PA
-		if(_curFighterPA < spell.getPACost())
-		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le joueur n'a pas assez de PA ("+_curFighterPA+"/"+spell.getPACost()+")");
-			return false;
-		}
-		//Si la cellule visée n'existe pas
-		if(cell == null)
-		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La cellule visee n'existe pas");
-			return false;
-		}
-		//Si la cellule visée n'est pas alignée avec le joueur alors que le sort le demande
-		if(spell.isLineLaunch() && !Pathfinding.casesAreInSameLine(_map, launchCase, cell.getID(), 'z'))
-		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande un lancer en ligne, or la case n'est pas alignee avec le joueur");
-			return false;
-		}
-		//Si le sort demande une ligne de vue et que la case demandée n'en fait pas partie
-		if(spell.hasLDV() && !Pathfinding.checkLoS(_map,launchCase,cell.getID(),fighter))
-		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le sort demande une ligne de vue, mais la case visee n'est pas visible pour le joueur");
-			return false;
-		}
-		int dist = Pathfinding.getDistanceBetween(_map, launchCase, cell.getID());
-		int MaxPO = spell.getMaxPO();
-		if(spell.isModifPO())
-			MaxPO += fighter.getTotalStats().getEffect(Constants.STATS_ADD_PO);
-		//Vérification Portée mini / maxi
-		if(dist < spell.getMinPO() || dist > MaxPO)
-		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("La case est trop proche ou trop eloignee Min: "+spell.getMinPO()+" Max: "+spell.getMaxPO()+" Dist: "+dist);
-			return false;
-		}
-		
-		//vérification cooldown
-		if(!LaunchedSort.coolDownGood(fighter,spell.getSpellID()))
-			return false;
-		
-		//vérification nombre de lancer par tour
-		int nbLancer = spell.getMaxLaunchbyTurn();
-		if(nbLancer - LaunchedSort.getNbLaunch(fighter, spell.getSpellID()) <= 0 && nbLancer > 0)
-			return false;
-		
-		//vérification nombre de lancer par cible
-		Fighter target = cell.getFirstFighter();
-		int nbLancerT = spell.getMaxLaunchbyByTarget();
-		if(nbLancerT - LaunchedSort.getNbLaunchTarget(fighter, target, spell.getSpellID()) <= 0 && nbLancerT > 0)
-			return false;
-			
-		/* TODO: COOLDOWN */
-		
 		return true;
 	}
 	
@@ -3191,12 +3165,15 @@ public class Fight
 			for(Entry<Integer,Fighter> entry : team.entrySet())
 			{
 				if(entry.getValue().getInvocator() == null)continue;
+				if(entry.getValue().getPDV() == 0)continue;
 				if(entry.getValue().isDead())continue;
 				if(entry.getValue().getInvocator().getGUID() == target.getGUID())//si il a été invoqué par le joueur mort
 				{
 					onFighterDie(entry.getValue());
+					
 					int index = _ordreJeu.indexOf(entry.getValue());
 					if(index != -1)_ordreJeu.remove(index);
+					
 					if(_team0.containsKey(entry.getValue().getGUID()))_team0.remove(entry.getValue().getGUID());
 					else if (_team1.containsKey(entry.getValue().getGUID()))_team1.remove(entry.getValue().getGUID());
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 999, target.getGUID()+"", getGTL());
@@ -3210,13 +3187,14 @@ public class Fight
 			{
 				if(entry.getValue().getInvocator() == null)continue;
 				if(entry.getValue().getPDV() == 0)continue;
+				if(entry.getValue().isDead())continue;
 				if(entry.getValue().getInvocator().getGUID() == target.getGUID())//si il a été invoqué par le joueur mort
 				{
 					onFighterDie(entry.getValue());
-
+					
 					int index = _ordreJeu.indexOf(entry.getValue());
 					if(index != -1)_ordreJeu.remove(index);
-
+					
 					if(_team0.containsKey(entry.getValue().getGUID()))_team0.remove(entry.getValue().getGUID());
 					else if (_team1.containsKey(entry.getValue().getGUID()))_team1.remove(entry.getValue().getGUID());
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 999, target.getGUID()+"", getGTL());
@@ -3232,18 +3210,26 @@ public class Fight
 				for(int id : Constants.STATIC_INVOCATIONS)if(id == target.getMob().getTemplate().getID())isStatic = true;
 				if(target.isInvocation() && !isStatic)
 				{
-					if(target.canPlay())
+					//Il ne peut plus jouer, et est mort on revient au joueur précedent pour que le startTurn passe au suivant
+					if(!target.canPlay() && _ordreJeu.get(_curPlayer).getGUID() == target.getGUID())
 					{
-						try {
-							Thread.sleep(1500);
-						} catch (InterruptedException e1) {}
-						endTurn();
+						_curPlayer--;
 					}
-
+					//Il peut jouer, et est mort alors on passe son tour pour que l'autre joue, puis on le supprime de l'index sans problèmes
+					if(target.canPlay() && _ordreJeu.get(_curPlayer).getGUID() == target.getGUID())
+					{
+	    				endTurn();
+					}
+					
+					//On ne peut pas supprimer l'index tant que le tour du prochain joueur n'est pas lancé
 					int index = _ordreJeu.indexOf(target);
+					
 					//Si le joueur courant a un index plus élevé, on le diminue pour éviter le outOfBound
 					if(_curPlayer > index) _curPlayer--;
+					
 					if(index != -1)_ordreJeu.remove(index);
+					
+					
 					if(_team0.containsKey(target.getGUID()))_team0.remove(target.getGUID());
 					else if (_team1.containsKey(target.getGUID()))_team1.remove(target.getGUID());
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 999, target.getGUID()+"", getGTL());

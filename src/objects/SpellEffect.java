@@ -1546,6 +1546,8 @@ public class SpellEffect
 			{
 				target.addBuff(effectID, val, turns, 1, false, spell, args, caster);
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, effectID, caster.getGUID()+"", target.getGUID()+","+val+","+turns);
+				//Gain de PO pendant le tour de jeu
+				if(target.canPlay() && target == caster) target.getTotalStats().addOneStat(Constants.STATS_ADD_PO, val);
 			}		
 		}
 		
@@ -1708,6 +1710,8 @@ public class SpellEffect
 					continue;
 				}
 				target.addBuff(effectID, val, turns, 1, false, spell, args, caster);
+				//Gain de PA pendant le tour de jeu
+				if(target.canPlay() && target == caster) target.setCurPA(fight, target.getPA()+val);
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, effectID, caster.getGUID()+"", target.getGUID()+","+val+","+turns);
 			}			
 		}
@@ -1937,6 +1941,8 @@ public class SpellEffect
 			{
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7,Constants.STATS_ADD_PA, caster.getGUID()+"", caster.getGUID()+","+num+","+turns);
 				caster.addBuff(Constants.STATS_ADD_PA, num, 0, 0, true, spell,args,caster);
+				//Gain de PA pendant le tour de jeu
+				if(caster.canPlay()) caster.setCurPA(fight, caster.getPA()+num);
 			}
 		}
 		
@@ -2300,19 +2306,33 @@ public class SpellEffect
 						int finalDommage = (int)(coef * c);
 						if(finalDommage < 1)finalDommage = 1;
 						if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-						target.removePDV(finalDommage);
-						SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+",-"+finalDommage);
-						if(target.getPDV() <=0)
+						
+						if(target.hasBuff(184)) 
 						{
-							fight.onFighterDie(target);
-							return;
+							finalDommage = finalDommage-target.getBuff(184).getValue();//Réduction physique
+							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 105, caster.getGUID()+"", target.getGUID()+","+target.getBuff(184).getValue());
 						}
-						a = value-a;
-						newCellID =	Pathfinding.newCaseAfterPush(fight.get_map(),caster.get_fightCell(),target.get_fightCell(),a);
-						if(newCellID == 0)
-							return;
-						if(fight.get_map().getCase(newCellID) == null)
-							return;
+						if(target.hasBuff(105))
+						{
+							finalDommage = finalDommage-target.getBuff(105).getValue();//Immu
+							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 105, caster.getGUID()+"", target.getGUID()+","+target.getBuff(105).getValue());
+						}
+						if(finalDommage > 0)
+						{
+							target.removePDV(finalDommage);
+							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+",-"+finalDommage);
+							if(target.getPDV() <=0)
+							{
+								fight.onFighterDie(target);
+								return;
+							}
+						}
+							a = value-a;
+							newCellID =	Pathfinding.newCaseAfterPush(fight.get_map(),caster.get_fightCell(),target.get_fightCell(),a);
+							if(newCellID == 0)
+								return;
+							if(fight.get_map().getCase(newCellID) == null)
+								return;
 					}
 					target.get_fightCell().getFighters().clear();
 					target.set_fightCell(fight.get_map().getCase(newCellID));
@@ -3631,6 +3651,11 @@ public class SpellEffect
 						target = target.getBuff(765).getCaster();
 					}
 				}
+				try{
+					Thread.sleep(1500);
+				}catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 				fight.onFighterDie(target);
 			}
 		}
@@ -3653,6 +3678,8 @@ public class SpellEffect
 			{
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7,Constants.STATS_ADD_PO, caster.getGUID()+"", caster.getGUID()+","+num+","+turns);
 				caster.addBuff(Constants.STATS_ADD_PO, num, 1, 0, true, spell,args,caster);
+				//Gain de PO pendant le tour de jeu
+				if(caster.canPlay()) caster.getTotalStats().addOneStat(Constants.STATS_ADD_PO, num);
 			}
 		}
 		

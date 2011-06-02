@@ -460,10 +460,6 @@ public class Action {
 			case 26://Téléportation enclo de guilde (ouverture du panneau de guilde)
 				SocketManager.GAME_SEND_GUILDENCLO_PACKET(perso);
 			break;
-			case 27://TODO ANNIM 228 : cellid
-				String StatsEffect = cellid+",101,11,0,1";
-				SocketManager.GAME_SEND_GA_PACKET(perso.get_compte().getGameThread().get_out(), "0", "228", ""+perso.get_GUID(), StatsEffect);
-			break;
 			case 50://Traque
 				if(perso.get_traque() == null)
 				{
