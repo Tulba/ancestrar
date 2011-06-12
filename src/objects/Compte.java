@@ -447,14 +447,14 @@ public class Compte {
 			_EnemyGuids.add(guid);
 			Personnage Pr = World.getPersoByName(packet);
 			SocketManager.GAME_SEND_ADD_ENEMY(_curPerso, Pr);
-			SQLManager.UPDATE_ACCOUNT_ENEMY(this);
+			SQLManager.UPDATE_ACCOUNT_DATA(this);
 		}
 		else SocketManager.GAME_SEND_iAEA_PACKET(_curPerso);
 	}
 	
 	public void removeEnemy(int guid)
 	{
-		if(_EnemyGuids.remove((Object)guid))SQLManager.UPDATE_ACCOUNT_ENEMY(this);
+		if(_EnemyGuids.remove((Object)guid))SQLManager.UPDATE_ACCOUNT_DATA(this);
 		SocketManager.GAME_SEND_iD_COMMANDE(_curPerso,"K");
 	}
 	

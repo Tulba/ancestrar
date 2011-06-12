@@ -3,6 +3,7 @@ package objects;
 import java.io.PrintWriter;
 
 import objects.Metier.StatsMetier;
+import objects.Monstre.MobGroup;
 import objects.NPC_tmpl.NPC_question;
 import objects.Objet.ObjTemplate;
 import objects.Personnage.traque;
@@ -85,7 +86,7 @@ public class Action {
 				{
 					short newMapID = Short.parseShort(args.split(",",2)[0]);
 					int newCellID = Integer.parseInt(args.split(",",2)[1]);
-
+					
 					perso.teleport(newMapID,newCellID);	
 				}catch(Exception e ){return;};
 			break;
@@ -377,23 +378,29 @@ public class Action {
 					}
 					}
 					}
-				}catch(Exception e ){return;};
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 16://Ajout d'honneur HonorValue
-				if(perso.get_align() != 0)
+				try
 				{
-					int AddHonor = Integer.parseInt(args);
-					int ActualHonor = perso.get_honor();
-					perso.set_honor(ActualHonor+AddHonor);
-				}
+					if(perso.get_align() != 0)
+					{
+						int AddHonor = Integer.parseInt(args);
+						int ActualHonor = perso.get_honor();
+						perso.set_honor(ActualHonor+AddHonor);
+					}
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 17://Xp métier JobID,XpValue
-				int JobID = Integer.parseInt(args.split(",")[0]);
-				int XpValue = Integer.parseInt(args.split(",")[1]);
-				if(perso.getMetierByID(JobID) != null)
+				try
 				{
-					perso.getMetierByID(JobID).addXp(perso, XpValue);
-				}
+					int JobID = Integer.parseInt(args.split(",")[0]);
+					int XpValue = Integer.parseInt(args.split(",")[1]);
+					if(perso.getMetierByID(JobID) != null)
+					{
+						perso.getMetierByID(JobID).addXp(perso, XpValue);
+					}
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 18://Téléportation chez sois
 				if(House.AlreadyHaveHouse(perso))//Si il a une maison
@@ -412,44 +419,59 @@ public class Action {
 				SocketManager.GAME_SEND_GUILDHOUSE_PACKET(perso);
 			break;
 			case 20://+Points de sorts
-				int pts = Integer.parseInt(args);
-				if(pts < 1) return;
-				perso.addSpellPoint(pts);
-				SocketManager.GAME_SEND_STATS_PACKET(perso);
+				try
+				{
+					int pts = Integer.parseInt(args);
+					if(pts < 1) return;
+					perso.addSpellPoint(pts);
+					SocketManager.GAME_SEND_STATS_PACKET(perso);
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 21://+Energie
-				int Energy = Integer.parseInt(args);
-				if(Energy < 1) return;
-				
-				int EnergyTotal = perso.get_energy()+Energy;
-				if(EnergyTotal > 10000) EnergyTotal = 10000;
-				
-				perso.set_energy(EnergyTotal);
-				SocketManager.GAME_SEND_STATS_PACKET(perso);
+				try
+				{
+					int Energy = Integer.parseInt(args);
+					if(Energy < 1) return;
+					
+					int EnergyTotal = perso.get_energy()+Energy;
+					if(EnergyTotal > 10000) EnergyTotal = 10000;
+					
+					perso.set_energy(EnergyTotal);
+					SocketManager.GAME_SEND_STATS_PACKET(perso);
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 22://+Xp
-				long XpAdd = Integer.parseInt(args);
-				if(XpAdd < 1) return;
-				
-				long TotalXp = perso.get_curExp()+XpAdd;
-				perso.set_curExp(TotalXp);
-				SocketManager.GAME_SEND_STATS_PACKET(perso);
+				try
+				{
+					long XpAdd = Integer.parseInt(args);
+					if(XpAdd < 1) return;
+					
+					long TotalXp = perso.get_curExp()+XpAdd;
+					perso.set_curExp(TotalXp);
+					SocketManager.GAME_SEND_STATS_PACKET(perso);
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 23://UnlearnJob
-				int Job = Integer.parseInt(args);
-				if(Job < 1) return;
-				StatsMetier m = perso.getMetierByID(Job);
-				if(m == null) return;
-				perso.unlearnJob(m.getID());
-				SocketManager.GAME_SEND_STATS_PACKET(perso);
-				SQLManager.SAVE_PERSONNAGE(perso, false);
+				try
+				{
+					int Job = Integer.parseInt(args);
+					if(Job < 1) return;
+					StatsMetier m = perso.getMetierByID(Job);
+					if(m == null) return;
+					perso.unlearnJob(m.getID());
+					SocketManager.GAME_SEND_STATS_PACKET(perso);
+					SQLManager.SAVE_PERSONNAGE(perso, false);
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 24://SimpleMorph
-				int morphID = Integer.parseInt(args);
-				if(morphID < 0)return;
-				perso.set_gfxID(morphID);
-				SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(perso.get_curCarte(), perso.get_GUID());
-				SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(perso.get_curCarte(), perso);
+				try
+				{
+					int morphID = Integer.parseInt(args);
+					if(morphID < 0)return;
+					perso.set_gfxID(morphID);
+					SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(perso.get_curCarte(), perso.get_GUID());
+					SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(perso.get_curCarte(), perso);
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 25://SimpleUnMorph
 				int UnMorphID = perso.get_classe()*10 + perso.get_sexe();
@@ -459,6 +481,30 @@ public class Action {
 			break;
 			case 26://Téléportation enclo de guilde (ouverture du panneau de guilde)
 				SocketManager.GAME_SEND_GUILDENCLO_PACKET(perso);
+			break;
+			case 27://startFigthVersusMonstres args : monsterID,monsterLevel| ...
+				String ValidMobGroup = "";
+				try
+		        {
+					for(String MobAndLevel : args.split("\\|"))
+					{
+						int monsterID = -1;
+						int monsterLevel = -1;
+						String[] MobOrLevel = MobAndLevel.split(",");
+						monsterID = Integer.parseInt(MobOrLevel[0]);
+						monsterLevel = Integer.parseInt(MobOrLevel[1]);
+						
+						if(World.getMonstre(monsterID) == null || World.getMonstre(monsterID).getGradeByLevel(monsterLevel) == null)
+						{
+							if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Monstre invalide : monsterID:"+monsterID+" monsterLevel:"+monsterLevel);
+							continue;
+						}
+						ValidMobGroup += monsterID+","+monsterLevel+","+monsterLevel+";";
+					}
+					if(ValidMobGroup.isEmpty()) return;
+					MobGroup group  = new MobGroup(perso.get_curCarte()._nextObjectID,perso.get_curCell().getID(),ValidMobGroup);
+					perso.get_curCarte().startFigthVersusMonstres(perso, group);
+		        }catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			case 50://Traque
 				if(perso.get_traque() == null)
@@ -597,11 +643,14 @@ public class Action {
 				}
 			break;
 			case 228://Faire animation Hors Combat
-				int AnimationId = Integer.parseInt(args);
-				Animations animation = World.getAnimation(AnimationId);
-				if(perso.get_fight() != null) return;
-				perso.changeOrientation(1);
-				SocketManager.GAME_SEND_GA_PACKET_TO_MAP(perso.get_curCarte(), "0", 228, perso.get_GUID()+";"+perso.get_curCell().getID()+","+Animations.PrepareToGA(animation), "");
+				try
+				{
+					int AnimationId = Integer.parseInt(args);
+					Animations animation = World.getAnimation(AnimationId);
+					if(perso.get_fight() != null) return;
+					perso.changeOrientation(1);
+					SocketManager.GAME_SEND_GA_PACKET_TO_MAP(perso.get_curCarte(), "0", 228, perso.get_GUID()+";"+perso.get_curCell().getID()+","+Animations.PrepareToGA(animation), "");
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			default:
 				GameServer.addToLog("Action ID="+ID+" non implantee");
