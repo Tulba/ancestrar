@@ -696,7 +696,7 @@ public class World {
 		System.out.print("Mise a 0 des logged: ");
 		SQLManager.LOGGED_ZERO();
 		System.out.println("Ok !");
-
+		
 		System.out.println("Chargement des items: ");
 		SQLManager.LOAD_ITEMS_FULL();
 		System.out.println("OK");
@@ -736,6 +736,10 @@ public class World {
 		System.out.print("Chargement des zaaps: ");
 		nbr = SQLManager.LOAD_ZAAPS();
 		System.out.println(nbr+" zaaps chargees");
+		
+		System.out.print("Chargement des zaapis: ");
+		nbr = SQLManager.LOAD_ZAAPIS();
+		System.out.println(nbr+" zaapis chargees");
 		
 		System.out.print("Chargement des BAN_IP: ");
 		nbr = SQLManager.LOAD_BANIP();

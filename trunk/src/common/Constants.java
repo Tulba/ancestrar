@@ -23,13 +23,10 @@ public class Constants
 	//Versions
 	public static final	String CLIENT_VERSION	=	"1.29.1";
 	public static final boolean IGNORE_VERSION 		= false;
-	//ZAAPI
-	public static final String ZAAPI_BONTA = "6159,4174,8758,4299,4180,8759,4183,2221,4300,4217,4098,8757,4223,8760,2214,4179,4229,4232,8478,4238,4263,4216,4172,4247,4272,4271,4250,4178,4106,4181,4259,4090,4262,4287,4300,4240,4218,4074,4308";
-	public static final String ZAAPI_BRAKMAR = "8756,8755,8493,5304,5311,5277,5317,4612,4618,5112,4639,4637,5116,5332,4579,4588,4549,4562,5334,5295,4646,4629,4601,4551,4607,4930,4622,4620,4615,4595,4627,4623,4604,8754,8753,4630";
-
-	//ZAAP
+	//ZAAPI <alignID,{mapID,mapID,...,mapID}>
+	public static Map<Integer, String> ZAAPI = new TreeMap<Integer, String>();
+	//ZAAP <mapID,cellID>
 	public static Map<Integer, Integer> ZAAPS = new TreeMap<Integer, Integer>();
-	
 	//BANIP
 	public static String BAN_IP = "";
 	
@@ -2858,31 +2855,48 @@ public class Constants
 	
 	public static int getNearCellidUnused(Personnage _perso)
 	{
-		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()+15).getDroppedItem() == null
-				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+15).getPersos().isEmpty()
-				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+15).isWalkable(false))
+		int cellFront = 0;
+		int cellBack = 0;
+		int cellRight = 0;
+		int cellLeft = 0;
+		if(_perso.get_curCarte().getSubArea().get_area().get_id() == 7 || _perso.get_curCarte().getSubArea().get_area().get_id() == 11)
 		{
-			return 15;
+			cellFront = 19;
+			cellBack = -19;
+			cellRight = 18;
+			cellLeft = -18;
 		}else
-		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()-15).getDroppedItem() == null
-				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-15).getPersos().isEmpty()
-				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-15).isWalkable(false))
 		{
-			return -15;
+			cellFront = 15;
+			cellBack = -15;
+			cellRight = 14;
+			cellLeft = -14;
+		}
+		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()+cellFront).getDroppedItem() == null
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+cellFront).getPersos().isEmpty()
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+cellFront).isWalkable(false))
+		{
+			return cellFront;
 		}else
-		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()+14).getDroppedItem() == null
-				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+14).getPersos().isEmpty()
-				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+14).isWalkable(false))
+		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()-cellBack).getDroppedItem() == null
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-cellBack).getPersos().isEmpty()
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-cellBack).isWalkable(false))
 		{
-			return 14;
+			return cellBack;
 		}else
-		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()-14).getDroppedItem() == null
-				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-14).getPersos().isEmpty()
-				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-14).isWalkable(false))
+		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()+cellRight).getDroppedItem() == null
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+cellRight).getPersos().isEmpty()
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()+cellRight).isWalkable(false))
 		{
-			return -14;
+			return cellRight;
+		}else
+		if(_perso.get_curCarte().getCase(_perso.get_curCell().getID()-cellLeft).getDroppedItem() == null
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-cellLeft).getPersos().isEmpty()
+				&& _perso.get_curCarte().GetCases().get(_perso.get_curCell().getID()-cellLeft).isWalkable(false))
+		{
+			return cellLeft;
 		}
 		
-		return 0;
+		return -1;
 	}
 }

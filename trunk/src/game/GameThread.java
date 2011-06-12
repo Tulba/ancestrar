@@ -170,7 +170,7 @@ public class GameThread implements Runnable
 				parseHouseSecPacket(packet);
 			break;
 			case 'i':
-				parseEnemyPacket(packet);
+				parse_enemyPacket(packet);
 			break;
 			case 'K':
 				parseHousePacket(packet);
@@ -248,19 +248,19 @@ public class GameThread implements Runnable
 		}
 	}
 	
-	private void parseEnemyPacket(String packet)
+	private void parse_enemyPacket(String packet)
 	{
 		switch(packet.charAt(1))
 		{
 		case 'A'://Ajouter
 			Enemy_add(packet);
-			break;
+		break;
 		case 'D'://Delete
 			Enemy_delete(packet);
-			break;
+		break;
 		case 'L'://Liste
 			SocketManager.GAME_SEND_ENEMY_LIST(_perso);
-			break;
+		break;
 		}
 	}
 	
@@ -270,7 +270,7 @@ public class GameThread implements Runnable
 		int guid = -1;
 		switch(packet.charAt(2))
 		{
-			case '%'://Nom du joueurs
+			case '%'://Nom de perso
 				packet = packet.substring(3);
 				Personnage P = World.getPersoByName(packet);
 				if(P == null)
@@ -281,7 +281,7 @@ public class GameThread implements Runnable
 				guid = P.getAccID();
 				
 			break;
-			case '*'://Nom de compte
+			case '*'://Pseudo
 				packet = packet.substring(3);
 				Compte C = World.getCompteByPseudo(packet);
 				if(C==null)
@@ -302,65 +302,59 @@ public class GameThread implements Runnable
 				guid = Pr.get_compte().get_GUID();
 			break;
 		}
-		/*
-		 if(guid == -1 || !_compte.isEnemyWith(guid))
-		
+		if(guid == -1)
 		{
 			SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
-			GameServer.addToLog("STEP 7");
 			return;
 		}
-		*/
-			_compte.addEnemy(packet, guid);
+		_compte.addEnemy(packet, guid);
 	}
 
 	private void Enemy_delete(String packet)
 	{
-	if(_perso == null)return;
-	int guid = -1;
-	switch(packet.charAt(2))
-	{
-		case '%'://Nom du joueurs
-			packet = packet.substring(3);
-			Personnage P = World.getPersoByName(packet);
-			if(P == null)
-			{
-				SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
-				return;
-			}
-			guid = P.getAccID();
-			
-		break;
-		case '*'://Nom de compte
-			packet = packet.substring(3);
-			Compte C = World.getCompteByName(packet);
-			if(C==null)
-			{
-				SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
-				return;
-			}
-			guid = C.get_GUID();
-		break;
-		default:
-			packet = packet.substring(2);
-			Personnage Pr = World.getPersoByName(packet);
-			if(Pr == null?true:!Pr.isOnline())
-			{
-				SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
-				return;
-			}
-			guid = Pr.get_compte().get_GUID();
-		break;
+		if(_perso == null)return;
+		int guid = -1;
+		switch(packet.charAt(2))
+		{
+			case '%'://Nom de perso
+				packet = packet.substring(3);
+				Personnage P = World.getPersoByName(packet);
+				if(P == null)
+				{
+					SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
+					return;
+				}
+				guid = P.getAccID();
+				
+			break;
+			case '*'://Pseudo
+				packet = packet.substring(3);
+				Compte C = World.getCompteByPseudo(packet);
+				if(C==null)
+				{
+					SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
+					return;
+				}
+				guid = C.get_GUID();
+			break;
+			default:
+				packet = packet.substring(2);
+				Personnage Pr = World.getPersoByName(packet);
+				if(Pr == null?true:!Pr.isOnline())
+				{
+					SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
+					return;
+				}
+				guid = Pr.get_compte().get_GUID();
+			break;
+		}
+		if(guid == -1 || !_compte.isEnemyWith(guid))
+		{
+			SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
+			return;
+		}
+		_compte.removeEnemy(guid);
 	}
-	/*
-	if(guid == -1 || !_compte.isEnemyWith(guid))
-	{
-		SocketManager.GAME_SEND_FD_PACKET(_perso, "Ef");
-		return;
-	}
-	*/
-	_compte.removeEnemy(guid);
-}
 	
 	private void parseWaypointPacket(String packet)
 	{
@@ -1278,7 +1272,7 @@ public class GameThread implements Runnable
 		int guid = -1;
 		switch(packet.charAt(2))
 		{
-			case '%'://nom de perso
+			case '%'://Nom de perso
 				packet = packet.substring(3);
 				Personnage P = World.getPersoByName(packet);
 				if(P == null)//Si P est nul, ou si P est nonNul et P offline
@@ -1324,7 +1318,7 @@ public class GameThread implements Runnable
 		int guid = -1;
 		switch(packet.charAt(2))
 		{
-			case '%'://nom de perso
+			case '%'://Nom de perso
 				packet = packet.substring(3);
 				Personnage P = World.getPersoByName(packet);
 				if(P == null?true:!P.isOnline())//Si P est nul, ou si P est nonNul et P offline
@@ -1528,13 +1522,25 @@ public class GameThread implements Runnable
 		if(guid == -1 || qua <= 0 || !_perso.hasItemGuid(guid))return;
 		Objet obj = World.getObjet(guid);
 		
+		_perso.set_curCell(_perso.get_curCell());
 		int cellPosition = Constants.getNearCellidUnused(_perso);
-		if(cellPosition == 0)
+		if(cellPosition < 0)
 		{
 			SocketManager.GAME_SEND_Im_PACKET(_perso, "1145");
 			return;
 		}
-		
+		if(obj.getPosition() != Constants.ITEM_POS_NO_EQUIPED)
+		{
+			obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+			SocketManager.GAME_SEND_OBJET_MOVE_PACKET(_perso,obj);
+			if(obj.getPosition() == Constants.ITEM_POS_ARME 		||
+				obj.getPosition() == Constants.ITEM_POS_COIFFE 		||
+				obj.getPosition() == Constants.ITEM_POS_FAMILIER 	||
+				obj.getPosition() == Constants.ITEM_POS_CAPE		||
+				obj.getPosition() == Constants.ITEM_POS_BOUCLIER	||
+				obj.getPosition() == Constants.ITEM_POS_NO_EQUIPED)
+					SocketManager.GAME_SEND_ON_EQUIP_ITEM(_perso.get_curCarte(), _perso);
+		}
 		if(qua >= obj.getQuantity())
 		{
 			_perso.removeItem(guid);

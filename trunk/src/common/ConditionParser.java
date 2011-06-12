@@ -1,6 +1,5 @@
 package common;
 
-import java.util.ArrayList;
 
 import com.singularsys.jep.Jep;
 import com.singularsys.jep.JepException;
@@ -13,13 +12,16 @@ public class ConditionParser
 	{
 		if(req == null || req.equals(""))return true;
 		if(req.contains("BI"))return false;
-		//if(perso.get_compte().get_gmLvl() >= 5)return true; TODO : OSEF ?
 		
 		Jep jep = new Jep();
+		
+		req = req.replace("&", "&&").replace("=", "==").replace("|", "||").replace("!", "!=").replace("~", "==");
+		
 		if(req.contains("PO"))
 			req = havePO(req, perso);
-		
-		req = req.replace("&", "&&").replace("=", "==").replace("|", "||").replace("!", "!=");
+		if(req.contains("PN"))
+			req = canPN(req, perso);
+	 	//TODO : Gérer PJ Pj
 		try
 		{
 				//Stats stuff compris
@@ -44,10 +46,12 @@ public class ConditionParser
 			 	jep.addVariable("PK", perso.get_kamas());
 			 	jep.addVariable("PG", perso.get_classe());
 			 	jep.addVariable("PS", perso.get_sexe());
-			 	jep.addVariable("PZ", true);//Abonnement
-			 	jep.addVariable("isMarried", perso.getWife());//Mariage
-			 	//Gérer PO PJ PN
-			 	
+			 	jep.addVariable("PZ", 1);//Abonnement
+			 	jep.addVariable("PX", perso.get_compte().get_gmLvl());
+			 	jep.addVariable("PW", perso.getMaxPod());
+			 	jep.addVariable("PB", perso.get_curCarte().getSubArea().get_id());
+			 	jep.addVariable("PR", (perso.getWife()>0?1:0));
+			 	jep.addVariable("SI", perso.get_curCarte().get_id());
 			 	//Les pierres d'ames sont lancables uniquement par le lanceur.
 			 	jep.addVariable("MiS",perso.get_GUID());
 			 	
@@ -62,29 +66,180 @@ public class ConditionParser
 		}
 		return true;
 	}
-
-	public static String havePO(String cond,Personnage perso)
+	
+	public static String havePO(String cond,Personnage perso)//On remplace les PO par leurs valeurs si possession de l'item
 	{
-		String[] cut = cond.replaceAll("[ ()]", "").split("[|&]");
-
-		ArrayList<Integer> value = new ArrayList<Integer>(cut.length);
+		boolean Jump = false;
+		boolean ContainsPO = false;
+		String copyCond = "";
 		
-		for(String cur : cut)
+		if(cond.contains("&&"))
 		{
-			if(!cur.contains("PO"))
+			for(String cur : cond.split("&&"))
+			{
+				if(cond.contains("=="))
+				{
+					for(String cur2 : cur.split("=="))
+					{
+						if(cur2.contains("PO")) 
+						{
+							ContainsPO = true;
+							continue;
+						}
+						if(Jump)
+						{
+							copyCond += cur2;
+							Jump = false;
+							continue;
+						}
+						if(!cur2.contains("PO") && !ContainsPO)
+						{
+							copyCond += cur2+"==";
+							Jump = true;
+							continue;
+						}
+						if(cur2.contains("!=")) continue;
+						ContainsPO = false;
+						if(perso.hasItemTemplate(Integer.parseInt(cur2), 1))
+						{
+							copyCond += Integer.parseInt(cur2)+"=="+Integer.parseInt(cur2);
+						}else
+						{
+							copyCond += Integer.parseInt(cur2)+"=="+0;
+						}
+					}
+				}
+				if(cond.contains("!="))
+				{
+					for(String cur2 : cur.split("!="))
+					{
+						if(cur2.contains("PO")) 
+						{
+							ContainsPO = true;
+							continue;
+						}
+						if(Jump)
+						{
+							copyCond += cur2;
+							Jump = false;
+							continue;
+						}
+						if(!cur2.contains("PO") && !ContainsPO)
+						{
+							copyCond += cur2+"!=";
+							Jump = true;
+							continue;
+						}
+						if(cur2.contains("==")) continue;
+						ContainsPO = false;
+						if(perso.hasItemTemplate(Integer.parseInt(cur2), 1))
+						{
+							copyCond += Integer.parseInt(cur2)+"!="+Integer.parseInt(cur2);
+						}else
+						{
+							copyCond += Integer.parseInt(cur2)+"!="+0;
+						}
+					}
+				}
+				copyCond += "&&";
+			}
+		}else if(cond.contains("||"))
+		{
+			for(String cur : cond.split("\\|\\|"))
+			{
+				if(cond.contains("=="))
+				{
+					for(String cur2 : cur.split("=="))
+					{
+						if(cur2.contains("PO")) 
+						{
+							ContainsPO = true;
+							continue;
+						}
+						if(Jump)
+						{
+							copyCond += cur2;
+							Jump = false;
+							continue;
+						}
+						if(!cur2.contains("PO") && !ContainsPO)
+						{
+							copyCond += cur2+"==";
+							Jump = true;
+							continue;
+						}
+						if(cur2.contains("!=")) continue;
+						ContainsPO = false;
+						if(perso.hasItemTemplate(Integer.parseInt(cur2), 1))
+						{
+							copyCond += Integer.parseInt(cur2)+"=="+Integer.parseInt(cur2);
+						}else
+						{
+							copyCond += Integer.parseInt(cur2)+"=="+0;
+						}
+					}
+				}
+				if(cond.contains("!="))
+				{
+					for(String cur2 : cur.split("!="))
+					{
+						if(cur2.contains("PO")) 
+						{
+							ContainsPO = true;
+							continue;
+						}
+						if(Jump)
+						{
+							copyCond += cur2;
+							Jump = false;
+							continue;
+						}
+						if(!cur2.contains("PO") && !ContainsPO)
+						{
+							copyCond += cur2+"!=";
+							Jump = true;
+							continue;
+						}
+						if(cur2.contains("==")) continue;
+						ContainsPO = false;
+						if(perso.hasItemTemplate(Integer.parseInt(cur2), 1))
+						{
+							copyCond += Integer.parseInt(cur2)+"!="+Integer.parseInt(cur2);
+						}else
+						{
+							copyCond += Integer.parseInt(cur2)+"!="+0;
+						}
+					}
+				}
+					copyCond += "||";
+			}
+		}else
+		{
+			System.out.println("Erreur : Contenant incorrect "+cond);
+		}
+		int finallenth = (copyCond.length()-2);//On retire les deux derniers carractères (|| ou &&)
+		copyCond = copyCond.substring(0, finallenth);
+		return copyCond;
+	}
+	
+	public static String canPN(String cond,Personnage perso)//On remplace le PN par 1 et si le nom correspond == 1 sinon == 0
+	{
+		String copyCond = "";
+		for(String cur : cond.split("=="))
+		{
+			if(cur.contains("PN")) 
+			{
+				copyCond += "1==";
 				continue;
-
-			if(perso.hasItemGuid(Integer.parseInt(cur.split("[=]")[1])))
-				value.add(Integer.parseInt(cur.split("[=]")[1]));
-			else
-				value.add(-1);
+			}
+			if(perso.get_name().toLowerCase().compareTo(cur) == 0)
+			{
+				copyCond += "1";
+			}else
+			{
+				copyCond += "0";
+			}
 		}
-		
-		for(int curValue : value)
-		{
-			cond = cond.replaceFirst("PO", curValue+"");
-		}
-
-		return cond;
+		return copyCond;
 	}
 }

@@ -115,6 +115,7 @@ public class SQLManager {
 			return false;
 		}
 	}
+	
 	public static void UPDATE_ACCOUNT_DATA(Compte acc)
 	{
 		try
@@ -125,36 +126,7 @@ public class SQLManager {
 								"`level` = ?,"+
 								"`stable` = ?,"+
 								"`banned` = ?,"+
-								"`friends` = ?"+
-								" WHERE `guid` = ?;";
-			PreparedStatement p = newTransact(baseQuery, othCon);
-			
-			p.setLong(1, acc.getBankKamas());
-			p.setString(2, acc.parseBankObjetsToDB());
-			p.setInt(3, acc.get_gmLvl());
-			p.setString(4, acc.parseStableIDs());
-			p.setInt(5, (acc.isBanned()?1:0));
-			p.setString(6, acc.parseFriendListToDB());
-			p.setInt(7, acc.get_GUID());
-			
-			p.executeUpdate();
-			closePreparedStatement(p);
-		}catch(SQLException e)
-		{
-			RealmServer.addToLog("SQL ERROR: "+e.getMessage());
-			e.printStackTrace();
-		}
-	}
-	public static void UPDATE_ACCOUNT_ENEMY(Compte acc)
-	{
-		try
-		{
-			String baseQuery = "UPDATE accounts SET " +
-								"`bankKamas` = ?,"+
-								"`bank` = ?,"+
-								"`level` = ?,"+
-								"`stable` = ?,"+
-								"`banned` = ?,"+
+								"`friends` = ?,"+
 								"`enemy` = ?"+
 								" WHERE `guid` = ?;";
 			PreparedStatement p = newTransact(baseQuery, othCon);
@@ -164,8 +136,9 @@ public class SQLManager {
 			p.setInt(3, acc.get_gmLvl());
 			p.setString(4, acc.parseStableIDs());
 			p.setInt(5, (acc.isBanned()?1:0));
-			p.setString(6, acc.parseEnemyListToDB());
-			p.setInt(7, acc.get_GUID());
+			p.setString(6, acc.parseFriendListToDB());
+			p.setString(7, acc.parseEnemyListToDB());
+			p.setInt(8, acc.get_GUID());
 			
 			p.executeUpdate();
 			closePreparedStatement(p);
@@ -246,10 +219,9 @@ public class SQLManager {
 			ResultSet RS = SQLManager.executeQuery("SELECT * from guild_members;",Ancestra.OTHER_DB_NAME);
 			while(RS.next())
 			{
-				//Personnage P = World.getPersonnage(RS.getInt("guid"));
 				Guild G = World.getGuild(RS.getInt("guild"));
 				if(G == null)continue;
-				/*GuildMember GM = */G.addMember(RS.getInt("guid"), RS.getString("name"), RS.getInt("level"), RS.getInt("gfxid"), RS.getInt("rank"), RS.getByte("pxp"), RS.getLong("xpdone"), RS.getInt("rights"), RS.getByte("align"),RS.getDate("lastConnection").toString().replaceAll("-","~"));
+				G.addMember(RS.getInt("guid"), RS.getString("name"), RS.getInt("level"), RS.getInt("gfxid"), RS.getInt("rank"), RS.getByte("pxp"), RS.getLong("xpdone"), RS.getInt("rights"), RS.getByte("align"),RS.getDate("lastConnection").toString().replaceAll("-","~"));
 			}
 			closeResultSet(RS);
 		}catch(SQLException e)
@@ -437,7 +409,6 @@ public class SQLManager {
 			e.printStackTrace();
 		}
 	}
-	
 	public static void LOAD_SUBAREA()
 	{
 		try
@@ -464,7 +435,6 @@ public class SQLManager {
 			e.printStackTrace();
 		}
 	}
-	
 	public static int LOAD_NPCS()
 	{
 		int nbr = 0;
@@ -488,7 +458,6 @@ public class SQLManager {
 		}
 		return nbr;
 	}
-	
 	public static int LOAD_PERCEPTEURS()
 	{
 		int nbr = 0;
@@ -695,7 +664,6 @@ public class SQLManager {
 			Ancestra.closeServers();
 		}
 	}
-	
 	public static void LOAD_PERSO(int persoID)
 	{
 				try
@@ -752,6 +720,8 @@ public class SQLManager {
 								RS.getByte("title"),
 								RS.getInt("wife")
 								);
+						//Vérifications pré-connexion
+						perso.VerifAndChangeItemPlace();
 						World.addPersonnage(perso);
 						int guildId = isPersoInGuild(RS.getInt("guid"));
 						if(guildId >= 0)
@@ -769,8 +739,7 @@ public class SQLManager {
 					e.printStackTrace();
 					Ancestra.closeServers();
 				}
-		}
-	
+	}
 	public static void LOAD_PERSOS()
 	{
 		try
@@ -824,6 +793,8 @@ public class SQLManager {
 						RS.getByte("title"),
 						RS.getInt("wife")
 						);
+				//Vérifications pré-connexion
+				perso.VerifAndChangeItemPlace();
 				World.addPersonnage(perso);
 				if(World.getCompte(RS.getInt("account")) != null)
 					World.getCompte(RS.getInt("account")).addPerso(perso);
@@ -1289,7 +1260,7 @@ public class SQLManager {
 				{
 					capturable = false;
 				}
-				//String drop = RS.getString("drop");
+				
 				World.addMobTemplate
 				(
 					id,
@@ -2382,7 +2353,6 @@ public class SQLManager {
 			e.printStackTrace();
 		}
 	}
-	
 	public static void SETONLINE(int accID)
 	{
 		PreparedStatement p;
@@ -2420,7 +2390,7 @@ public class SQLManager {
 		}
 		
 	}
-	 public static void LOAD_ITEMS_FULL() {
+	public static void LOAD_ITEMS_FULL() {
 		    try {
 		      ResultSet RS = executeQuery("SELECT * FROM items;", Ancestra.OTHER_DB_NAME);
 		      while (RS.next()) {
@@ -2458,13 +2428,12 @@ public class SQLManager {
 		public static boolean persoExist(String name)
 		{
 			boolean exist = false;
+			PreparedStatement p;
+			String query = "SELECT COUNT(*) AS exist FROM personnages WHERE name LIKE '" + name + "';";
 			try
 			{
-				String query = "SELECT COUNT(*) AS exist " +
-						"FROM personnages " +
-						"WHERE name LIKE '" + name + "';";
-				
-				ResultSet RS = executeQuery(query,Ancestra.OTHER_DB_NAME);
+				p = newTransact(query, othCon);
+				ResultSet RS =  p.executeQuery();
 				
 				boolean found = RS.first();
 				
@@ -2482,7 +2451,6 @@ public class SQLManager {
 			}
 			return exist;
 		}
-		
 		public static void HOUSE_BUY(Personnage P, House h) 
 		{	
 			
@@ -2631,7 +2599,6 @@ public class SQLManager {
 			}
 			return i;
 		}
-		
 		public static int GetNewIDPercepteur() 
 		{
 			int i = -50;//Pour éviter les conflits avec touts autre NPC
@@ -2653,7 +2620,45 @@ public class SQLManager {
 			}
 			return i;
 		}
-		
+		public static int LOAD_ZAAPIS() 
+		{
+			int i = 0;
+			String Bonta = "";
+			String Brak = "";
+			String Neutre = "";
+			try
+			{
+				ResultSet RS = SQLManager.executeQuery("SELECT mapid, align from zaapi;",Ancestra.OTHER_DB_NAME); 
+			      while (RS.next()) 
+			      { 
+						if(RS.getInt("align") == Constants.ALIGNEMENT_BONTARIEN)
+						{
+							Bonta += RS.getString("mapid");
+							if(!RS.isLast()) Bonta += ",";
+						}
+						else if(RS.getInt("align") == Constants.ALIGNEMENT_BRAKMARIEN)
+						{
+							Brak += RS.getString("mapid");
+							if(!RS.isLast()) Brak += ",";
+						}
+						else
+						{
+							Neutre += RS.getString("mapid");
+							if(!RS.isLast()) Neutre += ",";
+						}
+						i++;
+			      }
+			      Constants.ZAAPI.put(Constants.ALIGNEMENT_BONTARIEN, Bonta);
+			      Constants.ZAAPI.put(Constants.ALIGNEMENT_BRAKMARIEN, Brak);
+			      Constants.ZAAPI.put(Constants.ALIGNEMENT_NEUTRE, Neutre);
+					closeResultSet(RS);
+			}catch(SQLException e)
+			{
+				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+			}
+			return i;
+		}
 		public static int LOAD_ZAAPS() 
 		{
 			int i = 0;
@@ -2673,7 +2678,6 @@ public class SQLManager {
 			}
 			return i;
 		}
-		
 		public static int getNextObjetID()
 		{
 			try
@@ -2696,7 +2700,6 @@ public class SQLManager {
 			}
 			return 0;
 		}
-		
 		public static int LOAD_BANIP() 
 		{
 			int i = 0;
@@ -2705,11 +2708,8 @@ public class SQLManager {
 				ResultSet RS = SQLManager.executeQuery("SELECT ip from banip;",Ancestra.OTHER_DB_NAME); 
 			      while (RS.next()) 
 			      { 
-			    	  	if(!RS.isLast())
-			    	  		Constants.BAN_IP += RS.getString("ip")+",";
-			    	  	else
-			    	  		Constants.BAN_IP += RS.getString("ip");
-						
+			    	  	Constants.BAN_IP += RS.getString("ip");
+			    	  	if(!RS.isLast()) Constants.BAN_IP += ",";
 			    	  	i++;
 			      }
 					closeResultSet(RS);

@@ -30,7 +30,7 @@ public class Carte {
 	private Map<Integer,MobGroup> 	_mobGroups 		= new TreeMap<Integer,MobGroup>();
 	private Map<Integer,MobGroup> 	_fixMobGroups 	= new TreeMap<Integer,MobGroup>();
 	private Map<Integer,NPC>		_npcs	 		= new TreeMap<Integer, NPC>();
-	private int _nextObjectID = -1;
+	int _nextObjectID = -1;
 	private byte _X = 0;
 	private byte _Y = 0;
 	private SubArea _subArea;
@@ -958,33 +958,29 @@ public class Carte {
 					perso.openZaapMenu();
 					perso.get_compte().getGameThread().removeAction(GA);
 				break;
-				case 157: //zaapi
-					String ZaapiList="";
+				case 157: //Zaapis
+					String ZaapiList= "";
+					String[] Zaapis;
+					int count = 0;
+					int price = 20;
+					
 					if (perso.get_curCarte()._subArea.get_area().get_id() == 7 && (perso.get_align() == 1 || perso.get_align() == 0 || perso.get_align() == 3))//Ange, Neutre ou Sérianne
 					{
-						String[] Zaapis = Constants.ZAAPI_BONTA.split(",");
-						int count = 0;
-						int price = 20;
-						if (perso.get_align() == 1)
-							price = 10;
-						for (String s : Zaapis)
-						{
-							if(count == Zaapis.length)
-								ZaapiList += s+";"+price;
-							else
-								ZaapiList += s+";"+price+"|";
-							count++;
-						}
-						perso.SetZaaping(true);
-						SocketManager.GAME_SEND_ZAAPI_PACKET(perso, ZaapiList);
+						Zaapis = Constants.ZAAPI.get(Constants.ALIGNEMENT_BONTARIEN).split(",");
+						if (perso.get_align() == 1) price = 10;
 					}
-					if (perso.get_curCarte()._subArea.get_area().get_id() == 11 && (perso.get_align() == 2 || perso.get_align() == 0 || perso.get_align() == 3))//Démons, Neutre ou Sérianne
+					else if (perso.get_curCarte()._subArea.get_area().get_id() == 11 && (perso.get_align() == 2 || perso.get_align() == 0 || perso.get_align() == 3))//Démons, Neutre ou Sérianne
 					{
-						String[] Zaapis = Constants.ZAAPI_BRAKMAR.split(",");
-						int count = 0;
-						int price = 20;
-						if (perso.get_align() == 2)
-							price = 10;
+						Zaapis = Constants.ZAAPI.get(Constants.ALIGNEMENT_BRAKMARIEN).split(",");
+						if (perso.get_align() == 2) price = 10;
+					}
+					else
+					{
+						Zaapis = Constants.ZAAPI.get(Constants.ALIGNEMENT_NEUTRE).split(",");
+					}
+					
+					if(Zaapis.length > 0)
+					{
 						for (String s : Zaapis)
 						{
 							if(count == Zaapis.length)
@@ -1626,7 +1622,7 @@ public class Carte {
 		}
 	}
 	
-	private void startFigthVersusMonstres(Personnage perso, MobGroup group)
+	public void startFigthVersusMonstres(Personnage perso, MobGroup group)
 	{
 		int id = 1;
 		if(!_fights.isEmpty())

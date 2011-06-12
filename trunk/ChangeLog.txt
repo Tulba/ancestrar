@@ -1,3 +1,22 @@
+[10/06/2011]
+- ConditionParser : Débug de la condition PO (HaveObject) (A tester).
+- ConditionParser : Ajout de la condition PN (PlayerName) (A tester).
+
+[08/06/2011]
+- ConditionParser : Ajout des conditions PX (GmLevel), PW (MaxPod), PB (SubAreaID), PR (Mariage), SI (MapID).
+- SQLManager : Correction d'une faille SQL (THX Vendethiel).
+- GameThread : Correction de la fonction Object_Drop qui ne fonctionne pas lorsque l'on jète un item équipé.
+- Constants : Correction de la fonction getNearCellidUnused pour les areas 7 (Bonta) et 11 (Brak).
+
+[07/06/2011]
+- Carte/Constants/World/SQLManager : Implantation des zaapis dans la BDD pour autoriser l'ajout de zaapi sur des maps créer.
+- GameThread : Correction de quelques problèmes (Ajout/Supression) avec la liste d'ennemis.
+- Compte/SQLManager : Supression d'une fonction inutile.
+(Patch 101 a appliquer)
+
+[05/06/2011]
+- Action/Carte : Ajout de l'action 27 (startFigthVersusMonstres). Arguments : monsterID1,monsterLevel1|monsterID2,monsterLevel2| etc ...
+
 [02/06/2011]
 - Formulas : Les +dommage, %dommage et mutiplicateur de dommage ne sont plus pris en compte dans le formule de soin.
 
