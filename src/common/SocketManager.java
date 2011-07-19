@@ -2423,4 +2423,11 @@ public class SocketManager {
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
 	} 
+	public static void GAME_SEND_PF(Personnage perso, String str)
+	{
+		String packet = "PF"+str;
+		send(perso,packet);
+		if (Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>" + packet);
+	} 
 }

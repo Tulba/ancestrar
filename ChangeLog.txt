@@ -1,3 +1,37 @@
+[15/07/2011]
+- GameThread/Personnage : Correction de la fonction "Suivre le déplacement" (Groupe et mariés) (THX DasBoShit).
+- GameThread : Ajout de la fonction "Suivez le tous" (Groupe).
+
+[11/07/2011]
+- Fight/SpellEffect : 	Pandanlku est débuffable.
+						Odorat enlève des Pa/Pm correctement.
+						Transfert de vie est corrigé, le lanceur et les ennemis ne récupèrent plus la vie.
+						Lorsque l'on utilise Stabilisation :
+							=> On ne peut plus pousser le joueur
+							=> On ne peut plus attirer le joueur
+							=> On ne peut plus porter/lancer le joueur
+							=> On ne peut plus faire "Peur" au joueur
+							=> On ne peut plus transposer le joueur
+							=> On ne peut plus tacler le joueur
+							=> Les ennemis ne sont plus tacler par le joueur
+							(THX Adlesne).
+- Formulas : Correction de la formule calculFinalDommage (Prise en compte des résistances).
+
+[08/07/2011]
+- Fight/Formulas/PathFinding : Gestion de l'agilité des différents adversaires lors d'une tentative de tacle (THX Adlesne).
+
+[06/07/2011]
+- Action : Correction de l'action 228 (la fée est bien lancée là ou on la lance).
+- Compte : La déconnexion n'entraine plus la suppression de la map de ces personnages non connectés.
+- BDD : Suppression de la condition isMarried pour PR (Patch rev102).
+- ConditionParser : Correction de la condition PO (HaveObject) pour les conditions simple (Ex: PO!2568).
+
+[15/06/2011]
+- GameThread : La commande /whois ne fait plus déconnecter si le personnage n'existe pas.
+
+[13/06/2011]
+- World/Ancestra : Correction de quelques problèmes de sauvegarde.
+
 [10/06/2011]
 - ConditionParser : Débug de la condition PO (HaveObject) (A tester).
 - ConditionParser : Ajout de la condition PN (PlayerName) (A tester).
@@ -10,8 +44,8 @@
 
 [07/06/2011]
 - Carte/Constants/World/SQLManager : Implantation des zaapis dans la BDD pour autoriser l'ajout de zaapi sur des maps créer.
-- GameThread : Correction de quelques problèmes (Ajout/Supression) avec la liste d'ennemis.
-- Compte/SQLManager : Supression d'une fonction inutile.
+- GameThread : Correction de quelques problèmes (Ajout/Suppression) avec la liste d'ennemis.
+- Compte/SQLManager : Suppression d'une fonction inutile.
 (Patch 101 a appliquer)
 
 [05/06/2011]
@@ -49,7 +83,7 @@ Kackitu (Rat Noir), Le Rat Noir ne se suicide plus.
 - Fight : Correction de la formule InitOrdreJeu().
 
 [17/05/2011]
-- Fight/IA : Supression de la fonction CanCastSpell2 au profit de CanCastSpell.
+- Fight/IA : Suppression de la fonction CanCastSpell2 au profit de CanCastSpell.
 - IA : Correction d'un problème d'IA (passage de tour de certain mob).
 - Fight : Amélioration du passage du tour pendant un déplacement (on attend que l'action soit finit avant de passer le tour, wait() notifyAll()).
 
@@ -128,7 +162,7 @@ et 26 (Téléportation enclo de guilde (ouverture du panneau de guilde)) pas d'a
 - Action : Correction d'un Im paquet lors de l'ouverture de la banque quand on n'a pas assez de kamas.
 - GameServer : Ajout de la message box lors du kick d'inactivité (THX Alleos13).
 - [...] : Remplacement des GAME_SEND_MESSAGE(s) par les Im(s) paquets associés.
-- Metier : Supression de l'utilisation des requetes SQL.
+- Metier : Suppression de l'utilisation des requetes SQL.
 
 [26/11/2010]
 - GameThread/Guild : Ajout des boosts spells percepteur.
@@ -170,7 +204,7 @@ BANIP Death
 
 [12/11/2010]
 - GameThread : Correction de la commande TOOGLEAGGRO.
-- Compte/World : Correction de la supression des personnages.
+- Compte/World : Correction de la suppression des personnages.
 
 [11/11/2010]
 - Commands : Ajout de la commande BLOCK args : [GMLevel] [KickPlayer]
@@ -240,10 +274,10 @@ Patch 90 a appliquer.
 [26/10/2010]
 - GameThread : Débugge de la barre d'objets, a tester (Risque de duplication ou perte d'items).
 - GameServer/SocketManager : Mise en place des Im(s) paquets lié a la sauvegarde (THX nami-doc).
-- SocketManager : Supression de 2 paquets inutiles.
+- SocketManager : Suppression de 2 paquets inutiles.
 - Fight : Les pierres d'âme ne permettent plus d'obtenir des PAs a l'infini.
 - GameThread : Ajout de la commande "SHUTDOWN" 2 arguments : 
-"1 ou 0" : creation ou supression du programme 
+"1 ou 0" : creation ou suppression du programme 
 "xx" : temps en minutes du programme
 Ex : 
 SHUTDOWN 1 30 : Ferme le serveur dans 30 minutes.
@@ -251,7 +285,7 @@ SHUTDOWN 0 : Retire l'action précédente.
 
 
 [25/10/2010]
-- Guild : Correction d'un problème lié a la supression du personnage.
+- Guild : Correction d'un problème lié a la suppression du personnage.
 
 [24/10/2010]
 - BDD : Ajout du champ "objets" pour le percepteur.
@@ -368,7 +402,7 @@ armures terrestres/aqueuse/venteuse/incandescente et bouclier féca sont désorm
 [08/09/2010]
 - GameThread : Localisation des membres du groupe fonctionnel.
 - SpellEffect : Correction du sort "sacrifice" par Sylarman.
-- Guilde : La supression d'une guilde, retire les maisons de guildes associés.
+- Guilde : La suppression d'une guilde, retire les maisons de guildes associés.
 - Fight : Correction de quelques bugs liés a la fonction annuler.
 - Fight : Correction de l'affichage des épées dans le mode spectateur.
 
@@ -380,7 +414,7 @@ armures terrestres/aqueuse/venteuse/incandescente et bouclier féca sont désorm
 - Fight : L'agression d'un personnage possèdant la même IP que la sienne ne fait plus gagner de point d'honneur (Configurable avec l'option ALLOW_MULE_PVP).
 
 [06/09/2010]
-- Guilde : La supression d'un membre de guilde enleve sa maison de celle-ci.
+- Guilde : La suppression d'un membre de guilde enleve sa maison de celle-ci.
 
 [03/09/2010]
 - Personnage : Ajout du stuff du double (quelques bug surviennent).
@@ -388,7 +422,7 @@ armures terrestres/aqueuse/venteuse/incandescente et bouclier féca sont désorm
 [02/09/2010]
 - Fight : Gestion de l'affichage du drop percepteur en fin de combat.
 - Fight : Le double est décharger de la mémoire a la fin du combat.
-- Percepteur : Supression des items non récoltés/droppés.
+- Percepteur : Suppression des items non récoltés/droppés.
 
 [01/09/2010]
 - Percepteur : Ajout d'un système d'information de récolte pour les autres membre de guilde.
@@ -398,7 +432,7 @@ armures terrestres/aqueuse/venteuse/incandescente et bouclier féca sont désorm
 [31/08/2010]
 - Percepteur : Mise en place du système de récolte de kamas.
 - Percepteur : Mise en place du système de récolte d'objets.
-- Percepteur : Supression de celui-ci après récolte.
+- Percepteur : Suppression de celui-ci après récolte.
 - BDD : Ajout du patch des potions d'oublie de métier (THX xox1505).
 - Action : Ajout de deux actionsID
 24 : Morph. Argument : morphID

@@ -498,6 +498,7 @@ public class Percepteur
 	{
 		String str = "";
 		boolean isFirst = true;
+		if(_LogObjets == null) return str;
 		for(Objet obj : _LogObjets.values())
 		{
 			if(!isFirst) str += ";";

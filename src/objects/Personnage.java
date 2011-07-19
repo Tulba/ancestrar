@@ -102,7 +102,6 @@ public class Personnage {
 	//Zaap
 	private boolean _isZaaping = false;
 	private ArrayList<Short> _zaaps = new ArrayList<Short>();
-	private int _Prospection;
 	//Disponibilité
 	public boolean _isAbsent = false;
 	public boolean _isInvisible = false;
@@ -120,29 +119,32 @@ public class Personnage {
 	//Inactivité
 	protected long _lastPacketTime;
 	//Mariage
-	private int _wife = 0; 
-	private int _isOK = 0; 
+	private int _wife = 0;
+	private int _isOK = 0;
+	//Suiveur - Suivi
+	public Map<Integer,Personnage> _Follower = new TreeMap<Integer,Personnage>();
+	public Personnage _Follows = null;
 	
 	public static class traque 
-	{ 
-		private long _time; 
-		private Personnage _traqued; 
+	{
+		private long _time;
+		private Personnage _traqued;
 		
-		public traque(long time, Personnage p) 
-		{ 
-			this._time = time; 
-			this._traqued = p; 
-		} 
+		public traque(long time, Personnage p)
+		{
+			this._time = time;
+			this._traqued = p;
+		}
 		
-		public void set_traqued(Personnage tempP) 
-		{ 
+		public void set_traqued(Personnage tempP)
+		{
 			_traqued = tempP;
-		} 
+		}
 		
-		public Personnage get_traqued() 
-		{ 
-			return _traqued; 
-		} 
+		public Personnage get_traqued()
+		{
+			return _traqued;
+		}
 		
 		public long get_time()
 		{
@@ -544,9 +546,6 @@ public class Personnage {
 		this._PDV = (_PDVMAX*pdvPer)/100;
 		parseSpells(spells);
 		
-		this._Prospection = (int)Math.ceil(_baseStats.getEffect(Constants.STATS_ADD_CHAN)/10);
-		
-
 		_sitTimer = new Timer(2000,new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -554,6 +553,7 @@ public class Personnage {
 				regenLife();
 			}
 		});
+		
 		_exPdv = _PDV;
 		
 		
@@ -614,16 +614,6 @@ public class Personnage {
 		this._PDVMAX = (_lvl-1)*5+Constants.getBasePdv(_classe)+getTotalStats().getEffect(Constants.STATS_ADD_VITA);
 		this._PDV = (_PDVMAX*pdvPer)/100;
 		
-		this._Prospection = (int)Math.ceil(_baseStats.getEffect(Constants.STATS_ADD_CHAN)/10);
-		
-
-		_sitTimer = new Timer(2000,new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				regenLife();
-			}
-		});
 		_exPdv = _PDV;
 		
 		this._align = alignement;
@@ -1198,7 +1188,7 @@ public class Personnage {
 		PrintWriter out = _compte.getGameThread().get_out();
 		SocketManager.GAME_SEND_GAME_CREATE(out,_name);
 		SocketManager.GAME_SEND_STATS_PACKET(this);
-		SQLManager.SETONLINE(_compte.get_GUID());
+		SQLManager.LOG_OUT(_compte.get_GUID(), 1);
 		SocketManager.GAME_SEND_MAPDATA(out,_curCarte.get_id(),_curCarte.get_date(),_curCarte.get_key());
 		SocketManager.GAME_SEND_MAP_FIGHT_COUNT(out,this.get_curCarte());
 		_curCarte.addPlayer(this);
@@ -1299,7 +1289,7 @@ public class Personnage {
 		ASData += _energy+",10000|";
 		
 		ASData += getInitiative()+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_PROS)+getStuffStats().getEffect(Constants.STATS_ADD_PROS)+_Prospection+getBuffsStats().getEffect(Constants.STATS_ADD_PROS)+"|";
+		ASData += _baseStats.getEffect(Constants.STATS_ADD_PROS)+getStuffStats().getEffect(Constants.STATS_ADD_PROS)+((int)Math.ceil(_baseStats.getEffect(Constants.STATS_ADD_CHAN)/10))+getBuffsStats().getEffect(Constants.STATS_ADD_PROS)+"|";
 		ASData += _baseStats.getEffect(Constants.STATS_ADD_PA)+","+getStuffStats().getEffect(Constants.STATS_ADD_PA)+","+getDonsStats().getEffect(Constants.STATS_ADD_PA)+","+getBuffsStats().getEffect(Constants.STATS_ADD_PA)+","+getTotalStats().getEffect(Constants.STATS_ADD_PA)+"|";
 		ASData += _baseStats.getEffect(Constants.STATS_ADD_PM)+","+getStuffStats().getEffect(Constants.STATS_ADD_PM)+","+getDonsStats().getEffect(Constants.STATS_ADD_PM)+","+getBuffsStats().getEffect(Constants.STATS_ADD_PM)+","+getTotalStats().getEffect(Constants.STATS_ADD_PM)+"|";
 		ASData += _baseStats.getEffect(Constants.STATS_ADD_FORC)+","+getStuffStats().getEffect(Constants.STATS_ADD_FORC)+","+getDonsStats().getEffect(Constants.STATS_ADD_FORC)+","+getBuffsStats().getEffect(Constants.STATS_ADD_FORC)+"|";
@@ -1931,7 +1921,7 @@ public class Personnage {
 		str += _lvl+";";
 		str += getInitiative()+";";
 		str += getTotalStats().getEffect(Constants.STATS_ADD_PROS)+";";
-		str += "1";//Side = ?
+		str += "0";//Side = ?
 		return str;
 	}
 	
@@ -2001,6 +1991,18 @@ public class Personnage {
 				_curCarte.get_key());
 		_curCarte.addPlayer(this);
 		}
+		
+		if(!_Follower.isEmpty())//On met a jour la carte des personnages qui nous suivent
+		{
+			for(Personnage t : _Follower.values())
+			{
+				if(t.isOnline())
+					SocketManager.GAME_SEND_FLAG_PACKET(t, this);
+				else
+					_Follower.remove(t.get_GUID());
+			}
+		}
+
 	}
 	
 	public int getBankCost()
@@ -2551,6 +2553,8 @@ public class Personnage {
 		_isForgetingSpell = false;
 		_isAbsent = false;
 		_isInvisible = false;
+		_Follower.clear();
+		_Follows = null;
 	}
 	public void addChanel(String chan)
 	{

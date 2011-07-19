@@ -104,9 +104,9 @@ public class GameServer implements Runnable{
 		{
 			if(Ancestra.isSaving == false)
 			{
-			SocketManager.GAME_SEND_Im_PACKET_TO_ALL("1164");
-			World.saveAll(null);
-			SocketManager.GAME_SEND_Im_PACKET_TO_ALL("1165");
+				SocketManager.GAME_SEND_Im_PACKET_TO_ALL("1164");
+				World.saveAll(null);
+				SocketManager.GAME_SEND_Im_PACKET_TO_ALL("1165");
 			}
 		}
 	}

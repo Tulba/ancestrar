@@ -129,9 +129,7 @@ public class Commands {
 			uptime %= (1000*60);
 			int sec = (int) (uptime/(1000));
 			
-			String mess =	"===========\n"
-				+       	"Ancestra-R v. "+Constants.SERVER_VERSION+" par "+Constants.SERVER_MAKER+"\n"
-				+			"\n"
+			String mess =	"===========\n"+Ancestra.makeHeader()
 				+			"Uptime: "+jour+"j "+hour+"h "+min+"m "+sec+"s\n"
 				+			"Joueurs en lignes: "+Ancestra.gameServer.getPlayerNumber()+"\n"
 				+			"Record de connexion: "+Ancestra.gameServer.getMaxPlayer()+"\n"
@@ -1242,7 +1240,7 @@ public class Commands {
 		}
 		
 		if(command.equalsIgnoreCase("EXIT"))
-		{	
+		{
 			System.exit(0);
 		}else
 		if(command.equalsIgnoreCase("SAVE") && !Ancestra.isSaving)
