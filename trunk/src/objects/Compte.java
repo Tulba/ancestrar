@@ -336,7 +336,7 @@ public class Compte {
 		_gameThread = null;
 		_realmThread = null;
 		_curIP = "";
-		SQLManager.SETOFFLINE(get_GUID());
+		SQLManager.LOG_OUT(get_GUID(), 0);
 		resetAllChars(true);
 		SQLManager.UPDATE_ACCOUNT_DATA(this);
 	}
@@ -345,8 +345,6 @@ public class Compte {
 	{
 		for(Personnage P : _persos.values())
 		{
-			P.set_Online(false);
-			
 			//Si Echange avec un joueur
 			if(P.get_curExchange() != null)P.get_curExchange().cancel();
 			//Si en groupe
@@ -357,9 +355,9 @@ public class Compte {
 			else//Si hors combat
 			{
 				P.get_curCell().removePlayer(P.get_GUID());
-				if(P.get_curCarte() != null)SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(P.get_curCarte(), P.get_GUID());
+				if(P.get_curCarte() != null && P.isOnline())SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(P.get_curCarte(), P.get_GUID());
 			}
-			
+			P.set_Online(false);
 			//Reset des vars du perso
 			P.resetVars();
 			if(save)SQLManager.SAVE_PERSONNAGE(P,true);

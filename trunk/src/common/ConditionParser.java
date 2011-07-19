@@ -1,6 +1,8 @@
 package common;
 
 
+import game.GameServer;
+
 import com.singularsys.jep.Jep;
 import com.singularsys.jep.JepException;
 
@@ -71,7 +73,11 @@ public class ConditionParser
 	{
 		boolean Jump = false;
 		boolean ContainsPO = false;
+		boolean CutFinalLenght = true;
 		String copyCond = "";
+		int finalLength = 0;
+		
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Entered Cond : "+cond);
 		
 		if(cond.contains("&&"))
 		{
@@ -215,10 +221,50 @@ public class ConditionParser
 			}
 		}else
 		{
-			System.out.println("Erreur : Contenant incorrect "+cond);
+			CutFinalLenght = false;
+			if(cond.contains("=="))
+			{
+				for(String cur : cond.split("=="))
+				{
+					if(cur.contains("PO")) 
+					{
+						continue;
+					}
+					if(cur.contains("!=")) continue;
+					if(perso.hasItemTemplate(Integer.parseInt(cur), 1))
+					{
+						copyCond += Integer.parseInt(cur)+"=="+Integer.parseInt(cur);
+					}else
+					{
+						copyCond += Integer.parseInt(cur)+"=="+0;
+					}
+				}
+			}
+			if(cond.contains("!="))
+			{
+				for(String cur : cond.split("!="))
+				{
+					if(cur.contains("PO")) 
+					{
+						continue;
+					}
+					if(cur.contains("==")) continue;
+					if(perso.hasItemTemplate(Integer.parseInt(cur), 1))
+					{
+						copyCond += Integer.parseInt(cur)+"!="+Integer.parseInt(cur);
+					}else
+					{
+						copyCond += Integer.parseInt(cur)+"!="+0;
+					}
+				}
+			}
 		}
-		int finallenth = (copyCond.length()-2);//On retire les deux derniers carractères (|| ou &&)
-		copyCond = copyCond.substring(0, finallenth);
+		if(CutFinalLenght)
+		{
+			finalLength = (copyCond.length()-2);//On retire les deux derniers carractères (|| ou &&)
+			copyCond = copyCond.substring(0, finalLength);
+		}
+		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Returned Cond : "+copyCond);
 		return copyCond;
 	}
 	

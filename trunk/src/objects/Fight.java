@@ -670,7 +670,8 @@ public class Fight
 			   spellID == 18 ||
 			   spellID == 7 ||
 			   spellID == 284 ||
-			   spellID == 197
+			   spellID == 197 ||
+			   spellID == 704
 			   )
 			{
 				//Trêve
@@ -689,6 +690,7 @@ public class Fight
 				//Bouclier Féca
 				//Accélération Poupesque
 				//Puissance Sylvestre
+				//Pandanlku
 				debuff = true;
 			}
 			//Si c'est le jouer actif qui s'autoBuff, on ajoute 1 a la durée
@@ -2202,7 +2204,7 @@ public class Fight
 		if(_ordreJeu.get(_curPlayer) == null)return false;
 		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Tentative de deplacement de Fighter ID= "+f.getGUID()+" a partir de la case "+f.get_fightCell().getID());
 		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Path: "+path);
-		if(!_curAction.equals("")|| _ordreJeu.get(_curPlayer).getGUID() != f.getGUID() || _state!= Constants.FIGHT_STATE_ACTIVE)
+		if(!_curAction.equals("")|| _ordreJeu.get(_curPlayer).getGUID() != f.getGUID() || _state != Constants.FIGHT_STATE_ACTIVE)
 		{
 			if(!_curAction.equals(""))
 				if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Echec du deplacement: il y deja une action en cours");
@@ -2213,26 +2215,36 @@ public class Fight
 			return false;
 		}
 		
-		Fighter tacle = Pathfinding.getEnnemyFighterArround(f.get_fightCell().getID(), _map, this);
-		if(tacle != null)//Tentative de Tacle
+		ArrayList<Fighter> tacle = Pathfinding.getEnemyFighterArround(f.get_fightCell().getID(), _map, this);
+		if(tacle != null && !f.isState(6))//Tentative de Tacle : Si stabilisation alors pas de tacle possible
 		{
-			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le personnage est a cote d'un ennemi ("+tacle.getPacketsName()+","+tacle.get_fightCell().getID()+") => Tentative de tacle:");
-			int chance = Formulas.getTacleChance(f, tacle);
-			int rand = Formulas.getRandomValue(0, 99);
-			if(rand > chance)
+			for(Fighter T : tacle)//Les stabilisés ne taclent pas
+			{ 
+				if(T.isState(6)) 
+				{ 
+					tacle.remove(T); 
+				} 
+			}
+			if(!tacle.isEmpty())//Si tous les tacleur ne sont pas stabilisés
 			{
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7,GA._id, "104",_ordreJeu.get(_curPlayer).getGUID()+";", "");//Joueur taclé
-				int pertePA = _curFighterPA*chance/100;
-				
-				if(pertePA  < 0)pertePA = -pertePA;
-				if(_curFighterPM < 0)_curFighterPM = 0; // -_curFighterPM :: 0 c'est plus simple :)
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7,GA._id,"129", f.getGUID()+"", f.getGUID()+",-"+_curFighterPM);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7,GA._id,"102", f.getGUID()+"", f.getGUID()+",-"+pertePA);
-				
-				_curFighterPM = 0;
-				_curFighterPA -= pertePA;
-				if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Echec du deplacement: fighter tacle");
-				return false;
+				if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Le personnage est a cote de ("+tacle.size()+") ennemi(s)");// ("+tacle.getPacketsName()+","+tacle.get_fightCell().getID()+") => Tentative de tacle:");
+				int chance = Formulas.getTacleChance(f, tacle);
+				int rand = Formulas.getRandomValue(0, 99);
+				if(rand > chance)
+				{
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7,GA._id, "104",_ordreJeu.get(_curPlayer).getGUID()+";", "");//Joueur taclé
+					int pertePA = _curFighterPA*chance/100;
+					
+					if(pertePA  < 0)pertePA = -pertePA;
+					if(_curFighterPM < 0)_curFighterPM = 0; // -_curFighterPM :: 0 c'est plus simple :)
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7,GA._id,"129", f.getGUID()+"", f.getGUID()+",-"+_curFighterPM);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7,GA._id,"102", f.getGUID()+"", f.getGUID()+",-"+pertePA);
+					
+					_curFighterPM = 0;
+					_curFighterPA -= pertePA;
+					if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("Echec du deplacement: fighter tacle");
+					return false;
+				}
 			}
 		}
 		

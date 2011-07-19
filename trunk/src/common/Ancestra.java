@@ -88,12 +88,9 @@ public class Ancestra {
 			}
 		}
 		);
-		System.out.println("\n\t\tAncestra-R v"+Constants.SERVER_VERSION);
-		System.out.println("\tPar "+Constants.SERVER_MAKER+" pour Dofus "+Constants.CLIENT_VERSION);
-		System.out.println("\t\t  Thanks Diabu.");
-		System.out.println("\nhttp://sourceforge.net/projects/ancestrar/");
-		System.out.println("==============================================================");
-		System.out.println("Chargement de la configuration:");
+		System.out.println("==============================================================\n\n");
+		System.out.println(makeHeader());
+		System.out.println("==============================================================\n");
 		loadConfiguration();
 		isInit = true;
 		System.out.println("Ok");
@@ -371,8 +368,8 @@ public class Ancestra {
 		if(isRunning)
 		{
 			isRunning = false;
-			World.saveAll(null);
 			Ancestra.gameServer.kickAll();
+			World.saveAll(null);
 			SQLManager.closeCons();
 		}
 		System.out.println("Arret du serveur: OK");
@@ -399,5 +396,15 @@ public class Ancestra {
 			Log_Shop.newLine();
 			Log_Shop.flush();
 		} catch (IOException e) {}
+	}
+	
+	public static String makeHeader()
+	{
+		String mess = "";
+		mess += "Ancestra-R v"+Constants.SERVER_VERSION;
+		mess += "\nPar "+Constants.SERVER_MAKER+" pour Dofus "+Constants.CLIENT_VERSION;
+		mess += "\nThanks Diabu.";
+		mess += "\nhttp://sourceforge.net/projects/ancestrar/\n\n";
+		return mess;
 	}
 }

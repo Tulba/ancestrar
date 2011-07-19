@@ -17,6 +17,7 @@ import objects.Fight.Fighter;
 import objects.Guild.GuildMember;
 import objects.HDV.HdvEntry;
 import objects.Metier.StatsMetier;
+import objects.Personnage;
 import objects.NPC_tmpl.*;
 import objects.Objet.ObjTemplate;
 import objects.Personnage.Group;
@@ -1233,7 +1234,7 @@ public class GameThread implements Runnable
 					 break;
 				}
 			break;
-			case 'J': // Amant
+			case 'J': //Wife
 				FriendLove(packet);
 			break;
 		}
@@ -1245,23 +1246,33 @@ public class GameThread implements Runnable
 		if(Wife == null) return;
 		if(!Wife.isOnline())
 		{
-			SocketManager.GAME_SEND_MESSAGE(_perso,"Votre amour n'est plus en ligne", Ancestra.CONFIG_MOTD_COLOR);
+			if(Wife.get_sexe() == 0) SocketManager.GAME_SEND_Im_PACKET(_perso, "140");
+			else SocketManager.GAME_SEND_Im_PACKET(_perso, "139");
+			
 			SocketManager.GAME_SEND_FRIENDLIST_PACKET(_perso);
 			return;
 		}
 		switch(packet.charAt(2))
 		{
-			case 'S': // se tp a sa dulcinee..
+			case 'S'://Teleportation
 				if(_perso.get_fight() != null)
 					return;
 				else
 					_perso.meetWife(Wife);
 			break;
-			case 'C': // Suivre le deplacement de sa mamour...
-				if(packet.charAt(3) == '+'){// Si lancement de la traque
+			case 'C'://Suivre le deplacement
+				if(packet.charAt(3) == '+'){//Si lancement de la traque
+					if(_perso._Follows != null)
+					{
+						_perso._Follows._Follower.remove(_perso.get_GUID());
+					}
 					SocketManager.GAME_SEND_FLAG_PACKET(_perso, Wife);
-				}else{//On arrete de suivre.
+					_perso._Follows = Wife;
+					Wife._Follower.put(_perso.get_GUID(), _perso);
+				}else{//On arrete de suivre
 					SocketManager.GAME_SEND_DELETE_FLAG_PACKET(_perso);
+					_perso._Follows = null;
+					Wife._Follower.remove(_perso.get_GUID());
 				}
 			break;
 		}
@@ -1363,6 +1374,85 @@ public class GameThread implements Runnable
 		{
 			case 'A'://Accepter invitation
 				group_accept(packet);
+			break;
+			
+			case 'F'://Suivre membre du groupe PF+GUID
+				Group g = _perso.getGroup();
+				if(g == null)return;
+				
+				int pGuid = -1;
+				try
+				{
+					pGuid = Integer.parseInt(packet.substring(3));
+				}catch(NumberFormatException e){return;};
+				
+				if(pGuid == -1) return;
+				
+				Personnage P = World.getPersonnage(pGuid);
+				
+				if(P == null || !P.isOnline()) return;
+				
+				if(packet.charAt(2) == '+')//Suivre
+				{
+					if(_perso._Follows != null)
+					{
+						_perso._Follows._Follower.remove(_perso.get_GUID());
+					}
+					SocketManager.GAME_SEND_FLAG_PACKET(_perso, P);
+					SocketManager.GAME_SEND_PF(_perso, "+"+P.get_GUID());
+					_perso._Follows = P;
+					P._Follower.put(_perso.get_GUID(), _perso);
+				}
+				else if(packet.charAt(2) == '-')//Ne plus suivre
+				{
+					SocketManager.GAME_SEND_DELETE_FLAG_PACKET(_perso);
+					SocketManager.GAME_SEND_PF(_perso, "-");
+					_perso._Follows = null;
+					P._Follower.remove(_perso.get_GUID());
+				}
+			break;
+			case 'G'://Suivez le tous PG+GUID
+				Group g2 = _perso.getGroup();
+				if(g2 == null)return;
+				
+				int pGuid2 = -1;
+				try
+				{
+					pGuid2 = Integer.parseInt(packet.substring(3));
+				}catch(NumberFormatException e){return;};
+				
+				if(pGuid2 == -1) return;
+				
+				Personnage P2 = World.getPersonnage(pGuid2);
+				
+				if(P2 == null || !P2.isOnline()) return;
+				
+				if(packet.charAt(2) == '+')//Suivre
+				{
+					for(Personnage T : g2.getPersos())
+					{
+						if(T.get_GUID() == P2.get_GUID()) continue;
+						if(T._Follows != null)
+						{
+							T._Follows._Follower.remove(_perso.get_GUID());
+						}
+						SocketManager.GAME_SEND_FLAG_PACKET(T, P2);
+						SocketManager.GAME_SEND_PF(T, "+"+P2.get_GUID());
+						T._Follows = P2;
+						P2._Follower.put(T.get_GUID(), T);
+					}
+				}
+				else if(packet.charAt(2) == '-')//Ne plus suivre
+				{
+					for(Personnage T : g2.getPersos())
+					{
+						if(T.get_GUID() == P2.get_GUID()) continue;
+						SocketManager.GAME_SEND_DELETE_FLAG_PACKET(T);
+						SocketManager.GAME_SEND_PF(T, "-");
+						T._Follows = null;
+						P2._Follower.remove(T.get_GUID());
+					}
+				}
 			break;
 			
 			case 'I'://inviation
@@ -2904,8 +2994,7 @@ public class GameThread implements Runnable
 						uptime %= (1000*60);
 						int sec = (int) (uptime/(1000));
 						
-						String mess =	"===========\n"
-							+       	"Ancestra-R v. "+Constants.SERVER_VERSION+" par "+Constants.SERVER_MAKER+"\n"
+						String mess =	"===========\n"+Ancestra.makeHeader()
 							+			"Uptime: "+jour+"j "+hour+"h "+min+"m "+sec+"s\n"
 							+			"Joueurs en lignes: "+Ancestra.gameServer.getPlayerNumber()+"\n"
 							+			"Record de connexion: "+Ancestra.gameServer.getMaxPlayer()+"\n"
@@ -3051,6 +3140,7 @@ public class GameThread implements Runnable
 	{
 			packet = packet.substring(2);
 			Personnage T = World.getPersoByName(packet);
+			if(T == null) return;
 			SocketManager.GAME_SEND_BWK(_perso, T.get_compte().get_pseudo()+"|1|"+T.get_name()+"|-1");
 	}
 

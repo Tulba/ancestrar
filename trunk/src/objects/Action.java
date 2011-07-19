@@ -649,7 +649,7 @@ public class Action {
 					Animations animation = World.getAnimation(AnimationId);
 					if(perso.get_fight() != null) return;
 					perso.changeOrientation(1);
-					SocketManager.GAME_SEND_GA_PACKET_TO_MAP(perso.get_curCarte(), "0", 228, perso.get_GUID()+";"+perso.get_curCell().getID()+","+Animations.PrepareToGA(animation), "");
+					SocketManager.GAME_SEND_GA_PACKET_TO_MAP(perso.get_curCarte(), "0", 228, perso.get_GUID()+";"+cellid+","+Animations.PrepareToGA(animation), "");
 				}catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
 			default:

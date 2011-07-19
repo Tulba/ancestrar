@@ -30,7 +30,7 @@ public class Pathfinding {
 	        	int dirCaseID = CryptManager.cellCode_To_ID(SmallPath.substring(1));
 	        	_nSteps = 0;
 	        	//Si en combat et Si Pas début du path, on vérifie tacle
-	    		if(fight != null && i != 0 && getEnnemyFighterArround(newPos, map, fight) != null)
+	    		if(fight != null && i != 0 && getEnemyFighterArround(newPos, map, fight) != null)
 	    		{
 	    			pathRef.set(newPath);
 	    			return Steps;
@@ -75,19 +75,24 @@ public class Pathfinding {
 		}
 	}
 	
-	public static Fighter getEnnemyFighterArround(int cellID,Carte map,Fight fight)
+	public static ArrayList<Fighter> getEnemyFighterArround(int cellID,Carte map,Fight fight)
 	{
 		char[] dirs = {'b','d','f','h'};
+		ArrayList<Fighter> enemy = new ArrayList<Fighter>();
+		
 		for(char dir : dirs)
 		{
 			Fighter f = map.getCase(GetCaseIDFromDirrection(cellID, dir, map, false)).getFirstFighter();
 			if(f != null)
 			{
 				if(f.getTeam() != fight.getCurFighter().getTeam())
-					return f;
+					enemy.add(f);
 			}
 		}
-		return null;
+		if(enemy.size() == 0 || enemy.size() == 4) 
+			return null;
+		
+		return enemy;
 	}
 
 	public static boolean isNextTo (int cell1, int cell2)
@@ -127,7 +132,7 @@ public class Pathfinding {
            	}
             if(fight != null)
             {
-	            if(getEnnemyFighterArround(lastPos, map, fight) != null)//Si ennemie proche
+	            if(getEnemyFighterArround(lastPos, map, fight) != null)//Si ennemie proche
 	            {
 	            	return "stop:"+lastPos;
 	            }

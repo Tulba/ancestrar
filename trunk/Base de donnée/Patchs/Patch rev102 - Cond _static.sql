@@ -1,0 +1,1 @@
+UPDATE `ancestra_static`.`npc_questions` SET `cond` = 'PR<1' WHERE `npc_questions`.`ID` =613 AND `npc_questions`.`responses` = '560;559;518' AND `npc_questions`.`params` = '' AND `npc_questions`.`cond` = 'isMarried<1' AND `npc_questions`.`ifFalse` =614 LIMIT 1 ;

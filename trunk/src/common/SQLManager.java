@@ -115,6 +115,22 @@ public class SQLManager {
 			return false;
 		}
 	}
+	private static void closeResultSet(ResultSet RS)
+	{
+		try {
+			RS.getStatement().close();
+			RS.close();
+		} catch (SQLException e) {e.printStackTrace();}
+
+		
+	}
+	private static void closePreparedStatement(PreparedStatement p)
+	{
+		try {
+			p.clearParameters();
+			p.close();
+		} catch (SQLException e) {e.printStackTrace();}
+	}
 	
 	public static void UPDATE_ACCOUNT_DATA(Compte acc)
 	{
@@ -799,6 +815,7 @@ public class SQLManager {
 				if(World.getCompte(RS.getInt("account")) != null)
 					World.getCompte(RS.getInt("account")).addPerso(perso);
 			}
+			closeResultSet(RS);
 		}catch(SQLException e)
 		{
 			RealmServer.addToLog("SQL ERROR: "+e.getMessage());
@@ -1616,22 +1633,6 @@ public class SQLManager {
 			e.printStackTrace();
 		}
 	}
-	private static void closeResultSet(ResultSet RS)
-	{
-		try {
-			RS.getStatement().close();
-			RS.close();
-		} catch (SQLException e) {e.printStackTrace();}
-
-		
-	}
-	private static void closePreparedStatement(PreparedStatement p)
-	{
-		try {
-			p.clearParameters();
-			p.close();
-		} catch (SQLException e) {e.printStackTrace();}
-	}
 	public static void LOAD_ACCOUNT_BY_USER(String user)
 	{
 		try
@@ -2336,6 +2337,7 @@ public class SQLManager {
 					String query = "DELETE FROM live_action WHERE ID="+id+";";
 					p = newTransact(query, othCon);
 					p.execute();
+					closePreparedStatement(p);
 					Ancestra.addToShopLog("Commande "+id+" supprimee.");
 				}catch(SQLException e)
 				{
@@ -2353,25 +2355,17 @@ public class SQLManager {
 			e.printStackTrace();
 		}
 	}
-	public static void SETONLINE(int accID)
+	public static void LOG_OUT(int accID, int logged)
 	{
 		PreparedStatement p;
-		String query = "UPDATE `accounts` SET logged=1 WHERE `guid`="+accID+";";
+		String query = "UPDATE `accounts` SET logged=? WHERE `guid`=?;";
 		try {
 			p = newTransact(query, othCon);
+			p.setInt(1, logged);
+			p.setInt(2, accID);
+			
 			p.execute();
-		} catch (SQLException e) {
-			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
-			GameServer.addToLog("Game: Query: "+query);
-		}
-	}
-	public static void SETOFFLINE(int accID)
-	{
-		PreparedStatement p;
-		String query = "UPDATE `accounts` SET logged=0 WHERE `guid`="+accID+";";
-		try {
-			p = newTransact(query, othCon);
-			p.execute();
+			closePreparedStatement(p);
 		} catch (SQLException e) {
 			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 			GameServer.addToLog("Game: Query: "+query);
@@ -2383,7 +2377,9 @@ public class SQLManager {
 		String query = "UPDATE `accounts` SET logged=0;";
 		try {
 			p = newTransact(query, othCon);
+			
 			p.execute();
+			closePreparedStatement(p);
 		} catch (SQLException e) {
 			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 			GameServer.addToLog("Game: Query: "+query);
@@ -2401,6 +2397,7 @@ public class SQLManager {
 		        String stats = RS.getString("stats");
 		        World.addObjet(new Objet(guid, tempID, qua, pos, stats), false);
 		      }
+		      closeResultSet(RS);
 		    } catch (SQLException e) {
 		      GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 		      System.exit(1);
@@ -2429,10 +2426,11 @@ public class SQLManager {
 		{
 			boolean exist = false;
 			PreparedStatement p;
-			String query = "SELECT COUNT(*) AS exist FROM personnages WHERE name LIKE '" + name + "';";
+			String query = "SELECT COUNT(*) AS exist FROM personnages WHERE name LIKE ?;";
 			try
 			{
 				p = newTransact(query, othCon);
+				p.setString(1, name);
 				ResultSet RS =  p.executeQuery();
 				
 				boolean found = RS.first();
@@ -2444,6 +2442,7 @@ public class SQLManager {
 				}
 				
 				closeResultSet(RS);
+				closePreparedStatement(p);
 			}catch(SQLException e)
 			{
 				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
@@ -2455,10 +2454,15 @@ public class SQLManager {
 		{	
 			
 			PreparedStatement p;
-			String query = "UPDATE `houses` SET `sale`='0', `owner_id`='"+P.getAccID()+"', `guild_id`='0', `access`='0', `key`='-', `guild_rights`='0' WHERE `id`='"+h.get_id()+"';";
+			String query = "UPDATE `houses` SET `sale`='0', `owner_id`=?, `guild_id`='0', `access`='0', `key`='-', `guild_rights`='0' WHERE `id`=?;";
 			try {
 				p = newTransact(query, othCon);
+				p.setInt(1, P.getAccID());
+				p.setInt(2, h.get_id());
+				
 				p.execute();
+				closePreparedStatement(p);
+				
 				h.set_sale(0);
 				h.set_owner_id(P.getAccID());
 				h.set_guild_id(0);
@@ -2475,10 +2479,15 @@ public class SQLManager {
 			h.set_sale(price);
 			
 			PreparedStatement p;
-			String query = "UPDATE `houses` SET `sale`='"+price+"' WHERE `id`='"+h.get_id()+"';";
+			String query = "UPDATE `houses` SET `sale`=? WHERE `id`=?;";
 			try {
 				p = newTransact(query, othCon);
+				p.setInt(1, price);
+				p.setInt(2, h.get_id());
+				
 				p.execute();
+				closePreparedStatement(p);
+				
 			} catch (SQLException e) {
 				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 				GameServer.addToLog("Game: Query: "+query);
@@ -2487,10 +2496,16 @@ public class SQLManager {
 		public static void HOUSE_CODE(Personnage P, House h, String packet) 
 		{	
 			PreparedStatement p;
-			String query = "UPDATE `houses` SET `key`='"+packet+"' WHERE `id`='"+h.get_id()+"' AND owner_id='"+P.getAccID()+"';";
+			String query = "UPDATE `houses` SET `key`=? WHERE `id`=? AND owner_id=?;";
 			try {
 				p = newTransact(query, othCon);
+				p.setString(1, packet);
+				p.setInt(2, h.get_id());
+				p.setInt(3, P.getAccID());
+				
 				p.execute();
+				closePreparedStatement(p);
+				
 				h.set_key(packet);
 			} catch (SQLException e) {
 				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
@@ -2500,10 +2515,16 @@ public class SQLManager {
 		public static void HOUSE_GUILD(House h, int GuildID, int GuildRights) 
 		{	
 			PreparedStatement p;
-			String query = "UPDATE `houses` SET `guild_id`='"+GuildID+"', `guild_rights`='"+GuildRights+"' WHERE `id`='"+h.get_id()+"';";
+			String query = "UPDATE `houses` SET `guild_id`=?, `guild_rights`=? WHERE `id`=?;";
 			try {
 				p = newTransact(query, othCon);
+				p.setInt(1, GuildID);
+				p.setInt(2, GuildRights);
+				p.setInt(3, h.get_id());
+				
 				p.execute();
+				closePreparedStatement(p);
+				
 				h.set_guild_id(GuildID);
 				h.set_guild_rights(GuildRights);
 			} catch (SQLException e) {
@@ -2514,10 +2535,14 @@ public class SQLManager {
 		public static void HOUSE_GUILD_REMOVE(int GuildID) 
 		{	
 			PreparedStatement p;
-			String query = "UPDATE `houses` SET `guild_rights`='0', `guild_id`='0' WHERE `guild_id`='"+GuildID+"';";
+			String query = "UPDATE `houses` SET `guild_rights`='0', `guild_id`='0' WHERE `guild_id`=?;";
 			try {
 				p = newTransact(query, othCon);
+				p.setInt(1, GuildID);
+				
 				p.execute();
+				closePreparedStatement(p);
+				
 			} catch (SQLException e) {
 				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 				GameServer.addToLog("Game: Query: "+query);
@@ -2563,10 +2588,10 @@ public class SQLManager {
 						"WHERE guild='" + getId + "';";
 				
 				ResultSet RS = executeQuery(query,Ancestra.OTHER_DB_NAME);
-			      while (RS.next()) 
-			      {
-			    	  packet += "|"+RS.getShort("mapid")+";"+RS.getShort("size")+";"+RS.getShort("size"); // Nombre d'objets pour le dernier
-				  }
+				while (RS.next()) 
+				{
+					packet += "|"+RS.getShort("mapid")+";"+RS.getShort("size")+";"+RS.getShort("size"); // Nombre d'objets pour le dernier
+				}
 				
 				closeResultSet(RS);
 			}catch(SQLException e)
@@ -2586,10 +2611,10 @@ public class SQLManager {
 						"WHERE guild='" + getId + "';";
 				
 				ResultSet RS = executeQuery(query,Ancestra.OTHER_DB_NAME);
-			      while (RS.next()) 
-			      {
-			    	 i++; 
-			      }
+				while (RS.next()) 
+				{
+					i++; 
+				}
 				
 				closeResultSet(RS);
 			}catch(SQLException e)
@@ -2607,10 +2632,10 @@ public class SQLManager {
 				String query = "SELECT `guid` FROM `percepteurs` ORDER BY `guid` ASC LIMIT 0 , 1;";
 				
 				ResultSet RS = executeQuery(query,Ancestra.OTHER_DB_NAME);
-			      while (RS.next()) 
-			      {
-			    	 i = RS.getInt("guid")-1; 
-			      }
+				while (RS.next()) 
+				{
+					i = RS.getInt("guid")-1; 
+				}
 				
 				closeResultSet(RS);
 			}catch(SQLException e)
@@ -2629,29 +2654,29 @@ public class SQLManager {
 			try
 			{
 				ResultSet RS = SQLManager.executeQuery("SELECT mapid, align from zaapi;",Ancestra.OTHER_DB_NAME); 
-			      while (RS.next()) 
-			      { 
-						if(RS.getInt("align") == Constants.ALIGNEMENT_BONTARIEN)
-						{
-							Bonta += RS.getString("mapid");
-							if(!RS.isLast()) Bonta += ",";
-						}
-						else if(RS.getInt("align") == Constants.ALIGNEMENT_BRAKMARIEN)
-						{
-							Brak += RS.getString("mapid");
-							if(!RS.isLast()) Brak += ",";
-						}
-						else
-						{
-							Neutre += RS.getString("mapid");
-							if(!RS.isLast()) Neutre += ",";
-						}
-						i++;
-			      }
-			      Constants.ZAAPI.put(Constants.ALIGNEMENT_BONTARIEN, Bonta);
-			      Constants.ZAAPI.put(Constants.ALIGNEMENT_BRAKMARIEN, Brak);
-			      Constants.ZAAPI.put(Constants.ALIGNEMENT_NEUTRE, Neutre);
-					closeResultSet(RS);
+				while (RS.next()) 
+				{ 
+					if(RS.getInt("align") == Constants.ALIGNEMENT_BONTARIEN)
+					{
+						Bonta += RS.getString("mapid");
+						if(!RS.isLast()) Bonta += ",";
+					}
+					else if(RS.getInt("align") == Constants.ALIGNEMENT_BRAKMARIEN)
+					{
+						Brak += RS.getString("mapid");
+						if(!RS.isLast()) Brak += ",";
+					}
+					else
+					{
+						Neutre += RS.getString("mapid");
+						if(!RS.isLast()) Neutre += ",";
+					}
+					i++;
+				}
+				Constants.ZAAPI.put(Constants.ALIGNEMENT_BONTARIEN, Bonta);
+				Constants.ZAAPI.put(Constants.ALIGNEMENT_BRAKMARIEN, Brak);
+				Constants.ZAAPI.put(Constants.ALIGNEMENT_NEUTRE, Neutre);
+				closeResultSet(RS);
 			}catch(SQLException e)
 			{
 				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
@@ -2665,12 +2690,12 @@ public class SQLManager {
 			try
 			{
 				ResultSet RS = SQLManager.executeQuery("SELECT mapID, cellID from zaaps;",Ancestra.OTHER_DB_NAME); 
-			      while (RS.next()) 
-			      { 
-						Constants.ZAAPS.put(RS.getInt("mapID"), RS.getInt("cellID"));
-						i++;
-			      }
-					closeResultSet(RS);
+				while (RS.next()) 
+				{ 
+					Constants.ZAAPS.put(RS.getInt("mapID"), RS.getInt("cellID"));
+					i++;
+				}
+				closeResultSet(RS);
 			}catch(SQLException e)
 			{
 				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
@@ -2705,14 +2730,14 @@ public class SQLManager {
 			int i = 0;
 			try
 			{
-				ResultSet RS = SQLManager.executeQuery("SELECT ip from banip;",Ancestra.OTHER_DB_NAME); 
-			      while (RS.next()) 
-			      { 
-			    	  	Constants.BAN_IP += RS.getString("ip");
-			    	  	if(!RS.isLast()) Constants.BAN_IP += ",";
-			    	  	i++;
-			      }
-					closeResultSet(RS);
+				ResultSet RS = executeQuery("SELECT ip from banip;",Ancestra.OTHER_DB_NAME); 
+				while (RS.next()) 
+				{ 
+					Constants.BAN_IP += RS.getString("ip");
+					if(!RS.isLast()) Constants.BAN_IP += ",";
+					i++;
+			    }
+				closeResultSet(RS);
 			}catch(SQLException e)
 			{
 				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
@@ -2826,6 +2851,8 @@ public class SQLManager {
 				String emptyQuery = "TRUNCATE TABLE `hdvs_items`";
 				PreparedStatement emptyTable = newTransact(emptyQuery, othCon);
 				emptyTable.execute();
+				closePreparedStatement(emptyTable);
+				
 				String baseQuery = "INSERT INTO `hdvs_items` "+
 									"(`map`,`ownerGuid`,`price`,`count`,`itemID`) "+
 									"VALUES(?,?,?,?,?);";
@@ -2883,7 +2910,7 @@ public class SQLManager {
 		{
 			try
 			{
-				ResultSet RS = SQLManager.executeQuery("SELECT * from animations;",Ancestra.STATIC_DB_NAME);
+				ResultSet RS = executeQuery("SELECT * from animations;",Ancestra.STATIC_DB_NAME);
 				while(RS.next())
 				{
 					World.addAnimation(new Animations(

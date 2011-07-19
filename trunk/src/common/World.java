@@ -992,36 +992,54 @@ public class World {
 
 		try
 		{
+			GameServer.addToLog("Lancement de la sauvegarde du Monde...");
 			Ancestra.isSaving = true;
-			
 			SQLManager.commitTransacts();
-			SQLManager.TIMER(false);	//Arrête le timer d'enregistrement SQL
+			SQLManager.TIMER(false);//Arrête le timer d'enregistrement SQL
+			
+			Thread.sleep(10000);
 			
 			GameServer.addToLog("Sauvegarde des personnages...");
 			for(Personnage perso : Persos.values())
 			{
 				if(!perso.isOnline())continue;
+				Thread.sleep(100);//0.1 sec. pour 1 objets
 				SQLManager.SAVE_PERSONNAGE(perso,true);//sauvegarde des persos et de leurs items
 			}
+			
+			Thread.sleep(2500);
+			
 			GameServer.addToLog("Sauvegarde des guildes...");
 			for(Guild guilde : Guildes.values())
 			{
+				Thread.sleep(100);//0.1 sec. pour 1 objets
 				SQLManager.UPDATE_GUILD(guilde);
 			}
+			
+			Thread.sleep(2500);
+			
 			GameServer.addToLog("Sauvegarde des percepteurs...");
 			for(Percepteur perco : Percepteur.values())
 			{
 				if(perco.get_inFight()>0)continue;
+				Thread.sleep(100);//0.1 sec. pour 1 objets
 				SQLManager.UPDATE_PERCO(perco);
 			}
+			
+			Thread.sleep(2500);
+			
 			GameServer.addToLog("Sauvegarde des maisons...");
 			for(House house : House.values())
 			{
 				if(house.get_owner_id() > 0)
 				{
+					Thread.sleep(100);//0.1 sec. pour 1 objets
 					SQLManager.UPDATE_HOUSE(house);
 				}
 			}
+			
+			Thread.sleep(2500);
+			
 			GameServer.addToLog("Sauvegarde des Hdvs...");
 			ArrayList<HdvEntry> toSave = new ArrayList<HdvEntry>();
 			for(HDV curHdv : Hdvs.values())
@@ -1029,10 +1047,13 @@ public class World {
 				toSave.addAll(curHdv.getAllEntry());
 			}
 			SQLManager.SAVE_HDVS_ITEMS(toSave);
+			
+			Thread.sleep(10000);
+			
 			GameServer.addToLog("Sauvegarde effectuee !");
 			
 			set_state((short)1);
-			//TODO : Rafraichir 
+			//TODO : Rafraichir
 			
 		}catch(ConcurrentModificationException e)
 		{

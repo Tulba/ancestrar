@@ -713,6 +713,7 @@ public class SpellEffect
 			if(!cell.isWalkable(true) || cell.getFighters().size() >0)return;
 			Fighter target = caster.get_isHolding();
 			if(target == null)return;
+			if(target.isState(6))return;//Stabilisation
 			
 			//on ajoute le porté a sa case
 			target.set_fightCell(cell);
@@ -783,6 +784,7 @@ public class SpellEffect
 			//Porter
 			Fighter target = cell.getFirstFighter();
 			if(target == null)return;
+			if(target.isState(6))return;//Stabilisation
 			
 			//on enleve le porté de sa case
 			target.get_fightCell().getFighters().clear();
@@ -955,6 +957,7 @@ public class SpellEffect
 			if(cibles.isEmpty())return;
 			Fighter target = cibles.get(0);
 			if(target == null)return;//ne devrait pas arriver
+			if(target.isState(6))return;//Stabilisation
 			switch(spell)
 			{
 				case 438://Transpo
@@ -1831,7 +1834,7 @@ public class SpellEffect
 			}
 			for(Fighter target : cibles)
 			{
-				target.addBuff(effectID, val, turns, 1, false, spell, args, caster);
+                target.addBuff(effectID, val, turns, 1, false, spell, args, caster);
 				//Gain de PM pendant le tour de jeu
 				if(target.canPlay() && target == caster) target.setCurPM(fight, target.getPM()+val);
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, effectID, caster.getGUID()+"", target.getGUID()+","+val+","+turns);
@@ -1963,7 +1966,18 @@ public class SpellEffect
 					if(spell == 197 || spell == 112)
 					{
 						target.addBuff(effectID, value, turns, turns, false, spell, args, caster);
-					}else
+					}
+					else if(spell == 115)//Odorat
+                    {
+                        int lostPa = Formulas.getRandomJet(jet);
+                        if(lostPa == -1)
+                                continue;
+                       
+                        target.addBuff(effectID, lostPa, turns, turns, false, spell, args, caster);
+                        if(turns <= 1 || duration <= 1)
+                                SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 168,target.getGUID()+"",target.getGUID()+",-"+lostPa);
+                    }
+					else
 					{
 						target.addBuff(effectID, value, 1, 1, false, spell, args, caster);
 					}
@@ -2000,6 +2014,16 @@ public class SpellEffect
 					{
 						target.addBuff(effectID, value, turns, turns, false, spell, args, caster);
 					}
+					else if(spell == 115)//Odorat
+                    {
+                        int lostPm = Formulas.getRandomJet(jet);
+                        if(lostPm == -1)
+                               continue;
+                       
+                        target.addBuff(effectID, lostPm, turns, turns, false, spell, args, caster);
+                        if(turns <= 1 || duration <= 1)
+                                SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 169,target.getGUID()+"",target.getGUID()+",-"+lostPm);
+                    }
 					else
 					{
 						target.addBuff(effectID, value, 1, 1, false, spell, args, caster);
@@ -2235,6 +2259,7 @@ public class SpellEffect
 			{
 				for(Fighter target : cibles)
 				{
+					if(target.isState(6)) continue;
 					Case eCell = cell;
 					//Si meme case
 					if(target.get_fightCell().getID() == cell.getID())
@@ -2286,6 +2311,7 @@ public class SpellEffect
 			{
 				for(Fighter target : cibles)
 				{
+					if(target.isState(6)) continue;
 					Case eCell = cell;
 					//Si meme case
 					if(target.get_fightCell().getID() == cell.getID())
@@ -3579,6 +3605,7 @@ public class SpellEffect
 				//Application du soin
 				for(Fighter target : cibles)
 				{
+					if(spell == 435 && target.getTeam() != caster.getTeam()) continue;
 					if((val+target.getPDV())> target.getPDVMAX())val = target.getPDVMAX()-target.getPDV();//Target va mourrir
 					target.removePDV(-val);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+",+"+val);
