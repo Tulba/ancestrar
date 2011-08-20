@@ -1,5 +1,6 @@
 [17/08/2011]
 - Personnage/GameThread/Carte/World : Ajout du mode marchand.
+(Patch 104 a appliquer)
 
 [15/08/2011]
 - [...] : Mise en place de nombreux StringBuilder (Plus rapide que la méthode classique (THX Vendethiel)).
