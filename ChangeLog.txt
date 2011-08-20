@@ -1,3 +1,6 @@
+[20/08/2011]
+- GameThread : Correction de quelques problème liés au mode marchand.
+
 [17/08/2011]
 - Personnage/GameThread/Carte/World : Ajout du mode marchand.
 (Patch 104 a appliquer)
