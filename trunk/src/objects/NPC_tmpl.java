@@ -110,31 +110,32 @@ public class NPC_tmpl {
 
 		public String parseGM()
 		{
-			String sock = "";
-			sock += "+";
-			sock += _cellID+";";
-			sock += _orientation+";";
-			sock += "0"+";";
-			sock += _guid+";";
-			sock += _template.get_id()+";";
-			sock += "-4"+";";//type = NPC
-			String taille = "";
+			StringBuilder sock = new StringBuilder();
+			sock.append("+");
+			sock.append(_cellID).append(";");
+			sock.append(_orientation).append(";");
+			sock.append("0").append(";");
+			sock.append(_guid).append(";");
+			sock.append(_template.get_id()).append(";");
+			sock.append("-4").append(";");//type = NPC
+			
+			StringBuilder taille = new StringBuilder();
 			if(_template.get_scaleX() == _template.get_scaleY())
 			{
-				taille= ""+_template.get_scaleY();
+				taille.append(_template.get_scaleY());
 			}else
 			{
-				taille= _template.get_scaleX()+"x"+_template.get_scaleY();
+				taille.append(_template.get_scaleX()).append("x").append(_template.get_scaleY());
 			}
-			sock += _template.get_gfxID()+"^"+taille+";";
-			sock += _template.get_sex()+";";
-			sock += ( _template.get_color1() != -1?Integer.toHexString( _template.get_color1()):"-1")+";";
-			sock += ( _template.get_color2() != -1?Integer.toHexString( _template.get_color2()):"-1")+";";
-			sock += ( _template.get_color3() != -1?Integer.toHexString( _template.get_color3()):"-1")+";";
-			sock += _template.get_acces()+";";
-			sock += (_template.get_extraClip()!=-1?(_template.get_extraClip()):(""))+";";
-			sock += _template.get_customArtWork();
-			return sock;
+			sock.append(_template.get_gfxID()).append("^").append(taille.toString()).append(";");
+			sock.append(_template.get_sex()).append(";");
+			sock.append(( _template.get_color1() != -1?Integer.toHexString( _template.get_color1()):"-1")).append(";");
+			sock.append(( _template.get_color2() != -1?Integer.toHexString( _template.get_color2()):"-1")).append(";");
+			sock.append(( _template.get_color3() != -1?Integer.toHexString( _template.get_color3()):"-1")).append(";");
+			sock.append(_template.get_acces()).append(";");
+			sock.append((_template.get_extraClip()!=-1?(_template.get_extraClip()):(""))).append(";");
+			sock.append(_template.get_customArtWork());
+			return sock.toString();
 		}
 
 		public void setCellID(int id)
@@ -274,13 +275,13 @@ public class NPC_tmpl {
 	
 	public String getItemVendorList()
 	{
-		String items = "";
-		if(_ventes.isEmpty())return items;
+		StringBuilder items = new StringBuilder();
+		if(_ventes.isEmpty())return "";
 		for(ObjTemplate obj : _ventes)
 		{
-			items+= obj.parseItemTemplateStats()+"|";
+			items.append(obj.parseItemTemplateStats()).append("|");
 		}
-		return items;
+		return items.toString();
 	}
 
 	public boolean addItemVendor(ObjTemplate T)

@@ -17,7 +17,7 @@
 			snowiiz
 			DeXt
 			Sylarman
-			nami-doc
+			nami-doc@Vendethiel
 			Alex
 			mathias52
 			Alleos13
@@ -28,14 +28,12 @@
 			
 			#TODO :
 			Finir les Percepteurs.
-			Implanter les fées.
-			Revoir les dindes et bug lié.
-			Revoir les maisons et bug si compte/perso supprimé.
-			Finir les Maisons : intérieurs (Coffre+Spécialisations+Droits).
-			Finir de corriger les sorts.
-			Finir le PvP(Prismes-Zones/Traques)/PvM.
-			Finir la FM.
+			Finir les dindes.
 			Implanté le systeme d'élevage.
+			Finir les Maisons : intérieurs (Spécialisations).
+			Finir de corriger les sorts.
+			Finir le PvP(Prismes-Zones)/PvM.
+			Finir la FM.
 			Si on meurt le groupe de monstre lancé ne disparait pas de la map.
 			Refaire l'IA.
 			Système d'énergie (Tombe, Fantôme+Téléportation au cimetiere, Phoénix).

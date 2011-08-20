@@ -39,7 +39,6 @@ public class Compte {
 	private Map<Integer,Objet> _bank = new TreeMap<Integer,Objet>();
 	private ArrayList<Integer> _friendGuids = new ArrayList<Integer>();
 	private ArrayList<Integer> _EnemyGuids = new ArrayList<Integer>();
-	private ArrayList<Dragodinde> _stable = new ArrayList<Dragodinde>();
 	private boolean _mute = false;
 	public Timer _muteTimer;
 	public int _position = -1;//Position du joueur
@@ -47,7 +46,7 @@ public class Compte {
 	
 	private Map<Integer, Personnage> _persos = new TreeMap<Integer, Personnage>();
 	
-	public Compte(int aGUID,String aName,String aPass, String aPseudo,String aQuestion,String aReponse,int aGmLvl, int vip, boolean aBanned, String aLastIp, String aLastConnectionDate,String bank,int bankKamas, String friends, String enemy, String stable)
+	public Compte(int aGUID,String aName,String aPass, String aPseudo,String aQuestion,String aReponse,int aGmLvl, int vip, boolean aBanned, String aLastIp, String aLastConnectionDate,String bank,int bankKamas, String friends, String enemy)
 	{
 		this._GUID 		= aGUID;
 		this._name 		= aName;
@@ -89,20 +88,8 @@ public class Compte {
 				_EnemyGuids.add(Integer.parseInt(f));
 			}catch(Exception E){};
 		}
-		for(String d : stable.split(";"))
-		{
-			try
-			{
-				Dragodinde DD = World.getDragoByID(Integer.parseInt(d));
-				if(DD !=null)_stable.add(DD);
-			}catch(Exception E){};
-		}
 	}
 	
-	public ArrayList<Dragodinde> getStable()
-	{
-		return _stable;
-	}
 	public void setBankKamas(long i)
 	{
 		_bankKamas = i;
@@ -146,13 +133,14 @@ public class Compte {
 	
 	public String parseBankObjetsToDB()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
+		if(_bank.isEmpty())return "";
 		for(Entry<Integer,Objet> entry : _bank.entrySet())
 		{
 			Objet obj = entry.getValue();
-			str += obj.getGuid()+"|";
+			str.append(obj.getGuid()).append("|");
 		}
-		return str;
+		return str.toString();
 	}
 	
 	public Map<Integer, Objet> getBank() {
@@ -367,19 +355,20 @@ public class Compte {
 	}
 	public String parseFriendList()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
+		if(_friendGuids.isEmpty())return "";
 		for(int i : _friendGuids)
 		{
 			Compte C = World.getCompte(i);
 			if(C == null)continue;
-			str += "|"+C.get_pseudo();
+			str.append("|").append(C.get_pseudo());
 			//on s'arrete la si aucun perso n'est connecté
 			if(!C.isOnline())continue;
 			Personnage P = C.get_curPerso();
 			if(P == null)continue;
-			str += P.parseToFriendList(_GUID);
+			str.append(P.parseToFriendList(_GUID));
 		}
-		return str;
+		return str.toString();
 	}
 	
 	public void SendOnline()
@@ -472,29 +461,24 @@ public class Compte {
 		return str;
 	}
 	
-	public String parseEnemyList() {
-		String str = "";
+	public String parseEnemyList() 
+	{
+		StringBuilder str = new StringBuilder();
+		if(_EnemyGuids.isEmpty())return "";
 		for(int i : _EnemyGuids)
 		{
 			Compte C = World.getCompte(i);
 			if(C == null)continue;
-			str += "|"+C.get_pseudo();
+			str.append("|").append(C.get_pseudo());
 			//on s'arrete la si aucun perso n'est connecté
 			if(!C.isOnline())continue;
 			Personnage P = C.get_curPerso();
 			if(P == null)continue;
-			str += P.parseToEnemyList(_GUID);
+			str.append(P.parseToEnemyList(_GUID));
 		}
-		return str;
+		return str.toString();
 	}
 	
-	public String parseStableIDs()
-	{
-		String str = "";
-		for(Dragodinde DD : _stable)str+=(str.length() == 0?"":";")+DD.get_id();
-		return str;
-	}
-
 	public void setGmLvl(int gmLvl)
 	{
 		_gmLvl = gmLvl;

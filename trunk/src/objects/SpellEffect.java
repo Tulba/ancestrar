@@ -3605,7 +3605,6 @@ public class SpellEffect
 				//Application du soin
 				for(Fighter target : cibles)
 				{
-					if(spell == 435 && target.getTeam() != caster.getTeam()) continue;
 					if((val+target.getPDV())> target.getPDVMAX())val = target.getPDVMAX()-target.getPDV();//Target va mourrir
 					target.removePDV(-val);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+",+"+val);

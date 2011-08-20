@@ -41,12 +41,16 @@ public class World {
 	private static Map<Integer,ArrayList<Couple<Integer,Integer>>> Crafts = new TreeMap<Integer,ArrayList<Couple<Integer,Integer>>>();
 	private static Map<Integer,ItemSet> ItemSets = new TreeMap<Integer,ItemSet>();
 	private static Map<Integer,Guild> Guildes = new TreeMap<Integer,Guild>();
-	private static Map<Integer,Percepteur> Percepteur = new TreeMap<Integer,Percepteur>();
-	private static Map<Integer,House> House = new TreeMap<Integer,House>();
 	private static Map<Integer,HDV> Hdvs = new TreeMap<Integer,HDV>();
 	private static Map<Integer,Map<Integer,ArrayList<HdvEntry>>> _hdvsItems = new HashMap<Integer,Map<Integer,ArrayList<HdvEntry>>>();	//Contient tout les items en ventes des comptes dans le format<compteID,<hdvID,items<>>>
 	private static Map<Integer,Personnage> Married = new TreeMap<Integer,Personnage>(); 
-	 private static Map<Integer,Animations> Animations = new TreeMap<Integer,Animations>();
+	private static Map<Integer,Animations> Animations = new TreeMap<Integer,Animations>();
+	private static Map<Short,Carte.MountPark> MountPark = new TreeMap<Short,Carte.MountPark>();
+	private static Map<Integer,Trunk> Trunks = new TreeMap<Integer,Trunk>();
+	private static Map<Integer,Percepteur> Percepteurs = new TreeMap<Integer,Percepteur>();
+	private static Map<Integer,House> Houses = new TreeMap<Integer,House>();
+	private static Map<Short,Collection<Integer>> Seller	= new TreeMap<Short,Collection<Integer>>();
+	
 	 
 	private static int nextHdvID;	//Contient le derniere ID utilisé pour crée un HDV, pour obtenir un ID non utilisé il faut impérativement l'incrémenter
 	private static int nextLigneID;	//Contient le derniere ID utilisé pour crée une ligne dans un HDV
@@ -692,63 +696,51 @@ public class World {
 		System.out.println(Animations.size() + " ont ete chargees");
 		
 		System.out.println("====>Donnees dynamique<====");
-		
 		System.out.print("Mise a 0 des logged: ");
 		SQLManager.LOGGED_ZERO();
 		System.out.println("Ok !");
-		
-		System.out.println("Chargement des items: ");
+		System.out.print("Chargement des items: ");
 		SQLManager.LOAD_ITEMS_FULL();
-		System.out.println("OK");
-		
-		System.out.println("Chargement des comptes: ");
+		System.out.println("Ok !");
+		System.out.print("Chargement des comptes: ");
 		SQLManager.LOAD_COMPTES();
 		System.out.println(Comptes.size()+" comptes charges");
-		
-		System.out.println("Chargement des personnages: ");
+		System.out.print("Chargement des personnages: ");
 		SQLManager.LOAD_PERSOS();
 		System.out.println(Persos.size()+" personnages charges");
-
 	    System.out.print("Chargement des guildes: ");
 		SQLManager.LOAD_GUILDS();
-		System.out.println(Guildes.size()+" guildes ont ete chargees");
-
+		System.out.println(Guildes.size()+" guildes chargees");
 		System.out.print("Chargement des dragodindes: ");
 		SQLManager.LOAD_MOUNTS();
-		System.out.println(Dragodindes.size()+" dragodindes ont ete chargees");
-		
+		System.out.println(Dragodindes.size()+" dragodindes chargees");
 		System.out.print("Chargement des membres de guildes: ");
 		SQLManager.LOAD_GUILD_MEMBERS();
 		System.out.println("Ok !");
-		
 		System.out.print("Chargement des donnees d'enclos: ");
-		SQLManager.LOAD_MOUNTPARKS();
-		System.out.println("Ok !");
-		
+		nbr = SQLManager.LOAD_MOUNTPARKS();
+		System.out.println(nbr+" enclos charges");
 		System.out.print("Chargement des percepteurs: ");
 		nbr = SQLManager.LOAD_PERCEPTEURS();
 		System.out.println(nbr+" percepteurs charges");
-		
 		System.out.print("Chargement des maisons: ");
 		nbr = SQLManager.LOAD_HOUSES();
 		System.out.println(nbr+" maisons chargees");
-		
+		System.out.print("Chargement des coffres: ");
+		nbr = SQLManager.LOAD_TRUNK();
+		System.out.println(nbr+" coffres chargees");
 		System.out.print("Chargement des zaaps: ");
 		nbr = SQLManager.LOAD_ZAAPS();
 		System.out.println(nbr+" zaaps chargees");
-		
 		System.out.print("Chargement des zaapis: ");
 		nbr = SQLManager.LOAD_ZAAPIS();
 		System.out.println(nbr+" zaapis chargees");
-		
 		System.out.print("Chargement des BAN_IP: ");
 		nbr = SQLManager.LOAD_BANIP();
 		System.out.println(nbr+" BAN_IP chargees");
-		
-		System.out.print("Chargement des HDV :");
+		System.out.print("Chargement des HDV: ");
 		SQLManager.LOAD_HDVS();
 		SQLManager.LOAD_HDVS_ITEMS();
-		System.out.println("Ok !");
 		
 		nextObjetID = SQLManager.getNextObjetID();
 	}
@@ -875,9 +867,32 @@ public class World {
 
 	public static void deletePerso(Personnage perso)
 	{
-		perso.remove();//Supression BDD Perso, items ...
+		if(perso.get_guild() != null)
+		{
+			if(perso.get_guild().getMembers().size() <= 1)//Il est tout seul dans la guilde : Supression
+			{
+				World.removeGuild(perso.get_guild().get_id());
+			}else if(perso.getGuildMember().getRank() == 1)//On passe les pouvoir a celui qui a le plus de droits si il est meneur
+			{
+				int curMaxRight = 0;
+				Personnage Meneur = null;
+				for(Personnage newMeneur : perso.get_guild().getMembers())
+				{
+					if(newMeneur == perso) continue;
+					if(newMeneur.getGuildMember().getRights() < curMaxRight)
+					{
+						Meneur = newMeneur;
+					}
+				}
+				perso.get_guild().removeMember(perso);
+				Meneur.getGuildMember().setRank(1);
+			}else//Supression simple
+			{
+				perso.get_guild().removeMember(perso);
+			}
+		}
+		perso.remove();//Supression BDD Perso, items, monture.
 		World.unloadPerso(perso.get_GUID());//UnLoad du perso+item
-		//TODO : Remove des ventes en hdv etc ...
 	}
 
 	public static String getSousZoneStateString()
@@ -982,6 +997,10 @@ public class World {
 	{
 		Dragodindes.put(DD.get_id(), DD);
 	}
+	public static void removeDragodinde(int DID)
+	{
+		Dragodindes.remove(DID);
+	}
 	public static void saveAll(Personnage saver)
 	{
 		PrintWriter _out = null;
@@ -1012,29 +1031,53 @@ public class World {
 			GameServer.addToLog("Sauvegarde des guildes...");
 			for(Guild guilde : Guildes.values())
 			{
-				Thread.sleep(100);//0.1 sec. pour 1 objets
+				Thread.sleep(100);//0.1 sec. pour 1 guilde
 				SQLManager.UPDATE_GUILD(guilde);
 			}
 			
 			Thread.sleep(2500);
 			
 			GameServer.addToLog("Sauvegarde des percepteurs...");
-			for(Percepteur perco : Percepteur.values())
+			for(Percepteur perco : Percepteurs.values())
 			{
 				if(perco.get_inFight()>0)continue;
-				Thread.sleep(100);//0.1 sec. pour 1 objets
+				Thread.sleep(100);//0.1 sec. pour 1 percepteur
 				SQLManager.UPDATE_PERCO(perco);
 			}
 			
 			Thread.sleep(2500);
 			
 			GameServer.addToLog("Sauvegarde des maisons...");
-			for(House house : House.values())
+			for(House house : Houses.values())
 			{
 				if(house.get_owner_id() > 0)
 				{
-					Thread.sleep(100);//0.1 sec. pour 1 objets
+					Thread.sleep(100);//0.1 sec. pour 1 maison
 					SQLManager.UPDATE_HOUSE(house);
+				}
+			}
+			
+			Thread.sleep(2500);
+			
+			GameServer.addToLog("Sauvegarde des coffres...");
+			for(Trunk t : Trunks.values())
+			{
+				if(t.get_owner_id() > 0)
+				{
+					Thread.sleep(100);//0.1 sec. pour 1 coffre
+					SQLManager.UPDATE_TRUNK(t);
+				}
+			}
+			
+			Thread.sleep(2500);
+			
+			GameServer.addToLog("Sauvegarde des enclos...");
+			for(Carte.MountPark mp : MountPark.values())
+			{
+				if(mp.get_owner() > 0 || mp.get_owner() == -1)
+				{
+					Thread.sleep(100);//0.1 sec. pour 1 enclo
+					SQLManager.UPDATE_MOUNTPARK(mp);
 				}
 			}
 			
@@ -1264,9 +1307,16 @@ public class World {
 
 	public static void removeGuild(int id)
 	{
-		SQLManager.HOUSE_GUILD_REMOVE(id);
+		//Maison de guilde+SQL
+		House.removeHouseGuild(id);
+		//Enclo+SQL
+		Carte.MountPark.removeMountPark(id);
+		//Percepteur+SQL
+		Percepteur.removePercepteur(id);
+		//Guilde
 		Guildes.remove(id);
-		SQLManager.DEL_GUILD(id);
+		SQLManager.DEL_ALL_GUILDMEMBER(id);//Supprime les membres
+		SQLManager.DEL_GUILD(id);//Supprime la guilde
 	}
 
 	public static boolean ipIsUsed(String ip)
@@ -1286,7 +1336,7 @@ public class World {
 			}
 		}
 		toRem = null;
-		Persos.remove(g);
+		//Persos.remove(g);
 	}
 	
 	public static boolean isArenaMap(int mapID)
@@ -1424,10 +1474,6 @@ public class World {
 				Married.put(ordre, perso);
 				return;
 			}
-			if(perso.get_curCell() == Perso.get_curCell())
-			{
-				return;
-			}
 			
 			return;
 		}else
@@ -1477,5 +1523,123 @@ public class World {
 	public static void addAnimation(Animations animation)
 	{
 		Animations.put(animation.getId(), animation);
+	}
+	
+	public static void addHouse(House house)
+	{
+		Houses.put(house.get_id(), house);
+	}
+	
+	public static Map<Integer, House> getHouses()
+	{
+		return Houses;
+	}
+	
+	public static House getHouse(int id)
+	{
+		return Houses.get(id);
+	}
+	
+	public static void addPerco(Percepteur perco)
+	{
+		Percepteurs.put(perco.getGuid(), perco);
+	}
+	
+	public static Percepteur getPerco(int percoID)
+	{
+		return Percepteurs.get(percoID);
+	}
+	
+	public static Map<Integer, Percepteur> getPercos()
+	{
+		return Percepteurs;
+	}
+	
+	public static void addTrunk(Trunk trunk)
+	{
+		Trunks.put(trunk.get_id(), trunk);
+	}
+	
+	public static Trunk getTrunk(int id)
+	{
+		return Trunks.get(id);
+	}
+	
+	public static Map<Integer, Trunk> getTrunks()
+	{
+		return Trunks;
+	}
+	
+	public static void addMountPark(Carte.MountPark mp)
+	{
+		MountPark.put(mp.get_map().get_id(), mp);
+	}
+	
+	public static Map<Short, Carte.MountPark> getMountPark()
+	{
+		return MountPark;
+	}
+	
+	public static String parseMPtoGuild(int GuildID)
+	{
+		Guild G = World.getGuild(GuildID);
+		byte enclosMax = (byte)Math.floor(G.get_lvl()/10);
+		StringBuilder packet = new StringBuilder();
+		packet.append(enclosMax);
+		
+		for(Entry<Short, Carte.MountPark> mp : MountPark.entrySet())
+		{
+			if(mp.getValue().get_guild().get_id() == GuildID)
+			{
+				packet.append("|").append(mp.getValue().get_map().get_id()).append(";").append(mp.getValue().get_size()).append(";").append(mp.getValue().getObjectNumb());// Nombre d'objets pour le dernier
+			}else
+			{
+				continue;
+			}
+		}
+		return packet.toString();
+	}
+	
+	public static int totalMPGuild(int GuildID)
+	{
+		int i = 0;
+		for(Entry<Short, Carte.MountPark> mp : MountPark.entrySet())
+		{
+			if(mp.getValue().get_guild().get_id() == GuildID)
+			{
+				i++;
+			}else
+			{
+				continue;
+			}
+		}
+		return i;
+	}
+	
+	public static void addSeller(Personnage p)
+	{
+		if(Seller.get(p.get_curCarte().get_id()) == null)
+		{
+			ArrayList<Integer> PersoID = new ArrayList<Integer>();
+			PersoID.add(p.get_GUID());
+			Seller.put(p.get_curCarte().get_id(), PersoID);
+		}else
+		{
+			ArrayList<Integer> PersoID = new ArrayList<Integer>();
+			PersoID.addAll(Seller.get(p.get_curCarte().get_id()));
+			PersoID.add(p.get_GUID());
+			Seller.remove(p.get_curCarte().get_id());
+			Seller.put(p.get_curCarte().get_id(), PersoID);
+		}
+	}
+	
+	public static Collection<Integer> getSeller(short mapID)
+	{
+		return Seller.get(mapID);
+	}
+	
+	public static void removeSeller(int pID, short mapID)
+	{
+		Seller.get(mapID).remove(pID);
 	}
 }

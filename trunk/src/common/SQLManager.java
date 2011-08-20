@@ -140,7 +140,6 @@ public class SQLManager {
 								"`bankKamas` = ?,"+
 								"`bank` = ?,"+
 								"`level` = ?,"+
-								"`stable` = ?,"+
 								"`banned` = ?,"+
 								"`friends` = ?,"+
 								"`enemy` = ?"+
@@ -150,11 +149,10 @@ public class SQLManager {
 			p.setLong(1, acc.getBankKamas());
 			p.setString(2, acc.parseBankObjetsToDB());
 			p.setInt(3, acc.get_gmLvl());
-			p.setString(4, acc.parseStableIDs());
-			p.setInt(5, (acc.isBanned()?1:0));
-			p.setString(6, acc.parseFriendListToDB());
-			p.setString(7, acc.parseEnemyListToDB());
-			p.setInt(8, acc.get_GUID());
+			p.setInt(4, (acc.isBanned()?1:0));
+			p.setString(5, acc.parseFriendListToDB());
+			p.setString(6, acc.parseEnemyListToDB());
+			p.setInt(7, acc.get_GUID());
 			
 			p.executeUpdate();
 			closePreparedStatement(p);
@@ -352,8 +350,9 @@ public class SQLManager {
 			e.printStackTrace();
 		}
 	}
-	public static void LOAD_MOUNTPARKS()
+	public static int LOAD_MOUNTPARKS()
 	{
+		int nbr = 0;
 		try
 		{
 			ResultSet RS = SQLManager.executeQuery("SELECT * from mountpark_data;",Ancestra.OTHER_DB_NAME);
@@ -361,7 +360,8 @@ public class SQLManager {
 			{
 				Carte map = World.getCarte(RS.getShort("mapid"));
 				if(map == null)continue;
-				new MountPark(
+					World.addMountPark(
+						new MountPark(
 						RS.getInt("owner"),
 						map,
 						RS.getInt("cellid"),
@@ -369,14 +369,17 @@ public class SQLManager {
 						RS.getString("data"),
 						RS.getInt("guild"),
 						RS.getInt("price")
-				);
+						));
+					nbr++;
 			}
 			closeResultSet(RS);
 		}catch(SQLException e)
 		{
 			RealmServer.addToLog("SQL ERROR: "+e.getMessage());
 			e.printStackTrace();
+			nbr = 0;
 		}
+		return nbr;
 	}
 	public static void LOAD_JOBS()
 	{
@@ -485,7 +488,7 @@ public class SQLManager {
 				Carte map = World.getCarte(RS.getShort("mapid"));
 				if(map == null)continue;
 				
-				Percepteur.addPerco(
+				World.addPerco(
 						new Percepteur(
 						RS.getInt("guid"),
 						RS.getShort("mapid"),
@@ -520,7 +523,7 @@ public class SQLManager {
 				Carte map = World.getCarte(RS.getShort("map_id"));
 				if(map == null)continue;
 				
-				House.addHouse(
+				World.addHouse(
 						new House(
 						RS.getInt("id"),
 						RS.getShort("map_id"),
@@ -571,8 +574,7 @@ public class SQLManager {
 						RS.getString("bank"),
 						RS.getInt("bankKamas"),
 						RS.getString("friends"),
-						RS.getString("enemy"),
-						RS.getString("stable")
+						RS.getString("enemy")
 						);
 				World.addAccount(C);
 				World.addAccountbyName(C);
@@ -641,12 +643,14 @@ public class SQLManager {
 						RS.getByte("alignement"),
 						RS.getInt("account"),
 						stats,
-						RS.getInt("seeFriend"),
+						RS.getByte("seeFriend"),
 						RS.getByte("seeAlign"),
+						RS.getByte("seeSeller"),
 						RS.getString("canaux"),
 						RS.getShort("map"),
 						RS.getInt("cell"),
 						RS.getString("objets"),
+						RS.getString("storeObjets"),
 						RS.getInt("pdvper"),
 						RS.getString("spells"),
 						RS.getString("savepos"),
@@ -717,12 +721,14 @@ public class SQLManager {
 								RS.getByte("alignement"),
 								accID,
 								stats,
-								RS.getInt("seeFriend"),
+								RS.getByte("seeFriend"),
 								RS.getByte("seeAlign"),
+								RS.getByte("seeSeller"),
 								RS.getString("canaux"),
 								RS.getShort("map"),
 								RS.getInt("cell"),
 								RS.getString("objets"),
+								RS.getString("storeObjets"),
 								RS.getInt("pdvper"),
 								RS.getString("spells"),
 								RS.getString("savepos"),
@@ -790,12 +796,14 @@ public class SQLManager {
 						RS.getByte("alignement"),
 						RS.getInt("account"),
 						stats,
-						RS.getInt("seeFriend"),
+						RS.getByte("seeFriend"),
 						RS.getByte("seeAlign"),
+						RS.getByte("seeSeller"),
 						RS.getString("canaux"),
 						RS.getShort("map"),
 						RS.getInt("cell"),
 						RS.getString("objets"),
+						RS.getString("storeObjets"),
 						RS.getInt("pdvper"),
 						RS.getString("spells"),
 						RS.getString("savepos"),
@@ -842,6 +850,14 @@ public class SQLManager {
 				
 				p.execute();
 			}
+			if(!perso.getStoreItemsIDSplitByChar(",").equals(""))
+			{
+				baseQuery = "DELETE FROM items WHERE guid IN (?);";
+				p = newTransact(baseQuery, othCon);
+				p.setString(1, perso.getStoreItemsIDSplitByChar(","));
+				
+				p.execute();
+			}
 			if(perso.getMount() != null)
 			{
 				baseQuery = "DELETE FROM mounts_data WHERE id = ?";
@@ -850,15 +866,6 @@ public class SQLManager {
 				
 				p.execute();
 				World.delDragoByID(perso.getMount().get_id());
-			}
-			if(perso.getGuildMember() != null)
-			{
-				perso.get_guild().removeMember(perso);
-				baseQuery = "DELETE FROM guild_members WHERE guid = ?";
-				p = newTransact(baseQuery, othCon);
-				p.setInt(1, guid);
-				
-				p.execute();
 			}
 			
 			closePreparedStatement(p);
@@ -996,39 +1003,42 @@ public class SQLManager {
 	public static void SAVE_PERSONNAGE(Personnage _perso, boolean saveItem)
 	{
 		String baseQuery = "UPDATE `personnages` SET "+
-						"`seeFriend`= ?,"+
-						"`canaux`= ?,"+
-						"`pdvper`= ?,"+
-						"`map`= ?,"+
-						"`cell`= ?,"+
+						"`kamas`= ?,"+
+						"`spellboost`= ?,"+
+						"`capital`= ?,"+
+						"`energy`= ?,"+
+						"`level`= ?,"+
+						"`xp`= ?,"+
+						"`size` = ?," +
+						"`gfx`= ?,"+
+						"`alignement`= ?,"+
+						"`honor`= ?,"+
+						"`deshonor`= ?,"+
+						"`alvl`= ?,"+
 						"`vitalite`= ?,"+
 						"`force`= ?,"+
 						"`sagesse`= ?,"+
 						"`intelligence`= ?,"+
 						"`chance`= ?,"+
 						"`agilite`= ?,"+
-						"`alignement`= ?,"+
-						"`honor`= ?,"+
-						"`deshonor`= ?,"+
-						"`alvl`= ?,"+
-						"`gfx`= ?,"+
-						"`xp`= ?,"+
-						"`level`= ?,"+
-						"`energy`= ?,"+
-						"`capital`= ?,"+
-						"`spellboost`= ?,"+
-						"`kamas`= ?,"+
-						"`size` = ?," +
-						"`spells` = ?," +
-						"`objets` = ?,"+
-						"`savepos` = ?,"+
-						"`jobs` = ?,"+
-						"`mountxpgive` = ?,"+
-						"`zaaps` = ?,"+
-						"`mount` = ?,"+
-						"`seeAlign` = ?,"+
-						"`title` = ?,"+
-						"`wife` = ?"+
+						"`seeSpell`= ?,"+
+						"`seeFriend`= ?,"+
+						"`seeAlign`= ?,"+
+						"`seeSeller`= ?,"+
+						"`canaux`= ?,"+
+						"`map`= ?,"+
+						"`cell`= ?,"+
+						"`pdvper`= ?,"+
+						"`spells`= ?," +
+						"`objets`= ?,"+
+						"`storeObjets`= ?,"+
+						"`savepos`= ?,"+
+						"`zaaps`= ?,"+
+						"`jobs`= ?,"+
+						"`mountxpgive`= ?,"+
+						"`mount`= ?,"+
+						"`title`= ?,"+
+						"`wife`= ?"+
 						" WHERE `personnages`.`guid` = ? LIMIT 1 ;";
 		
 		PreparedStatement p = null;
@@ -1037,40 +1047,43 @@ public class SQLManager {
 		{
 			p = newTransact(baseQuery, othCon);
 			
-			p.setInt(1,(_perso.is_showFriendConnection()?1:0));
-			p.setString(2,_perso.get_canaux());
-			p.setInt(3,_perso.get_pdvper());
-			p.setInt(4,_perso.get_curCarte().get_id());
-			p.setInt(5,_perso.get_curCell().getID());
-			p.setInt(6,_perso.get_baseStats().getEffect(Constants.STATS_ADD_VITA));
-			p.setInt(7,_perso.get_baseStats().getEffect(Constants.STATS_ADD_FORC));
-			p.setInt(8,_perso.get_baseStats().getEffect(Constants.STATS_ADD_SAGE));
-			p.setInt(9,_perso.get_baseStats().getEffect(Constants.STATS_ADD_INTE));
-			p.setInt(10,_perso.get_baseStats().getEffect(Constants.STATS_ADD_CHAN));
-			p.setInt(11,_perso.get_baseStats().getEffect(Constants.STATS_ADD_AGIL));
-			p.setInt(12,_perso.get_align());
-			p.setInt(13,_perso.get_honor());
-			p.setInt(14,_perso.getDeshonor());
-			p.setInt(15,_perso.getALvl());
-			p.setInt(16,_perso.get_gfxID());
-			p.setLong(17,_perso.get_curExp());
-			p.setInt(18,_perso.get_lvl());
-			p.setInt(19,_perso.get_energy());
-			p.setInt(20,_perso.get_capital());
-			p.setInt(21,_perso.get_spellPts());
-			p.setLong(22,_perso.get_kamas());
-			p.setInt(23,_perso.get_size());
-			p.setString(24,_perso.parseSpellToDB());
-			p.setString(25,_perso.parseObjetsToDB());
-			p.setString(26,_perso.get_savePos());
-			p.setString(27,_perso.parseJobData());
-			p.setInt(28,_perso.getMountXpGive());
-			p.setString(29,_perso.parseZaaps());
-			p.setInt(30, (_perso.getMount()!=null?_perso.getMount().get_id():-1));
-			p.setInt(31,(_perso.is_showWings()?1:0));
-			p.setByte(32,(_perso.get_title()));
-			p.setInt(33,_perso.getWife());
-			p.setInt(34,_perso.get_GUID());
+			p.setLong(1,_perso.get_kamas());
+			p.setInt(2,_perso.get_spellPts());
+			p.setInt(3,_perso.get_capital());
+			p.setInt(4,_perso.get_energy());
+			p.setInt(5,_perso.get_lvl());
+			p.setLong(6,_perso.get_curExp());
+			p.setInt(7,_perso.get_size());
+			p.setInt(8,_perso.get_gfxID());
+			p.setInt(9,_perso.get_align());
+			p.setInt(10,_perso.get_honor());
+			p.setInt(11,_perso.getDeshonor());
+			p.setInt(12,_perso.getALvl());
+			p.setInt(13,_perso.get_baseStats().getEffect(Constants.STATS_ADD_VITA));
+			p.setInt(14,_perso.get_baseStats().getEffect(Constants.STATS_ADD_FORC));
+			p.setInt(15,_perso.get_baseStats().getEffect(Constants.STATS_ADD_SAGE));
+			p.setInt(16,_perso.get_baseStats().getEffect(Constants.STATS_ADD_INTE));
+			p.setInt(17,_perso.get_baseStats().getEffect(Constants.STATS_ADD_CHAN));
+			p.setInt(18,_perso.get_baseStats().getEffect(Constants.STATS_ADD_AGIL));
+			p.setInt(19,(_perso.is_showSpells()?1:0));
+			p.setInt(20,(_perso.is_showFriendConnection()?1:0));
+			p.setInt(21,(_perso.is_showWings()?1:0));
+			p.setInt(22,(_perso.is_showSeller()?1:0));
+			p.setString(23,_perso.get_canaux());
+			p.setInt(24,_perso.get_curCarte().get_id());
+			p.setInt(25,_perso.get_curCell().getID());
+			p.setInt(26,_perso.get_pdvper());
+			p.setString(27,_perso.parseSpellToDB());
+			p.setString(28,_perso.parseObjetsToDB());
+			p.setString(29, _perso.parseStoreItemstoBD());
+			p.setString(30,_perso.get_savePos());
+			p.setString(31,_perso.parseZaaps());
+			p.setString(32,_perso.parseJobData());
+			p.setInt(33,_perso.getMountXpGive());
+			p.setInt(34, (_perso.getMount()!=null?_perso.getMount().get_id():-1));
+			p.setByte(35,(_perso.get_title()));
+			p.setInt(36,_perso.getWife());
+			p.setInt(37,_perso.get_GUID());
 			
 			p.executeUpdate();
 			
@@ -1584,6 +1597,20 @@ public class SQLManager {
 			GameServer.addToLog("Game: Query: "+baseQuery);
 		}
 	}
+	public static void REMOVE_MOUNT(int DID)
+	{
+		String baseQuery = "DELETE FROM `mounts_data` WHERE `id` = ?;";
+		try {
+			PreparedStatement p = newTransact(baseQuery, statCon);
+			p.setInt(1, DID);
+			
+			p.execute();
+			closePreparedStatement(p);
+		} catch (SQLException e) {
+			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+			GameServer.addToLog("Game: Query: "+baseQuery);
+		}
+	}
 	public static void LOAD_ACCOUNT_BY_GUID(int user)
 	{
 		try
@@ -1615,8 +1642,7 @@ public class SQLManager {
 						RS.getString("bank"),
 						RS.getInt("bankKamas"),
 						RS.getString("friends"),
-						RS.getString("enemy"),
-						RS.getString("stable")
+						RS.getString("enemy")
 						);
 				World.addAccount(C);
 				World.ReassignAccountToChar(C);
@@ -1666,8 +1692,7 @@ public class SQLManager {
 						RS.getString("bank"),
 						RS.getInt("bankKamas"),
 						RS.getString("friends"),
-						RS.getString("enemy"),
-						RS.getString("stable")
+						RS.getString("enemy")
 						);
 				World.addAccount(C);
 				World.ReassignAccountToChar(C);
@@ -1765,7 +1790,25 @@ public class SQLManager {
 			p.setInt(4,MP.get_owner());
 			p.setInt(5,(MP.get_guild()==null?-1:MP.get_guild().get_id()));
 			p.setInt(6,MP.get_price());
-			p.setString(7,MP.parseData());
+			p.setString(7,MP.parseDBData());
+			
+			p.execute();
+			closePreparedStatement(p);
+		} catch (SQLException e) {
+			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+			GameServer.addToLog("Game: Query: "+baseQuery);
+		}
+	}
+	public static void UPDATE_MOUNTPARK(MountPark MP)
+	{
+		String baseQuery = "UPDATE `mountpark_data` SET "+
+		"`data` = ?"+
+		" WHERE mapid = ?;";
+		
+		try {
+			PreparedStatement p = newTransact(baseQuery, othCon);
+			p.setString(1, MP.parseDBData());
+			p.setShort(2, MP.get_map().get_id());
 			
 			p.execute();
 			closePreparedStatement(p);
@@ -2009,6 +2052,21 @@ public class SQLManager {
 		try {
 			PreparedStatement p = newTransact(baseQuery, othCon);
 			p.setInt(1, id);
+			
+			p.execute();
+			closePreparedStatement(p);
+		} catch (SQLException e) {
+			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+			GameServer.addToLog("Game: Query: "+baseQuery);
+		}
+	}
+	public static void DEL_ALL_GUILDMEMBER(int guildid)
+	{
+		String baseQuery = "DELETE FROM `guild_members` " +
+				"WHERE `guild` = ?;";
+		try {
+			PreparedStatement p = newTransact(baseQuery, othCon);
+			p.setInt(1, guildid);
 			
 			p.execute();
 			closePreparedStatement(p);
@@ -2473,6 +2531,25 @@ public class SQLManager {
 				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 				GameServer.addToLog("Game: Query: "+query);
 			}
+			
+			ArrayList<Trunk> trunks = Trunk.getTrunksByHouse(h);
+			for(Trunk trunk : trunks)
+			{
+				trunk.set_owner_id(P.getAccID());
+				trunk.set_key("-");
+			}
+			
+			query = "UPDATE `coffres` SET `owner_id`=?, `key`='-' WHERE `id_house`=?;";
+			try {
+				p = newTransact(query, othCon);
+				p.setInt(1, P.getAccID());
+				p.setInt(2, h.get_id());
+				p.execute();
+				closePreparedStatement(p);
+			} catch (SQLException e) {
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				GameServer.addToLog("Game: Query: "+query);
+			}
 		}
 		public static void HOUSE_SELL(House h, int price) 
 		{	
@@ -2553,9 +2630,9 @@ public class SQLManager {
 			String baseQuery = "UPDATE `houses` SET "+
 			"`owner_id` = ?,"+
 			"`sale` = ?," +
-			"`guild_id` = ?" +
-			"`access` = ?" +
-			"`key` = ?" +
+			"`guild_id` = ?," +
+			"`access` = ?," +
+			"`key` = ?," +
 			"`guild_rights` = ?" +
 			" WHERE id = ?;";
 			
@@ -2575,54 +2652,6 @@ public class SQLManager {
 				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
 				GameServer.addToLog("Game: Query: "+baseQuery);
 			}
-		}
-		public static String parseMPtoGuild(int getId) 
-		{
-			Guild G = World.getGuild(getId);
-			byte enclosMax = (byte)Math.floor(G.get_lvl()/10);
-			String packet = ""+enclosMax;
-			try
-			{
-				String query = "SELECT *" +
-						"FROM mountpark_data " +
-						"WHERE guild='" + getId + "';";
-				
-				ResultSet RS = executeQuery(query,Ancestra.OTHER_DB_NAME);
-				while (RS.next()) 
-				{
-					packet += "|"+RS.getShort("mapid")+";"+RS.getShort("size")+";"+RS.getShort("size"); // Nombre d'objets pour le dernier
-				}
-				
-				closeResultSet(RS);
-			}catch(SQLException e)
-			{
-				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
-				e.printStackTrace();
-			}
-			return packet;
-		}
-		public static byte TotalMPGuild(int getId) 
-		{
-			byte i = 0;
-			try
-			{
-				String query = "SELECT *" +
-						"FROM mountpark_data " +
-						"WHERE guild='" + getId + "';";
-				
-				ResultSet RS = executeQuery(query,Ancestra.OTHER_DB_NAME);
-				while (RS.next()) 
-				{
-					i++; 
-				}
-				
-				closeResultSet(RS);
-			}catch(SQLException e)
-			{
-				RealmServer.addToLog("SQL ERROR: "+e.getMessage());
-				e.printStackTrace();
-			}
-			return i;
 		}
 		public static int GetNewIDPercepteur() 
 		{
@@ -2929,5 +2958,72 @@ public class SQLManager {
 				e.printStackTrace();
 			}
 		}
+	    public static int LOAD_TRUNK()
+        {
+                int nbr = 0;
+                try
+                {
+                        ResultSet RS = SQLManager.executeQuery("SELECT * from coffres;",Ancestra.OTHER_DB_NAME);
+                        while(RS.next())
+                        {                      
+                                World.addTrunk(
+                                                new Trunk(
+                                                RS.getInt("id"),
+                                                RS.getInt("id_house"),
+                                                RS.getShort("mapid"),
+                                                RS.getInt("cellid"),
+                                                RS.getString("object"),
+                                                RS.getInt("kamas"),
+                                                RS.getString("key"),
+                                                RS.getInt("owner_id")
+                                                ));
+                                nbr ++;
+                        }
+                        closeResultSet(RS);
+                }catch(SQLException e)
+                {
+                        RealmServer.addToLog("SQL ERROR: "+e.getMessage());
+                        e.printStackTrace();
+                        nbr = 0;
+                }
+                return nbr;
+        }
+       
+        public static void TRUNK_CODE(Personnage P, Trunk t, String packet)
+        {      
+                PreparedStatement p;
+                String query = "UPDATE `coffres` SET `key`=? WHERE `id`=? AND owner_id=?;";
+                try {
+                        p = newTransact(query, othCon);
+                        p.setString(1, packet);
+                        p.setInt(2, t.get_id());
+                        p.setInt(3, P.getAccID());
+                       
+                        p.execute();
+                        closePreparedStatement(p);
+                } catch (SQLException e) {
+                        GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+                        GameServer.addToLog("Game: Query: "+query);
+                }
+        }
+       
+        public static void UPDATE_TRUNK(Trunk t)
+        {      
+                PreparedStatement p;
+                String query = "UPDATE `coffres` SET `kamas`=?, `object`=? WHERE `id`=?";
+
+                try {
+                        p = newTransact(query, othCon);
+                        p.setLong(1, t.get_kamas());
+                        p.setString(2, t.parseTrunkObjetsToDB());
+                        p.setInt(3, t.get_id());
+                       
+                        p.execute();
+                        closePreparedStatement(p);
+                } catch (SQLException e) {
+                        GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+                        GameServer.addToLog("Game: Query: "+query);
+                }
+        }
 }
 

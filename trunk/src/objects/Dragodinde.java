@@ -142,28 +142,29 @@ public class Dragodinde {
 	
 	public String parse()
 	{
-		String str = _id+":";
-		str += _color+":";
-		str += _ancetres+":";
-		str += ","+":";//FIXME capacités
-		str += _nom+":";
-		str += _sexe+":";
-		str += parseXpString()+":";
-		str += _level+":";
-		str += "1"+":";//FIXME
-		str += getTotalPod()+":";
-		str += "0"+":";//FIXME podActuel?
-		str += _endurance+",10000:";
-		str += _maturite+","+getMaxMatu()+":";
-		str += _energie+","+getMaxEnergie()+":";
-		str += _serenite+",-10000,10000:";
-		str += _amour+",10000:";
-		str += "-1"+":";//FIXME
-		str += "0"+":";//FIXME
-		str += parseStats()+":";
-		str += _fatigue+",240:";
-		str += _reprod+",20:";
-		return str;
+		StringBuilder str = new StringBuilder();
+		str.append(_id).append(":");
+		str.append(_color).append(":");
+		str.append(_ancetres).append(":");
+		str.append(",").append(":");//FIXME capacités
+		str.append(_nom).append(":");
+		str.append(_sexe).append(":");
+		str.append(parseXpString()).append(":");
+		str.append(_level).append(":");
+		str.append("1").append(":");//FIXME
+		str.append(getTotalPod()).append(":");
+		str.append("0").append(":");//FIXME podActuel?
+		str.append(_endurance).append(",10000:");
+		str.append(_maturite).append(",").append(getMaxMatu()).append(":");
+		str.append(_energie).append(",").append(getMaxEnergie()).append(":");
+		str.append(_serenite).append(",-10000,10000:");
+		str.append(_amour).append(",10000:");
+		str.append("-1").append(":");//FIXME
+		str.append("0").append(":");//FIXME
+		str.append(parseStats()).append(":");
+		str.append(_fatigue).append(",240:");
+		str.append(_reprod).append(",20:");
+		return str.toString();
 	}
 
 	private String parseStats()

@@ -335,7 +335,7 @@ public class Action {
 		        }catch(Exception e){GameServer.addToLog(e.getMessage());};
 		    break;
 		    case 14://Ouvrir l'interface d'oublie de sort
-				perso.setisForgetingSpell(true);
+		    	perso.setisForgetingSpell(true);
 				SocketManager.GAME_SEND_FORGETSPELL_INTERFACE('+', perso);
 			break;
 			case 15://Téléportation donjon

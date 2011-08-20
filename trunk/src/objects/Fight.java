@@ -81,28 +81,36 @@ public class Fight
 		
 		public void desappear()
 		{
+			StringBuilder str = new StringBuilder();
+			StringBuilder str2 = new StringBuilder();
+			StringBuilder str3 = new StringBuilder();
+			StringBuilder str4 = new StringBuilder();
+			
 			int team = _caster.getTeam()+1;
-			String str = "GDZ-"+_cell.getID()+";"+_size+";"+_color;
-			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str);
-			str = "GDC"+_cell.getID();
-			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str);
+			str.append("GDZ-").append(_cell.getID()).append(";").append(_size).append(";").append(_color);
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str.toString());
+			str2.append("GDC"+_cell.getID());
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str2.toString());
 			if(get_isunHide())
 			{
 				int team2 = _teamUnHide+1;
-				String str2 = "GDZ-"+_cell.getID()+";"+_size+";"+_color;
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team2, 999, _caster.getGUID()+"", str2);
-				str2 = "GDC"+_cell.getID();
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team2, 999, _caster.getGUID()+"", str2);
+				str3.append("GDZ-").append(_cell.getID()).append(";").append(_size).append(";").append(_color);
+				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team2, 999, _caster.getGUID()+"", str3.toString());
+				str4.append("GDC").append(_cell.getID());
+				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team2, 999, _caster.getGUID()+"", str4.toString());
 			}
 		}
 		
 		public void appear(Fighter f)
 		{
+			StringBuilder str = new StringBuilder();
+			StringBuilder str2 = new StringBuilder();
+			
 			int team = f.getTeam()+1;
-			String str = "GDZ+"+_cell.getID()+";"+_size+";"+_color;
-			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str);
-			str = "GDC"+_cell.getID()+";Haaaaaaaaz3005;";
-			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str);
+			str.append("GDZ+").append(_cell.getID()).append(";").append(_size).append(";").append(_color);
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str.toString());
+			str2.append("GDC").append(_cell.getID()).append(";Haaaaaaaaz3005;");
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(_fight, team, 999, _caster.getGUID()+"", str2.toString());
 		}
 		
 		public void onTraped(Fighter target)
@@ -383,94 +391,95 @@ public class Fight
 		
 		public String getGmPacket()
 		{
-			String str = "GM|+";
-			str+= _cell.getID()+";";
+			StringBuilder str = new StringBuilder();
+			str.append("GM|+");
+			str.append(_cell.getID()).append(";");
 			_orientation = 1;
-			str+= _orientation+";";
-			str+= "0;";
-			str+= getGUID()+";";
-			str+= getPacketsName()+";";
+			str.append(_orientation).append(";");
+			str.append("0;");
+			str.append(getGUID()).append(";");
+			str.append(getPacketsName()).append(";");
 
 			switch(_type)
 			{
 				case 1://Perso
-					str+= _perso.get_classe()+";";
-					str+= _perso.get_gfxID()+"^"+_perso.get_size()+";";
-					str+= _perso.get_sexe()+";";
-					str+= _perso.get_lvl()+";";
-					str+= _perso.get_align()+",";
-					str+= "0,";//TODO
-					str+= (_perso.isShowingWings()?_perso.getGrade():"0")+",";
-					str+= _perso.get_GUID()+";";
-					str+= (_perso.get_color1()==-1?"-1":Integer.toHexString(_perso.get_color1()))+";";
-					str+= (_perso.get_color2()==-1?"-1":Integer.toHexString(_perso.get_color2()))+";";
-					str+= (_perso.get_color3()==-1?"-1":Integer.toHexString(_perso.get_color3()))+";";
-					str+= _perso.getGMStuffString()+";";
-					str+= getPDV()+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_PA)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_PM)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_NEU)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_TER)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_FEU)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_EAU)+";";	
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_AIR)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_AFLEE)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_MFLEE)+";";
-					str+= _team+";";
-					if(_perso.isOnMount() && _perso.getMount() != null)str+=_perso.getMount().get_color();
-					str+= ";";
+					str.append(_perso.get_classe()).append(";");
+					str.append(_perso.get_gfxID()).append("^").append(_perso.get_size()).append(";");
+					str.append(_perso.get_sexe()).append(";");
+					str.append(_perso.get_lvl()).append(";");
+					str.append(_perso.get_align()).append(",");
+					str.append("0,");//TODO
+					str.append((_perso.is_showWings()?_perso.getGrade():"0")).append(",");
+					str.append(_perso.get_GUID()).append(";");
+					str.append((_perso.get_color1()==-1?"-1":Integer.toHexString(_perso.get_color1()))).append(";");
+					str.append((_perso.get_color2()==-1?"-1":Integer.toHexString(_perso.get_color2()))).append(";");
+					str.append((_perso.get_color3()==-1?"-1":Integer.toHexString(_perso.get_color3()))).append(";");
+					str.append(_perso.getGMStuffString()).append(";");
+					str.append(getPDV()).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_PA)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_PM)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_NEU)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_TER)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_FEU)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_EAU)).append(";");	
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_AIR)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_AFLEE)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_MFLEE)).append(";");
+					str.append(_team).append(";");
+					if(_perso.isOnMount() && _perso.getMount() != null)str.append(_perso.getMount().get_color());
+					str.append(";");
 				break;
 				case 2://Mob
-					str+= "-2;";
-					str+= _mob.getTemplate().getGfxID()+"^100;";
-					str+= _mob.getGrade()+";";
-					str+= _mob.getTemplate().getColors().replace(",", ";")+";";
-					str+= "0,0,0,0;";
-					str+= this.getPDVMAX()+";";
-					str+= _mob.getPA()+";";
-					str+= _mob.getPM()+";";
-					str+= _team;
+					str.append("-2;");
+					str.append(_mob.getTemplate().getGfxID()).append("^100;");
+					str.append(_mob.getGrade()).append(";");
+					str.append(_mob.getTemplate().getColors().replace(",", ";")).append(";");
+					str.append("0,0,0,0;");
+					str.append(this.getPDVMAX()).append(";");
+					str.append(_mob.getPA()).append(";");
+					str.append(_mob.getPM()).append(";");
+					str.append(_team);
 				break;
 				case 5://Perco
-					str+= "-6;";//Perco
-					str+= "6000^100;";//GFXID^Size
+					str.append("-6;");//Perco
+					str.append("6000^100;");//GFXID^Size
 					Guild G = World.getGuild(Percepteur.GetPercoGuildID(_fight._mapOld.get_id()));
-					str+= G.get_lvl()+";";
-					str+= "1;";//FIXME
-					str+= "2;4;";//FIXME
-					str+= (int)Math.floor(G.get_lvl()/2)+";"+(int)Math.floor(G.get_lvl()/2)+";"+(int)Math.floor(G.get_lvl()/2)+";"+(int)Math.floor(G.get_lvl()/2)+";"+(int)Math.floor(G.get_lvl()/2)+";"+(int)Math.floor(G.get_lvl()/2)+";"+(int)Math.floor(G.get_lvl()/2)+";";//Résistances
-					str+= _team;
+					str.append(G.get_lvl()).append(";");
+					str.append("1;");//FIXME
+					str.append("2;4;");//FIXME
+					str.append((int)Math.floor(G.get_lvl()/2)).append(";").append((int)Math.floor(G.get_lvl()/2)).append(";").append((int)Math.floor(G.get_lvl()/2)).append(";").append((int)Math.floor(G.get_lvl()/2)).append(";").append((int)Math.floor(G.get_lvl()/2)).append(";").append((int)Math.floor(G.get_lvl()/2)).append(";").append((int)Math.floor(G.get_lvl()/2)).append(";");//Résistances
+					str.append(_team);
 				break;
 				case 10://Double
-					str+= _double.get_classe()+";";
-					str+= _double.get_gfxID()+"^"+_double.get_size()+";";
-					str+= _double.get_sexe()+";";
-					str+= _double.get_lvl()+";";
-					str+= _double.get_align()+",";
-					str+= "0,";//TODO
-					str+= (_double.isShowingWings()?_double.getGrade():"0")+",";
-					str+= _double.get_GUID()+";";
-					str+= (_double.get_color1()==-1?"-1":Integer.toHexString(_double.get_color1()))+";";
-					str+= (_double.get_color2()==-1?"-1":Integer.toHexString(_double.get_color2()))+";";
-					str+= (_double.get_color3()==-1?"-1":Integer.toHexString(_double.get_color3()))+";";
-					str+= _double.getGMStuffString()+";";
-					str+= getPDV()+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_PA)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_PM)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_NEU)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_TER)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_FEU)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_EAU)+";";	
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_RP_AIR)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_AFLEE)+";";
-					str+= getTotalStats().getEffect(Constants.STATS_ADD_MFLEE)+";";
-					str+= _team+";";
-					if(_double.isOnMount() && _double.getMount() != null)str+=_double.getMount().get_color();
-					str+= ";";
+					str.append(_double.get_classe()).append(";");
+					str.append(_double.get_gfxID()).append("^").append(_double.get_size()).append(";");
+					str.append(_double.get_sexe()).append(";");
+					str.append(_double.get_lvl()).append(";");
+					str.append(_double.get_align()).append(",");
+					str.append("0,");//TODO
+					str.append((_double.is_showWings()?_double.getGrade():"0")).append(",");
+					str.append(_double.get_GUID()).append(";");
+					str.append((_double.get_color1()==-1?"-1":Integer.toHexString(_double.get_color1()))).append(";");
+					str.append((_double.get_color2()==-1?"-1":Integer.toHexString(_double.get_color2()))).append(";");
+					str.append((_double.get_color3()==-1?"-1":Integer.toHexString(_double.get_color3()))).append(";");
+					str.append(_double.getGMStuffString()).append(";");
+					str.append(getPDV()).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_PA)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_PM)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_NEU)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_TER)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_FEU)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_EAU)).append(";");	
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_RP_AIR)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_AFLEE)).append(";");
+					str.append(getTotalStats().getEffect(Constants.STATS_ADD_MFLEE)).append(";");
+					str.append(_team).append(";");
+					if(_double.isOnMount() && _double.getMount() != null)str.append(_double.getMount().get_color());
+					str.append(";");
 				break;
 			}
 			
-			return str;
+			return str.toString();
 		}
 		
 		public void setState(int id, int t)
@@ -1189,19 +1198,6 @@ public class Fight
 	private PierreAme pierrePleine;
 	private Percepteur _Perco;
 	
-	public synchronized void waitAction() 
-	{ 
-		try {
-			wait() ;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} 
-	}
-	public synchronized void endAction() 
-	{
-		notifyAll(); 
-	}
-	
 	//TIMER décompte toutes les secondes
 	private Timer TurnTimer (final int timer, final Percepteur perco)
 	{
@@ -1704,19 +1700,17 @@ public class Fight
 		_curFighterUsedPA = 0;
 		_curFighterUsedPM = 0;
 		
-		if(!_ordreJeu.get(_curPlayer).isDead())
-		{
-			_ordreJeu.get(_curPlayer).applyBeginningTurnBuff(this);
-			if(_state == Constants.FIGHT_STATE_FINISHED)return;
-			if(_ordreJeu.get(_curPlayer).getPDV()<=0)onFighterDie(_ordreJeu.get(_curPlayer));
-		}
-		
-		if(_ordreJeu.get(_curPlayer).isDead())//Si joueur mort
+		if(_ordreJeu.get(_curPlayer).hasLeft() || _ordreJeu.get(_curPlayer).isDead())//Si joueur mort
 		{
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Fighter ID=  "+_ordreJeu.get(_curPlayer).getGUID()+" est mort");
 			endTurn();
 			return;
 		}
+		
+		_ordreJeu.get(_curPlayer).applyBeginningTurnBuff(this);
+		if(_state == Constants.FIGHT_STATE_FINISHED)return;
+		if(_ordreJeu.get(_curPlayer).getPDV()<=0)onFighterDie(_ordreJeu.get(_curPlayer));
+		
 		//On actualise les sorts launch
 		_ordreJeu.get(_curPlayer).ActualiseLaunchedSort();
 		//reset des Max des Chatis
@@ -1782,101 +1776,100 @@ public class Fight
 
 	public void endTurn()
 	{
-		if(_state >= Constants.FIGHT_STATE_FINISHED)return;
-		if(_ordreJeu.get(_curPlayer) != null)
-		{
-			_ordreJeu.get(_curPlayer).setCanPlay(false);
-			
-			if(!_curAction.equals("") && _ordreJeu.get(_curPlayer).getPersonnage() != null)
-			{
-				waitAction();
-			}
-			
-			SocketManager.GAME_SEND_GAMETURNSTOP_PACKET_TO_FIGHT(this,7,_ordreJeu.get(_curPlayer).getGUID());
-		}
 		
-		if(_curPlayer == -1)return;
 		try
 		{
+			if(_curPlayer == -1)return;
+			if(_ordreJeu == null || _ordreJeu.get(_curPlayer) == null)return;
+			if(_state >= Constants.FIGHT_STATE_FINISHED)return;
+			if(_ordreJeu.get(_curPlayer).hasLeft() || _ordreJeu.get(_curPlayer).isDead())
+			{
+				startTurn();
+				return;
+			}
+				
 			_turnTimer.stop();
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e1) {e1.printStackTrace();}
-			if(_ordreJeu == null || _ordreJeu.get(_curPlayer) == null)return;
-			if(!_ordreJeu.get(_curPlayer).hasLeft())
+			
+			if(!_curAction.equals("") && _ordreJeu.get(_curPlayer).getPersonnage() != null)
 			{
-				_ordreJeu.get(_curPlayer).setCanPlay(false);
-				_curAction = "";
-				if(!_ordreJeu.get(_curPlayer).isDead())
-				{
-					//Si empoisonné (Créer une fonction applyEndTurnbuff si d'autres effets existent)
-					for(SpellEffect SE : _ordreJeu.get(_curPlayer).getBuffsByEffectID(131))
-					{
-						int pas = SE.getValue();
-						int val = -1;
-						try
-						{
-							val = Integer.parseInt(SE.getArgs().split(";")[1]);
-						}catch(Exception e){};
-						if(val == -1)continue;
-						
-						int nbr = (int) Math.floor((double)_curFighterUsedPA/(double)pas);
-						int dgt = val * nbr;
-	
-						//Si poison paralysant
-						if(SE.getSpell() == 200)
-						{
-							int inte = SE.getCaster().getTotalStats().getEffect(Constants.STATS_ADD_INTE);
-							if(inte < 0)inte = 0;
-							int pdom = SE.getCaster().getTotalStats().getEffect(Constants.STATS_ADD_PERDOM);
-							if(pdom < 0)pdom = 0;
-							//on applique le boost
-							dgt = (int)(((100+inte+pdom)/100) * dgt);
-						}
-						if(_ordreJeu.get(_curPlayer).hasBuff(184))
-						{
-							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 105, _ordreJeu.get(_curPlayer).getGUID()+"", _ordreJeu.get(_curPlayer).getGUID()+","+_ordreJeu.get(_curPlayer).getBuff(184).getValue());
-							dgt = dgt-_ordreJeu.get(_curPlayer).getBuff(184).getValue();//Réduction physique
-						}
-						if(_ordreJeu.get(_curPlayer).hasBuff(105))
-						{
-							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 105, _ordreJeu.get(_curPlayer).getGUID()+"", _ordreJeu.get(_curPlayer).getGUID()+","+_ordreJeu.get(_curPlayer).getBuff(105).getValue());
-							dgt = dgt-_ordreJeu.get(_curPlayer).getBuff(105).getValue();//Immu
-						}
-						if(dgt <= 0)continue;
-						
-						if(dgt>_ordreJeu.get(_curPlayer).getPDV())dgt = _ordreJeu.get(_curPlayer).getPDV();//va mourrir
-						_ordreJeu.get(_curPlayer).removePDV(dgt);
-						dgt = -(dgt);
-						SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 100, SE.getCaster().getGUID()+"", _ordreJeu.get(_curPlayer).getGUID()+","+dgt);
-						
-					}
-					ArrayList<Glyphe> glyphs = new ArrayList<Glyphe>();//Copie du tableau
-					glyphs.addAll(_glyphs);
-					for(Glyphe g : glyphs)
-					{
-						if(_state >= Constants.FIGHT_STATE_FINISHED)return;
-						//Si dans le glyphe
-						int dist = Pathfinding.getDistanceBetween(_map,_ordreJeu.get(_curPlayer).get_fightCell().getID() , g.get_cell().getID());
-						if(dist <= g.get_size() && g._spell == 476)//476 a effet en fin de tour
-						{
-							//Alors le joueur est dans le glyphe
-							g.onTraped(_ordreJeu.get(_curPlayer));
-						}
-					}
-					if(_ordreJeu.get(_curPlayer).getPDV() <= 0)onFighterDie(_ordreJeu.get(_curPlayer));
-				}
-				//reset des valeurs
-				_curFighterUsedPA = 0;
-				_curFighterUsedPM = 0;
-				_curFighterPA = _ordreJeu.get(_curPlayer).getTotalStats().getEffect(Constants.STATS_ADD_PA);
-				_curFighterPM = _ordreJeu.get(_curPlayer).getTotalStats().getEffect(Constants.STATS_ADD_PM);
-				_ordreJeu.get(_curPlayer).refreshfightBuff();
-				
-				if(_ordreJeu.get(_curPlayer).getPersonnage() != null)
-					if(_ordreJeu.get(_curPlayer).getPersonnage().isOnline())
-						SocketManager.GAME_SEND_STATS_PACKET(_ordreJeu.get(_curPlayer).getPersonnage());
+				while(!_curAction.isEmpty()){}
 			}
+			
+			SocketManager.GAME_SEND_GAMETURNSTOP_PACKET_TO_FIGHT(this,7,_ordreJeu.get(_curPlayer).getGUID());
+			
+			_ordreJeu.get(_curPlayer).setCanPlay(false);
+			_curAction = "";
+			
+			//Si empoisonné (Créer une fonction applyEndTurnbuff si d'autres effets existent)
+			for(SpellEffect SE : _ordreJeu.get(_curPlayer).getBuffsByEffectID(131))
+			{
+				int pas = SE.getValue();
+				int val = -1;
+				try
+				{
+					val = Integer.parseInt(SE.getArgs().split(";")[1]);
+				}catch(Exception e){};
+				if(val == -1)continue;
+				
+				int nbr = (int) Math.floor((double)_curFighterUsedPA/(double)pas);
+				int dgt = val * nbr;
+				//Si poison paralysant
+				if(SE.getSpell() == 200)
+				{
+					int inte = SE.getCaster().getTotalStats().getEffect(Constants.STATS_ADD_INTE);
+					if(inte < 0)inte = 0;
+					int pdom = SE.getCaster().getTotalStats().getEffect(Constants.STATS_ADD_PERDOM);
+					if(pdom < 0)pdom = 0;
+					//on applique le boost
+					dgt = (int)(((100+inte+pdom)/100) * dgt);
+				}
+				if(_ordreJeu.get(_curPlayer).hasBuff(184))
+				{
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 105, _ordreJeu.get(_curPlayer).getGUID()+"", _ordreJeu.get(_curPlayer).getGUID()+","+_ordreJeu.get(_curPlayer).getBuff(184).getValue());
+					dgt = dgt-_ordreJeu.get(_curPlayer).getBuff(184).getValue();//Réduction physique
+				}
+				if(_ordreJeu.get(_curPlayer).hasBuff(105))
+				{
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 105, _ordreJeu.get(_curPlayer).getGUID()+"", _ordreJeu.get(_curPlayer).getGUID()+","+_ordreJeu.get(_curPlayer).getBuff(105).getValue());
+					dgt = dgt-_ordreJeu.get(_curPlayer).getBuff(105).getValue();//Immu
+				}
+				if(dgt <= 0)continue;
+				
+				if(dgt>_ordreJeu.get(_curPlayer).getPDV())dgt = _ordreJeu.get(_curPlayer).getPDV();//va mourrir
+				_ordreJeu.get(_curPlayer).removePDV(dgt);
+				dgt = -(dgt);
+				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 100, SE.getCaster().getGUID()+"", _ordreJeu.get(_curPlayer).getGUID()+","+dgt);
+				
+			}
+			ArrayList<Glyphe> glyphs = new ArrayList<Glyphe>();//Copie du tableau
+			glyphs.addAll(_glyphs);
+			for(Glyphe g : glyphs)
+			{
+				if(_state >= Constants.FIGHT_STATE_FINISHED)return;
+				//Si dans le glyphe
+				int dist = Pathfinding.getDistanceBetween(_map,_ordreJeu.get(_curPlayer).get_fightCell().getID() , g.get_cell().getID());
+				if(dist <= g.get_size() && g._spell == 476)//476 a effet en fin de tour
+				{
+					//Alors le joueur est dans le glyphe
+					g.onTraped(_ordreJeu.get(_curPlayer));
+				}
+			}
+			if(_ordreJeu.get(_curPlayer).getPDV() <= 0)onFighterDie(_ordreJeu.get(_curPlayer));
+			
+			//reset des valeurs
+			_curFighterUsedPA = 0;
+			_curFighterUsedPM = 0;
+			_curFighterPA = _ordreJeu.get(_curPlayer).getTotalStats().getEffect(Constants.STATS_ADD_PA);
+			_curFighterPM = _ordreJeu.get(_curPlayer).getTotalStats().getEffect(Constants.STATS_ADD_PM);
+			_ordreJeu.get(_curPlayer).refreshfightBuff();
+			
+			if(_ordreJeu.get(_curPlayer).getPersonnage() != null)
+				if(_ordreJeu.get(_curPlayer).getPersonnage().isOnline())
+					SocketManager.GAME_SEND_STATS_PACKET(_ordreJeu.get(_curPlayer).getPersonnage());
+			
 			SocketManager.GAME_SEND_GTM_PACKET_TO_FIGHT(this, 7);
 			SocketManager.GAME_SEND_GTR_PACKET_TO_FIGHT(this, 7, _ordreJeu.get(_curPlayer==_ordreJeu.size()?0:_curPlayer).getGUID());
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+")Fin du tour de Fighter ID= "+_ordreJeu.get(_curPlayer).getGUID());
@@ -1910,6 +1903,14 @@ public class Fight
 					}
 				}
 			}
+			if(!team1_ready)
+			{
+				if(curMax == null)return;
+				_ordreJeu.add(curMax);
+				curMaxIni = 0;
+				curMax = null;
+			}
+			
 			if(!team2_ready)
 			{
 				team2_ready = true;
@@ -1924,10 +1925,14 @@ public class Fight
 					}
 				}
 			}
-			if(curMax == null)return;
-			_ordreJeu.add(curMax);
-			curMaxIni = 0;
-			curMax = null;
+			if(!team2_ready)
+			{
+				if(curMax == null)return;
+				_ordreJeu.add(curMax);
+				curMaxIni = 0;
+				curMax = null;
+			}
+			
 		}while(_ordreJeu.size() != getFighters(3).size());
 	}
 
@@ -2308,6 +2313,7 @@ public class Fight
 		if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Fighter ID= "+f.getGUID()+" se deplace de la case "+_ordreJeu.get(_curPlayer).get_fightCell().getID()+" vers "+CryptManager.cellCode_To_ID(newPath.substring(newPath.length() - 2)));
         _ordreJeu.get(_curPlayer).set_fightCell(_map.getCase(nextCellID));
         _ordreJeu.get(_curPlayer).get_fightCell().addFighter(_ordreJeu.get(_curPlayer));
+        if(po != null) po.get_fightCell().addFighter(po);// même erreur que tantôt, bug ou plus de fighter sur la case
        if(nStep < 0) 
        {
     	   if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Fighter ID= "+f.getGUID()+" nStep negatives, reconversion");
@@ -2371,7 +2377,6 @@ public class Fight
 		} catch (InterruptedException e) {};
 		
 		_curAction = "";
-		this.endAction();
 	}
 
 	public void playerPass(Personnage _perso)
@@ -2576,7 +2581,8 @@ public class Fight
 		if(_type == Constants.FIGHT_TYPE_AGRESSION)//Sauf si gain d'honneur
 			type = _type;
 		
-        String Packet = "GE"+time+"|"+initGUID+"|"+type+"|";
+		StringBuilder Packet = new StringBuilder();
+        Packet.append("GE").append(time).append("|").append(initGUID).append("|").append(type).append("|");
         ArrayList<Fighter> TEAM1 = new ArrayList<Fighter>();
         ArrayList<Fighter> TEAM2 = new ArrayList<Fighter>();
         if(win == 1)
@@ -2826,13 +2832,13 @@ public class Fight
         		if(guildxp > 0 && i.getPersonnage().getGuildMember() != null)
         			i.getPersonnage().getGuildMember().giveXpToGuild(guildxp);
 
-        		Packet += "2;" + i.getGUID() + ";" + i.getPacketsName() + ";" + i.get_lvl() + ";" + (i.isDead() ?  "1" : "0" )+";";
-        		Packet += i.xpString(";")+";";
-        		Packet += (winxp == 0?"":winxp)+";";
-        		Packet += (guildxp == 0?"":guildxp)+";";
-        		Packet += (mountxp == 0?"":mountxp)+";";
-        		Packet += drops+";";//Drop
-        		Packet += (winKamas == 0?"":winKamas)+"|";
+        		Packet.append("2;").append(i.getGUID()).append(";").append(i.getPacketsName()).append(";").append(i.get_lvl()).append(";").append((i.isDead() ?  "1" : "0" )).append(";");
+        		Packet.append(i.xpString(";")).append(";");
+        		Packet.append((winxp == 0?"":winxp)).append(";");
+        		Packet.append((guildxp == 0?"":guildxp)).append(";");
+        		Packet.append((mountxp == 0?"":mountxp)).append(";");
+        		Packet.append(drops).append(";");//Drop
+        		Packet.append((winKamas == 0?"":winKamas)).append("|");
         	}else
         	{
         		// Si c'est un neutre, on ne gagne pas de points
@@ -2853,17 +2859,17 @@ public class Fight
         		if(P.get_honor()+winH<0)winH = -P.get_honor();
         		P.addHonor(winH);
         		P.setDeshonor(P.getDeshonor()+winD);
-        		Packet += "2;" + i.getGUID() + ";" + i.getPacketsName() + ";" + i.get_lvl() + ";" + (i.isDead() ?  "1" : "0" )+";";
-        		Packet += (P.get_align()!=Constants.ALIGNEMENT_NEUTRE?World.getExpLevel(P.getGrade()).pvp:0)+";";
-        		Packet += P.get_honor()+";";
+        		Packet.append("2;").append(i.getGUID()).append(";").append(i.getPacketsName()).append(";").append(i.get_lvl()).append(";").append((i.isDead() ?  "1" : "0" )).append(";");
+        		Packet.append((P.get_align()!=Constants.ALIGNEMENT_NEUTRE?World.getExpLevel(P.getGrade()).pvp:0)).append(";");
+        		Packet.append(P.get_honor()).append(";");
         		int maxHonor = World.getExpLevel(P.getGrade()+1).pvp;
         		if(maxHonor == -1)maxHonor = World.getExpLevel(P.getGrade()).pvp;
-        		Packet += (P.get_align()!=Constants.ALIGNEMENT_NEUTRE?maxHonor:0)+";";
-        		Packet += winH+";";
-        		Packet += P.getGrade()+";";
-        		Packet += P.getDeshonor()+";";
-        		Packet += winD;
-        		Packet += ";;0;0;0;0;0|";
+        		Packet.append((P.get_align()!=Constants.ALIGNEMENT_NEUTRE?maxHonor:0)).append(";");
+        		Packet.append(winH).append(";");
+        		Packet.append(P.getGrade()).append(";");
+        		Packet.append(P.getDeshonor()).append(";");
+        		Packet.append(winD);
+        		Packet.append(";;0;0;0;0;0|");
         	}
 		}
 		for(Fighter i : TEAM2)
@@ -2874,10 +2880,10 @@ public class Fight
 			{
 				if(i.getPDV() == 0 || i.hasLeft())
 				{
-					Packet += "0;"+i.getGUID()+";"+i.getPacketsName()+";"+i.get_lvl()+";1"+";"+i.xpString(";")+";;;;|";
+					Packet.append("0;").append(i.getGUID()).append(";").append(i.getPacketsName()).append(";").append(i.get_lvl()).append(";1").append(";").append(i.xpString(";")).append(";;;;|");
 				}else
 				{
-					Packet += "0;"+i.getGUID()+";"+i.getPacketsName()+";"+i.get_lvl()+";0"+";"+i.xpString(";")+";;;;|";
+					Packet.append("0;").append(i.getGUID()).append(";").append(i.getPacketsName()).append(";").append(i.get_lvl()).append(";0").append(";").append(i.xpString(";")).append(";;;;|");
 				}
 			}else
         	{
@@ -2897,17 +2903,17 @@ public class Fight
         		P.addHonor(winH);
         		if(P.getDeshonor()-winD<0) winD = 0;
         		P.setDeshonor(P.getDeshonor()-winD);
-        		Packet += "0;" + i.getGUID() + ";" + i.getPacketsName() + ";" + i.get_lvl() + ";" + (i.isDead() ?  "1" : "0" )+";";
-        		Packet += (P.get_align()!=Constants.ALIGNEMENT_NEUTRE?World.getExpLevel(P.getGrade()).pvp:0)+";";
-        		Packet += P.get_honor()+";";
+        		Packet.append("0;").append(i.getGUID()).append(";").append(i.getPacketsName()).append(";").append(i.get_lvl()).append(";").append((i.isDead() ?  "1" : "0" )).append(";");
+        		Packet.append((P.get_align()!=Constants.ALIGNEMENT_NEUTRE?World.getExpLevel(P.getGrade()).pvp:0)).append(";");
+        		Packet.append(P.get_honor()).append(";");
         		int maxHonor = World.getExpLevel(P.getGrade()+1).pvp;
         		if(maxHonor == -1)maxHonor = World.getExpLevel(P.getGrade()).pvp;
-        		Packet += (P.get_align()!=Constants.ALIGNEMENT_NEUTRE?maxHonor:0)+";";
-        		Packet += winH+";";
-        		Packet += P.getGrade()+";";
-        		Packet += P.getDeshonor()+";";
-        		Packet += winD;
-        		Packet += ";;0;0;0;0;0|";
+        		Packet.append((P.get_align()!=Constants.ALIGNEMENT_NEUTRE?maxHonor:0)).append(";");
+        		Packet.append(winH).append(";");
+        		Packet.append(P.getGrade()).append(";");
+        		Packet.append(P.getDeshonor()).append(";");
+        		Packet.append(winD);
+        		Packet.append(";;0;0;0;0;0|");
         	}
 		}
 		if(Percepteur.GetPercoByMapID(_map.get_id()) != null && _type == 4)//On a un percepteur ONLY PVM ?
@@ -2917,14 +2923,14 @@ public class Fight
 			long winkamas 	= (int)Math.floor(Formulas.getKamasWinPerco(minkamas,maxkamas)/100);
 			p.setXp(p.getXp()+winxp);
 			p.setKamas(p.getKamas()+winkamas);
-			Packet += "5;" + p.getGuid() + ";" + p.get_N1() + "," + p.get_N2() + ";" + World.getGuild(p.get_guildID()).get_lvl() + ";0;";
+			Packet.append("5;").append(p.getGuid()).append(";").append(p.get_N1()).append(",").append(p.get_N2()).append(";").append(World.getGuild(p.get_guildID()).get_lvl()).append(";0;");
 			Guild G = World.getGuild(p.get_guildID());
-			Packet += G.get_lvl()+";";
-			Packet += G.get_xp()+";";
-			Packet += World.getGuildXpMax(G.get_lvl())+";";
-			Packet += ";";//XpGagner
-			Packet += winxp+";";//XpGuilde
-			Packet += ";";//Monture
+			Packet.append(G.get_lvl()).append(";");
+			Packet.append(G.get_xp()).append(";");
+			Packet.append(World.getGuildXpMax(G.get_lvl())).append(";");
+			Packet.append(";");//XpGagner
+			Packet.append(winxp).append(";");//XpGuilde
+			Packet.append(";");//Monture
 			
 			String drops = "";
     		ArrayList<Drop> temp = new ArrayList<Drop>();
@@ -2956,12 +2962,12 @@ public class Fight
     			p.addObjet(obj);
     			World.addObjet(obj, true);
     		}
-			Packet += drops+";";//Drop
-			Packet += winkamas+"|";
+    		Packet.append(drops).append(";");//Drop
+    		Packet.append(winkamas).append("|");
 			
 			SQLManager.UPDATE_PERCO(p);
 		}
-        return Packet;
+        return Packet.toString();
     }
     
 	public void verifIfTeamAllDead()
@@ -3100,17 +3106,18 @@ public class Fight
 					{
 						F.getPersonnage().set_PDV(F.getPDV());	
 					}
-				}else
-				{
-					//FIXME : PDV d'avant FIGHT
-					F.getPersonnage().set_PDV(F.getPersonnage().get_PDVMAX());
 				}
+				
+				try
+				{
+					Thread.sleep(1000);
+				}catch(Exception E){};
+				if(_type != Constants.FIGHT_TYPE_CHALLENGE) F.getPersonnage().get_curCarte().applyEndFightAction(_type, F.getPersonnage());
 				
 				try
 				{
 					Thread.sleep(200);
 				}catch(Exception E){};
-				if(_type != Constants.FIGHT_TYPE_CHALLENGE) F.getPersonnage().get_curCarte().applyEndFightAction(_type, F.getPersonnage());
 				F.getPersonnage().refreshMapAfterFight();
 			}
 			//Pour les perdant ont TP au point de sauvegarde
@@ -3142,16 +3149,22 @@ public class Fight
 				{
 					try
 					{
-						Thread.sleep(700);
+						Thread.sleep(1000);
 					}catch(Exception E){};
-					//TODO perte d'energie
-					F.getPersonnage().warpToSavePos();
-					F.getPersonnage().set_PDV(1);
-				}
-				else
-				{
-					//FIXME : PDV d'avant FIGHT
-					F.getPersonnage().set_PDV(F.getPersonnage().get_PDVMAX());
+					int EnergyLoos = Formulas.getLoosEnergy(F.get_lvl(), _type==1, _type==5);
+					int Energy = F.getPersonnage().get_energy() - EnergyLoos;
+					if(Energy < 0) Energy = 0;
+					F.getPersonnage().set_energy(Energy);
+					if(Energy == 0)
+					{
+						F.getPersonnage().set_Ghosts();
+					}else
+					{
+						F.getPersonnage().warpToSavePos();
+						F.getPersonnage().set_PDV(1);
+					}
+					if(F.getPersonnage().isOnline())
+						SocketManager.GAME_SEND_Im_PACKET(F.getPersonnage(), "034;"+EnergyLoos);
 				}
 				
 				try
@@ -3169,7 +3182,21 @@ public class Fight
 		target.setIsDead(true);
 		if(!target.hasLeft()) deadList.put(target.getGUID(), target);//on ajoute le joueur à la liste des cadavres ;)
 		SocketManager.GAME_SEND_FIGHT_PLAYER_DIE_TO_FIGHT(this,7,target.getGUID());
-		target.get_fightCell().getFighters().clear();
+		target.get_fightCell().getFighters().clear();// Supprime tout causait bug si porté/porteur
+		
+		if(target.isState(Constants.ETAT_PORTEUR)) 
+		{ 
+			Fighter f = target.get_isHolding();
+			f.set_fightCell(f.get_fightCell());
+			f.get_fightCell().addFighter(f);//Le bug venait par manque de ceci, il ni avait plus de firstFighter
+			f.setState(Constants.ETAT_PORTE, 0);//J'ajoute ceci quand même pour signaler qu'ils ne sont plus en état porté/porteur
+			target.setState(Constants.ETAT_PORTEUR, 0);
+			f.set_holdedBy(null);
+			target.set_isHolding(null);
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 950, f.getGUID()+"", f.getGUID()+","+Constants.ETAT_PORTE+",0");
+			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(this, 7, 950, target.getGUID()+"", target.getGUID()+","+Constants.ETAT_PORTEUR+",0"); 
+		}
+		
 		if(target.getTeam() == 0)
 		{
 			TreeMap<Integer,Fighter> team = new TreeMap<Integer,Fighter>();
@@ -3483,12 +3510,12 @@ public class Fight
 							
 							if(_type == Constants.FIGHT_TYPE_AGRESSION || _type == Constants.FIGHT_TYPE_PVM || _type == Constants.FIGHT_TYPE_PVT)
 							{
-								//TODO Energy
-								int energy = P.get_energy()-500;
-								if(energy < 0) energy = 0;
-								P.set_energy(P.get_energy()-0);
+								int EnergyLoos = Formulas.getLoosEnergy(P.get_lvl(), _type==1, _type==5);
+								int Energy = P.get_energy() - EnergyLoos;
+								if(Energy < 0) Energy = 0;
+								P.set_energy(Energy);
 								if(P.isOnline())
-									SocketManager.GAME_SEND_Im_PACKET(P, "034;"+energy);
+									SocketManager.GAME_SEND_Im_PACKET(P, "034;"+EnergyLoos);
 								
 								if(_type == Constants.FIGHT_TYPE_AGRESSION)
 								{
@@ -3499,12 +3526,28 @@ public class Fight
 										SocketManager.GAME_SEND_Im_PACKET(P, "076;"+honor);
 								}
 								
-								P.warpToSavePos();
-								P.set_PDV(1);
+								
+								try
+								{
+									Thread.sleep(1000);
+								}catch(Exception E){};
+								
+								if(Energy == 0)
+								{
+									P.set_Ghosts();
+								}else
+								{
+									P.warpToSavePos();
+									P.set_PDV(1);
+								}
 							}
 							
 							if(P.isOnline())
 							{
+								try
+								{
+									Thread.sleep(200);
+								}catch(Exception E){};
 								SocketManager.GAME_SEND_GV_PACKET(P);
 								P.refreshMapAfterFight();
 							}
@@ -3554,6 +3597,10 @@ public class Fight
 								
 								if(P.isOnline())
 								{
+									try
+									{
+										Thread.sleep(200);
+									}catch(Exception E){};
 									SocketManager.GAME_SEND_GV_PACKET(P);
 									P.refreshMapAfterFight();
 								}
@@ -3605,6 +3652,10 @@ public class Fight
 									{
 										if(P.isOnline())
 										{
+											try
+											{
+												Thread.sleep(200);
+											}catch(Exception E){};
 											SocketManager.GAME_SEND_GV_PACKET(P);
 											P.refreshMapAfterFight();
 										}
@@ -3612,12 +3663,12 @@ public class Fight
 									{
 										if(_type == Constants.FIGHT_TYPE_AGRESSION || _type == Constants.FIGHT_TYPE_PVM || _type == Constants.FIGHT_TYPE_PVT)
 										{
-											//TODO Energy
-											int energy = P.get_energy()-500;
-											if(energy < 0) energy = 0;
-											P.set_energy(P.get_energy()-0);
+											int EnergyLoos = Formulas.getLoosEnergy(P.get_lvl(), _type==1, _type==5);
+											int Energy = P.get_energy() - EnergyLoos;
+											if(Energy < 0) Energy = 0;
+											P.set_energy(Energy);
 											if(P.isOnline())
-												SocketManager.GAME_SEND_Im_PACKET(P, "034;"+energy);
+												SocketManager.GAME_SEND_Im_PACKET(P, "034;"+EnergyLoos);
 											
 											if(_type == Constants.FIGHT_TYPE_AGRESSION)
 											{
@@ -3628,12 +3679,27 @@ public class Fight
 													SocketManager.GAME_SEND_Im_PACKET(P, "076;"+honor);
 											}
 											
-											P.warpToSavePos();
-											P.set_PDV(1);
+											
+											try
+											{
+												Thread.sleep(1000);
+											}catch(Exception E){};
+											if(Energy == 0)
+											{
+												P.set_Ghosts();
+											}else
+											{
+												P.warpToSavePos();
+												P.set_PDV(1);
+											}
 										}
 										
 										if(P.isOnline())
 										{	
+											try
+											{
+												Thread.sleep(200);
+											}catch(Exception E){};
 											SocketManager.GAME_SEND_GV_PACKET(P);
 											P.refreshMapAfterFight();
 										}
@@ -3654,6 +3720,10 @@ public class Fight
 										
 										if(P.isOnline())
 										{
+											try
+											{
+												Thread.sleep(200);
+											}catch(Exception E){};
 											SocketManager.GAME_SEND_GV_PACKET(P);
 											P.refreshMapAfterFight();
 										}
@@ -3709,12 +3779,12 @@ public class Fight
 								
 								if(_type == Constants.FIGHT_TYPE_AGRESSION || _type == Constants.FIGHT_TYPE_PVM || _type == Constants.FIGHT_TYPE_PVT)
 								{
-									//TODO Energy
-									int energy = P.get_energy()-500;
-									if(energy < 0) energy = 0;
-									P.set_energy(P.get_energy()-0);
+									int EnergyLoos = Formulas.getLoosEnergy(P.get_lvl(), _type==1, _type==5);
+									int Energy = P.get_energy() - EnergyLoos;
+									if(Energy < 0) Energy = 0;
+									P.set_energy(Energy);
 									if(P.isOnline())
-										SocketManager.GAME_SEND_Im_PACKET(P, "034;"+energy);
+										SocketManager.GAME_SEND_Im_PACKET(P, "034;"+EnergyLoos);
 									
 									if(_type == Constants.FIGHT_TYPE_AGRESSION)
 									{
@@ -3725,12 +3795,26 @@ public class Fight
 											SocketManager.GAME_SEND_Im_PACKET(P, "076;"+honor);
 									}
 									
-									P.warpToSavePos();
-									P.set_PDV(1);
+									try
+									{
+										Thread.sleep(1000);
+									}catch(Exception E){};
+									if(Energy == 0)
+									{
+										P.set_Ghosts();
+									}else
+									{
+										P.warpToSavePos();
+										P.set_PDV(1);
+									}
 								}
 								
 								if(P.isOnline())
 								{
+									try
+									{
+										Thread.sleep(200);
+									}catch(Exception E){};
 									SocketManager.GAME_SEND_GV_PACKET(P);
 									P.refreshMapAfterFight();
 								}
@@ -3800,50 +3884,51 @@ public class Fight
 
 	public String parseFightInfos()
 	{
-		String infos = _id+";";
+		StringBuilder infos = new StringBuilder();
+		infos.append(_id).append(";");
 		long time = System.nanoTime()-_startTime;
-		infos += (_startTime  == 0?"-1":time)+";";
+		infos.append((_startTime  == 0?"-1":time)).append(";");
 		//Team1
-		infos += "0,";//0 car toujours joueur :)
+		infos.append("0,");//0 car toujours joueur :)
 		switch(_type)
 		{
 			case Constants.FIGHT_TYPE_CHALLENGE:
-				infos += "0,";
-				infos += _team0.size()+";";
+				infos.append("0,");
+				infos.append(_team0.size()).append(";");
 				//Team2
-				infos += "0,";
-				infos += "0,";
-				infos += _team1.size()+";";
+				infos.append("0,");
+				infos.append("0,");
+				infos.append(_team1.size()).append(";");
 			break;
 			
 			case Constants.FIGHT_TYPE_AGRESSION:
-				infos += _init0.getPersonnage().get_align()+",";
-				infos += _team0.size()+";";
+				infos.append(_init0.getPersonnage().get_align()).append(",");
+				infos.append(_team0.size()).append(";");
 				//Team2
-				infos += "0,";
-				infos += _init1.getPersonnage().get_align()+",";
-				infos += _team1.size()+";";
+				infos.append("0,");
+				infos.append(_init1.getPersonnage().get_align()).append(",");
+				infos.append(_team1.size()).append(";");
 			break;
 			
 			case Constants.FIGHT_TYPE_PVM:
-				infos += "0,";
-				infos += _team0.size()+";";
+				infos.append("0,");
+				infos.append(_team0.size()).append(";");
 				//Team2
-				infos += "1,";//FIXME: valeur pour Monstres ? :o
-				infos += _team1.get(_team1.keySet().toArray()[0]).getMob().getTemplate().getAlign()+",";
-				infos += _team1.size()+";";
+				infos.append("1,");//FIXME: valeur pour Monstres ? :o
+				infos.append(_team1.get(_team1.keySet().toArray()[0]).getMob().getTemplate().getAlign()).append(",");
+				infos.append(_team1.size()).append(";");
 			break;
 			
 			case Constants.FIGHT_TYPE_PVT:
-				infos += "0,";
-				infos += _team0.size()+";";
+				infos.append("0,");
+				infos.append(_team0.size()).append(";");
 				//Team2
-				infos += "4,";//FIXME: valeur pour Percepteur
-				infos += "0,";
-				infos += _team1.size()+";";
+				infos.append("4,");//FIXME: valeur pour Percepteur
+				infos.append("0,");
+				infos.append(_team1.size()).append(";");
 			break;
 		}
-		return infos;
+		return infos.toString();
 	}
 
 	public void showCaseToTeam(int guid, int cellID)
