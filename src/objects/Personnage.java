@@ -49,7 +49,6 @@ public class Personnage {
 	private long _curExp;
 	private int _size;
 	private int _gfxID;
-	private int _isMerchant = 0;
 	private int _orientation = 1;
 	private Compte _compte;
 	private int _accID;
@@ -72,45 +71,52 @@ public class Personnage {
 	private boolean _away;
 	private Carte _curCarte;
 	private Case _curCell;
-	private int _PDV;
-	private boolean _isInBank;
-	private int _PDVMAX;
 	private boolean _sitted;
 	private boolean _ready = false;
 	private boolean _isOnline  = false;
 	private Group _group;
-	private int _isTradingWith = 0;
-	private Exchange _curExchange;
-	private int _isTalkingWith = 0;
-	private int _inviting = 0;
 	private int _duelID = -1;
-	private Map<Integer,SortStats> _sorts = new TreeMap<Integer,SortStats>();
-	private Map<Integer,Character> _sortsPlaces = new TreeMap<Integer,Character>();
-	
 	private Map<Integer,SpellEffect> _buffs = new TreeMap<Integer,SpellEffect>(); 
 	private Map<Integer,Objet> _items = new TreeMap<Integer,Objet>();
-	private Map<Integer,StatsMetier> _metiers = new TreeMap<Integer,StatsMetier>();
 	private Timer _sitTimer;
 	private String _savePos;
-	private int _exPdv;
-	private MountPark _inMountPark;//Enclos
 	private int _emoteActive = 0;
+	//PDV
+	private int _PDV;
+	private int _PDVMAX;
+	private int _exPdv;
+	//Echanges
+	private int _isTradingWith = 0;
+	private Exchange _curExchange;
+	//Dialogue
+	private int _isTalkingWith = 0;
+	//Invitation
+	private int _inviting = 0;
+	//Job
 	private JobAction _curJobAction;
+	private Map<Integer,StatsMetier> _metiers = new TreeMap<Integer,StatsMetier>();
+	//Enclos
+	private MountPark _inMountPark;
+	//Monture
 	private Dragodinde _mount;
 	private int _mountXpGive = 0;
 	private boolean _onMount = false;
+	//Banque
+	private boolean _isInBank;
 	//Zaap
 	private boolean _isZaaping = false;
 	private ArrayList<Short> _zaaps = new ArrayList<Short>();
 	//Disponibilité
 	public boolean _isAbsent = false;
 	public boolean _isInvisible = false;
-	//Oublie de sort
+	//Sort
+	public boolean _seeSpell = false;
 	private boolean _isForgetingSpell = false;
+	private Map<Integer,SortStats> _sorts = new TreeMap<Integer,SortStats>();
+	private Map<Integer,Character> _sortsPlaces = new TreeMap<Integer,Character>();
 	//Double
 	public boolean _isClone = false;
 	//Percepteurs
-	public boolean _isOnPercepteur = false;
 	private int _isOnPercepteurID = 0;
 	//Traque
 	private traque _traqued = null;
@@ -124,6 +130,15 @@ public class Personnage {
 	//Suiveur - Suivi
 	public Map<Integer,Personnage> _Follower = new TreeMap<Integer,Personnage>();
 	public Personnage _Follows = null;
+	//Fantome
+	public boolean _isGhosts = false;
+	//Coffre
+	private Trunk _curTrunk;
+	//Maison
+	private House _curHouse;
+	//Marchand
+	public boolean _seeSeller = false;
+	private Map<Integer , Integer> _storeItems = new TreeMap<Integer, Integer>();//<ObjID, Prix>
 	
 	public static class traque 
 	{
@@ -218,7 +233,6 @@ public class Personnage {
 				SocketManager.GAME_SEND_PM_DEL_PACKET_TO_GROUP(this,p.get_GUID());
 		}
 	}
-	
 	public static class Stats
 	{
 		private Map<Integer,Integer> Effects = new TreeMap<Integer,Integer>();
@@ -438,20 +452,21 @@ public class Personnage {
 		}
 		public String parseToItemSetStats()
 		{
-			String str= "";
+			StringBuilder str = new StringBuilder();
+			if(Effects.isEmpty())return "";
 			for(Entry<Integer,Integer> entry : Effects.entrySet())
 			{
-				if(str.length() >0)str += ",";
-				str += Integer.toHexString(entry.getKey())+"#"+Integer.toHexString(entry.getValue())+"#0#0";
+				if(str.length() >0)str.append(",");
+				str.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(entry.getValue())).append("#0#0");
 			}
-			return str;
+			return str.toString();
 		}
 	}
 	
 	public Personnage(int _guid, String _name, int _sexe, int _classe,
 			int _color1, int _color2, int _color3,long _kamas, int pts, int _capital, int _energy, int _lvl, long exp,
 			int _size, int _gfxid, byte alignement, int _compte, Map<Integer,Integer> stats,
-			int seeFriend, byte seeAlign, String canaux, short map, int cell,String stuff,int pdvPer,String spells, String savePos,String jobs,
+			byte seeFriend, byte seeAlign, byte seeSeller, String canaux, short map, int cell, String stuff, String storeObjets,int pdvPer,String spells, String savePos,String jobs,
 			int mountXp,int mount,int honor,int deshonor,int alvl,String z, byte title, int wifeGuid)
 	{
 		this._GUID = _guid;
@@ -536,12 +551,36 @@ public class Personnage {
 		{
 			if(item.equals(""))continue;
 			String[] infos = item.split(":");
-			int guid = Integer.parseInt(infos[0]);
+			
+			int guid = 0;
+			try
+			{
+				guid = Integer.parseInt(infos[0]);
+			}catch(Exception e ){continue;};
+			
 			Objet obj = World.getObjet(guid);
-			if( obj == null)continue;
+			if(obj == null)continue;
 			_items.put(obj.getGuid(), obj);
 		}
-		
+		if(!storeObjets.equals(""))
+		{
+			for(String _storeObjets : storeObjets.split("\\|"))
+			{
+				String[] infos = _storeObjets.split(",");
+				int guid = 0;
+				int price = 0;
+				try
+				{
+					guid = Integer.parseInt(infos[0]);
+					price = Integer.parseInt(infos[1]);
+				}catch(Exception e ){continue;};
+				
+				Objet obj = World.getObjet(guid);
+				if(obj == null)continue;
+				
+				_storeItems.put(obj.getGuid(), price);
+			}
+		}
 		this._PDVMAX = (_lvl-1)*5+Constants.getBasePdv(_classe)+getTotalStats().getEffect(Constants.STATS_ADD_VITA);
 		this._PDV = (_PDVMAX*pdvPer)/100;
 		parseSpells(spells);
@@ -575,6 +614,7 @@ public class Personnage {
 		}
 		
 		this._title = title;
+		if(_energy == 0) set_Ghosts();
 	}
 	
 	//Clone double
@@ -668,11 +708,13 @@ public class Personnage {
 				(byte)0,
 				compte.get_GUID(),
 				new TreeMap<Integer,Integer>(),
-				1,
+				(byte)1,
+				(byte)0,
 				(byte)0,
 				"*#%!pi$:?",
 				(short)Constants.getStartMap(classe),
 				Constants.getStartCell(classe),
+				"",
 				"",
 				100,
 				"",
@@ -723,21 +765,20 @@ public class Personnage {
 	
 	public String parseSpellToDB()
 	{
-		String sorts = "";
+		StringBuilder sorts = new StringBuilder();
 		if(_sorts.isEmpty())return "";
 		for(int key : _sorts.keySet())
 		{
 			//3;1;a,4;3;b
 			SortStats SS = _sorts.get(key);
-			sorts += SS.getSpellID()+";"+SS.getLevel()+";";
+			sorts.append(SS.getSpellID()).append(";").append(SS.getLevel()).append(";");
 			if(_sortsPlaces.get(key)!=null)
-				sorts += _sortsPlaces.get(key);
+				sorts.append(_sortsPlaces.get(key));
 			else
-				sorts += "_";
-			sorts += ",";
+				sorts.append("_");
+			sorts.append(",");
 		}
-		sorts = sorts.substring(0, sorts.length()-1);
-		return sorts;
+		return sorts.substring(0, sorts.length()-1).toString();
 	}
 	
 	private void parseSpells(String str)
@@ -771,7 +812,7 @@ public class Personnage {
 	public void set_isTradingWith(int tradingWith) {
 		_isTradingWith = tradingWith;
 	}
-
+	
 	public int get_isTalkingWith() {
 		return _isTalkingWith;
 	}
@@ -779,7 +820,7 @@ public class Personnage {
 	public void set_isTalkingWith(int talkingWith) {
 		_isTalkingWith = talkingWith;
 	}
-
+	
 	public long get_kamas() {
 		return _kamas;
 	}
@@ -842,10 +883,22 @@ public class Personnage {
 		return _showFriendConnection;
 	}
 	
+	public boolean is_showSpells() {
+		return _seeSpell;
+	}
+	
 	public boolean is_showWings() {
 		return _showWings;
 	}
-
+	
+	public boolean is_showSeller() {
+		return _seeSeller;
+	}
+	
+	public void set_showSeller(boolean is) {
+		_seeSeller = is;
+	}
+	
 	public String get_canaux() {
 		return _canaux;
 	}
@@ -1026,23 +1079,23 @@ public class Personnage {
 	
 	public String parseSpellList()
 	{
-		String packet = "SL";
+		StringBuilder packet = new StringBuilder();
+		packet.append("SL");
 		for (Iterator<SortStats> i = _sorts.values().iterator() ; i.hasNext();)
 		{
 		    SortStats SS = i.next();
-			packet += SS.getSpellID()+"~"+SS.getLevel()+"~"+_sortsPlaces.get(SS.getSpellID())+";";
+		    packet.append(SS.getSpellID()).append("~").append(SS.getLevel()).append("~").append(_sortsPlaces.get(SS.getSpellID())).append(";");
 		}
-		return packet;
+		return packet.toString();
 	}
 
 	public void set_SpellPlace(int SpellID, char Place)
-		
-		{
+	{
 			replace_SpellInBook(Place);
 			_sortsPlaces.remove(SpellID);	
 			_sortsPlaces.put(SpellID, Place);
 			SQLManager.SAVE_PERSONNAGE(this,false);//On sauvegarde les changements
-		}
+	}
 
 	private void replace_SpellInBook(char Place)
 	{
@@ -1065,20 +1118,21 @@ public class Personnage {
 	
 	public String parseALK()
 	{
-		String perso = "";
-		perso += this._GUID+";";
-		perso += this._name+";";
-		perso += this._lvl+";";
-		perso += this._gfxID+";";
-		perso += (this._color1!= -1?Integer.toHexString(this._color1):"-1")+";";
-		perso += (this._color2!= -1?Integer.toHexString(this._color2):"-1")+";";
-		perso += (this._color3!= -1?Integer.toHexString(this._color3):"-1")+";";
-		perso += getGMStuffString()+ ";";
-		perso += this._isMerchant+";";//merchant
-		perso += "1;";
-		perso += ";";//DeathCount	this.deathCount;
-		perso += ";";//LevelMax
-		return "|"+perso;
+		StringBuilder perso = new StringBuilder();
+		perso.append("|");
+		perso.append(this._GUID).append(";");
+		perso.append(this._name).append(";");
+		perso.append(this._lvl).append(";");
+		perso.append(this._gfxID).append(";");
+		perso.append((this._color1!= -1?Integer.toHexString(this._color1):"-1")).append(";");
+		perso.append((this._color2!= -1?Integer.toHexString(this._color2):"-1")).append(";");
+		perso.append((this._color3!= -1?Integer.toHexString(this._color3):"-1")).append(";");
+		perso.append(getGMStuffString()).append(";");
+		perso.append((this.is_showSeller()?1:0)).append(";");
+		perso.append("1;");
+		perso.append(";");//DeathCount	this.deathCount;
+		perso.append(";");//LevelMax
+		return perso.toString();
 	}
 	
 	public void remove()
@@ -1186,6 +1240,14 @@ public class Personnage {
 	{
 		if(_compte.getGameThread() == null) return;
 		PrintWriter out = _compte.getGameThread().get_out();
+		
+		if(is_showSeller() == true && World.getSeller(get_curCarte().get_id()) != null && World.getSeller(get_curCarte().get_id()).contains(get_GUID()))
+		{
+			World.removeSeller(get_GUID(), get_curCarte().get_id());
+			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(get_curCarte(), get_GUID());
+			set_showSeller(false);
+		}
+		
 		SocketManager.GAME_SEND_GAME_CREATE(out,_name);
 		SocketManager.GAME_SEND_STATS_PACKET(this);
 		SQLManager.LOG_OUT(_compte.get_GUID(), 1);
@@ -1196,86 +1258,103 @@ public class Personnage {
 	
 	public String parseToOa()
 	{
-		String packetOa = "Oa";
-		
-		packetOa += _GUID + "|";
-		packetOa += getGMStuffString();
-			
-		return packetOa;
+		StringBuilder packetOa = new StringBuilder();
+		packetOa.append("Oa").append(_GUID).append("|").append(getGMStuffString());
+		return packetOa.toString();
 	}
 	
 	public String parseToGM()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
 		if(_fight == null)// Hors combat
 		{
-			str+= _curCell.getID()+";";
-			str+= _orientation+";";
-			str+= "0"+";";//FIXME:?
-			str+= _GUID+";";
-			str+= _name+";";
-			str+= _classe;
-			str+= (this.get_title()>0?(","+this.get_title()+";"):(";"));
-			str+= _gfxID+"^"+_size+";";//gfxID^size
-			str+= _sexe+";";
-			str+= _align+",";//1,0,0,4055064
-			str+= "0,";//FIXME:?
-			str+= (_showWings?getGrade():"0")+",";
-			str+= _lvl+";";//_GUID
-			str+= (_color1==-1?"-1":Integer.toHexString(_color1))+";";
-			str+= (_color2==-1?"-1":Integer.toHexString(_color2))+";";
-			str+= (_color3==-1?"-1":Integer.toHexString(_color3))+";";
-			str+= getGMStuffString()+";";
+			str.append(_curCell.getID()).append(";").append(_orientation).append(";");
+			str.append("0").append(";");//FIXME:?
+			str.append(_GUID).append(";").append(_name).append(";").append(_classe);
+			str.append((this.get_title()>0?(","+this.get_title()+";"):(";")));
+			str.append(_gfxID).append("^").append(_size).append(";");//gfxID^size
+			str.append(_sexe).append(";").append(_align).append(",");//1,0,0,4055064
+			str.append("0,");//FIXME:?
+			str.append((_showWings?getGrade():"0")).append(",");
+			str.append(_lvl).append(";");
+			str.append((_color1==-1?"-1":Integer.toHexString(_color1))).append(";");
+			str.append((_color2==-1?"-1":Integer.toHexString(_color2))).append(";");
+			str.append((_color3==-1?"-1":Integer.toHexString(_color3))).append(";");
+			str.append(getGMStuffString()).append(";");
 			if(Ancestra.AURA_SYSTEM)
 			{
-				str+= (_lvl>99?(_lvl>199?(2):(1)):(0))+";";
+				str.append((_lvl>99?(_lvl>199?(2):(1)):(0))).append(";");
 			}else
 			{
-				str+= "0;";
+				str.append("0;");
 			}
-			str+= ";";//Emote
-			str+= ";";//Emote timer
+			str.append(";");//Emote
+			str.append(";");//Emote timer
 			if(this._guildMember!=null && this._guildMember.getGuild().getMembers().size()>9)
 			{
-				str += this._guildMember.getGuild().get_name()+";"+this._guildMember.getGuild().get_emblem()+";";
+				str.append(this._guildMember.getGuild().get_name()).append(";").append(this._guildMember.getGuild().get_emblem()).append(";");
 			}
-			else str+= ";;";
-			str+= /* Restriction */ "0;";//TODO: Restriction
-			str+= (_onMount&&_mount!=null?_mount.get_color():"")+";";
-			str+= ";";
+			else str.append(";;");
+			str.append("0;");//TODO: Restriction
+			str.append((_onMount&&_mount!=null?_mount.get_color():"")).append(";");
+			str.append(";");
 		}
-		return str;
+		return str.toString();
 	}
+	
+    public String parseToMerchant() 
+    {
+    	StringBuilder str = new StringBuilder();
+    	str.append(_curCell.getID()).append(";");
+    	str.append(_orientation).append(";");
+    	str.append("0").append(";");
+    	str.append(_GUID).append(";");
+    	str.append(_name).append(";");
+    	str.append("-5").append(";");//Merchant identifier
+    	str.append(_gfxID).append("^").append(_size).append(";");
+		str.append((_color1==-1?"-1":Integer.toHexString(_color1))).append(";");
+		str.append((_color2==-1?"-1":Integer.toHexString(_color2))).append(";");
+		str.append((_color3==-1?"-1":Integer.toHexString(_color3))).append(";");
+    	str.append(";");//acessories
+    	str.append((_guildMember != null ? _guildMember.getGuild().get_name() : "")).append(";");//guildName
+    	str.append((_guildMember != null ? _guildMember.getGuild().get_emblem() : "")).append(";");//emblem
+    	str.append("0;");//offlineType
+
+        return str.toString();
+    }
 	
 	public String getGMStuffString()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
 		if(getObjetByPos(Constants.ITEM_POS_ARME) != null)
-		 	str+= Integer.toHexString(getObjetByPos(Constants.ITEM_POS_ARME).getTemplate().getID());	
-		str+= ",";
+		 	str.append(Integer.toHexString(getObjetByPos(Constants.ITEM_POS_ARME).getTemplate().getID()));	
+		str.append(",");
 		if(getObjetByPos(Constants.ITEM_POS_COIFFE) != null)
-		 	str+= Integer.toHexString(getObjetByPos(Constants.ITEM_POS_COIFFE).getTemplate().getID());	
-		str+= ",";
+			str.append(Integer.toHexString(getObjetByPos(Constants.ITEM_POS_COIFFE).getTemplate().getID()));	
+		str.append(",");
 		if(getObjetByPos(Constants.ITEM_POS_CAPE) != null)
-		 	str+= Integer.toHexString(getObjetByPos(Constants.ITEM_POS_CAPE).getTemplate().getID());	
-		str+= ",";
+			str.append(Integer.toHexString(getObjetByPos(Constants.ITEM_POS_CAPE).getTemplate().getID()));	
+		str.append(",");
 		if(getObjetByPos(Constants.ITEM_POS_FAMILIER) != null)
-		 	str+= Integer.toHexString(getObjetByPos(Constants.ITEM_POS_FAMILIER).getTemplate().getID());	
-		str+= ",";
+			str.append(Integer.toHexString(getObjetByPos(Constants.ITEM_POS_FAMILIER).getTemplate().getID()));	
+		str.append(",");
 		if(getObjetByPos(Constants.ITEM_POS_BOUCLIER) != null)
-		 	str+= Integer.toHexString(getObjetByPos(Constants.ITEM_POS_BOUCLIER).getTemplate().getID());	
-		return str;
+			str.append(Integer.toHexString(getObjetByPos(Constants.ITEM_POS_BOUCLIER).getTemplate().getID()));	
+		return str.toString();
 	}
 
 	public String getAsPacket()
 	{
 		refreshStats();
-		String ASData = "As";
-		ASData += xpString(",")+"|";
-		ASData += _kamas+"|"+_capital+"|"+_spellPts+"|";
-		ASData += _align+"~"+_align+","+_aLvl+","+getGrade()+","+_honor+","+_deshonor+","+(_showWings?"1":"0")+"|";
+		
+		StringBuilder ASData = new StringBuilder();
+		ASData.append("As").append(xpString(",")).append("|");
+		ASData.append(_kamas).append("|").append(_capital).append("|").append(_spellPts).append("|");
+		ASData.append(_align).append("~").append(_align).append(",").append(_aLvl).append(",").append(getGrade()).append(",").append(_honor).append(",").append(_deshonor+",").append((_showWings?"1":"0")).append("|");
+		
 		int pdv = get_PDV();
 		int pdvMax = get_PDVMAX();
+		
 		if(_fight != null)
 		{
 			Fighter f = _fight.getFighterByPerso(this);
@@ -1285,55 +1364,56 @@ public class Personnage {
 				pdvMax = f.getPDVMAX();
 			}
 		}
-		ASData += pdv+","+pdvMax+"|";
-		ASData += _energy+",10000|";
 		
-		ASData += getInitiative()+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_PROS)+getStuffStats().getEffect(Constants.STATS_ADD_PROS)+((int)Math.ceil(_baseStats.getEffect(Constants.STATS_ADD_CHAN)/10))+getBuffsStats().getEffect(Constants.STATS_ADD_PROS)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_PA)+","+getStuffStats().getEffect(Constants.STATS_ADD_PA)+","+getDonsStats().getEffect(Constants.STATS_ADD_PA)+","+getBuffsStats().getEffect(Constants.STATS_ADD_PA)+","+getTotalStats().getEffect(Constants.STATS_ADD_PA)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_PM)+","+getStuffStats().getEffect(Constants.STATS_ADD_PM)+","+getDonsStats().getEffect(Constants.STATS_ADD_PM)+","+getBuffsStats().getEffect(Constants.STATS_ADD_PM)+","+getTotalStats().getEffect(Constants.STATS_ADD_PM)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_FORC)+","+getStuffStats().getEffect(Constants.STATS_ADD_FORC)+","+getDonsStats().getEffect(Constants.STATS_ADD_FORC)+","+getBuffsStats().getEffect(Constants.STATS_ADD_FORC)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_VITA)+","+getStuffStats().getEffect(Constants.STATS_ADD_VITA)+","+getDonsStats().getEffect(Constants.STATS_ADD_VITA)+","+getBuffsStats().getEffect(Constants.STATS_ADD_VITA)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_SAGE)+","+getStuffStats().getEffect(Constants.STATS_ADD_SAGE)+","+getDonsStats().getEffect(Constants.STATS_ADD_SAGE)+","+getBuffsStats().getEffect(Constants.STATS_ADD_SAGE)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_CHAN)+","+getStuffStats().getEffect(Constants.STATS_ADD_CHAN)+","+getDonsStats().getEffect(Constants.STATS_ADD_CHAN)+","+getBuffsStats().getEffect(Constants.STATS_ADD_CHAN)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_AGIL)+","+getStuffStats().getEffect(Constants.STATS_ADD_AGIL)+","+getDonsStats().getEffect(Constants.STATS_ADD_AGIL)+","+getBuffsStats().getEffect(Constants.STATS_ADD_AGIL)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_INTE)+","+getStuffStats().getEffect(Constants.STATS_ADD_INTE)+","+getDonsStats().getEffect(Constants.STATS_ADD_INTE)+","+getBuffsStats().getEffect(Constants.STATS_ADD_INTE)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_PO)+","+getStuffStats().getEffect(Constants.STATS_ADD_PO)+","+getDonsStats().getEffect(Constants.STATS_ADD_PO)+","+getBuffsStats().getEffect(Constants.STATS_ADD_PO)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_CREATURE)+","+getStuffStats().getEffect(Constants.STATS_CREATURE)+","+getDonsStats().getEffect(Constants.STATS_CREATURE)+","+getBuffsStats().getEffect(Constants.STATS_CREATURE)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_DOMA)+","+getStuffStats().getEffect(Constants.STATS_ADD_DOMA)+","+getDonsStats().getEffect(Constants.STATS_ADD_DOMA)+","+getBuffsStats().getEffect(Constants.STATS_ADD_DOMA)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_PDOM)+","+getStuffStats().getEffect(Constants.STATS_ADD_PDOM)+","+getDonsStats().getEffect(Constants.STATS_ADD_PDOM)+","+getBuffsStats().getEffect(Constants.STATS_ADD_PDOM)+"|";
-		ASData += "0,0,0,0|";//Maitrise ?
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_PERDOM)+","+getStuffStats().getEffect(Constants.STATS_ADD_PERDOM)+","+getDonsStats().getEffect(Constants.STATS_ADD_PERDOM)+","+getBuffsStats().getEffect(Constants.STATS_ADD_PERDOM)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_SOIN)+","+getStuffStats().getEffect(Constants.STATS_ADD_SOIN)+","+getDonsStats().getEffect(Constants.STATS_ADD_SOIN)+","+getBuffsStats().getEffect(Constants.STATS_ADD_SOIN)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_TRAPDOM)+","+getStuffStats().getEffect(Constants.STATS_TRAPDOM)+","+getDonsStats().getEffect(Constants.STATS_TRAPDOM)+","+getBuffsStats().getEffect(Constants.STATS_TRAPDOM)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_TRAPPER)+","+getStuffStats().getEffect(Constants.STATS_TRAPPER)+","+getDonsStats().getEffect(Constants.STATS_TRAPPER)+","+getBuffsStats().getEffect(Constants.STATS_TRAPPER)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_RETDOM)+","+getStuffStats().getEffect(Constants.STATS_RETDOM)+","+getDonsStats().getEffect(Constants.STATS_RETDOM)+","+getBuffsStats().getEffect(Constants.STATS_RETDOM)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_CC)+","+getStuffStats().getEffect(Constants.STATS_ADD_CC)+","+getDonsStats().getEffect(Constants.STATS_ADD_CC)+","+getBuffsStats().getEffect(Constants.STATS_ADD_CC)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_EC)+","+ getStuffStats().getEffect(Constants.STATS_ADD_EC)+","+getDonsStats().getEffect(Constants.STATS_ADD_EC)+","+getBuffsStats().getEffect(Constants.STATS_ADD_EC)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_AFLEE)+","+getStuffStats().getEffect(Constants.STATS_ADD_AFLEE)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_AFLEE)+","+getBuffsStats().getEffect(Constants.STATS_ADD_AFLEE)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_MFLEE)+","+getStuffStats().getEffect(Constants.STATS_ADD_MFLEE)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_MFLEE)+","+getBuffsStats().getEffect(Constants.STATS_ADD_MFLEE)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_NEU)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_NEU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_NEU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_NEU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_NEU)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_NEU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_NEU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_NEU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_PVP_NEU)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_NEU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_NEU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_NEU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_PVP_NEU)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_NEU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_NEU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_NEU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_TER)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_TER)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_TER)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_TER)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_TER)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_TER)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_TER)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_TER)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_PVP_TER)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_TER)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_TER)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_TER)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_PVP_TER)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_TER)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_TER)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_TER)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_EAU)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_EAU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_EAU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_EAU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_EAU)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_EAU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_EAU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_EAU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_PVP_EAU)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_EAU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_EAU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_EAU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_PVP_EAU)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_EAU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_EAU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_EAU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_AIR)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_AIR)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_AIR)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_AIR)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_AIR)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_AIR)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_AIR)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_AIR)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_PVP_AIR)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_AIR)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_AIR)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_AIR)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_PVP_AIR)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_AIR)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_AIR)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_AIR)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_FEU)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_FEU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_FEU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_FEU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_FEU)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_FEU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_FEU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_FEU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_R_PVP_FEU)+","+getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_FEU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_FEU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_FEU)+"|";
-		ASData += _baseStats.getEffect(Constants.STATS_ADD_RP_PVP_FEU)+","+getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_FEU)+","+0+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_FEU)+","+getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_FEU)+"|";
+		ASData.append(pdv).append(",").append(pdvMax).append("|");
+		ASData.append(_energy).append(",10000|");
 		
-		return ASData;
+		ASData.append(getInitiative()).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_PROS)+getStuffStats().getEffect(Constants.STATS_ADD_PROS)+((int)Math.ceil(_baseStats.getEffect(Constants.STATS_ADD_CHAN)/10))+getBuffsStats().getEffect(Constants.STATS_ADD_PROS)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_PA)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_PA)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_PA)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_PA)).append(",").append(getTotalStats().getEffect(Constants.STATS_ADD_PA)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_PM)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_PM)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_PM)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_PM)).append(",").append(getTotalStats().getEffect(Constants.STATS_ADD_PM)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_FORC)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_FORC)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_FORC)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_FORC)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_VITA)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_VITA)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_VITA)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_VITA)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_SAGE)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_SAGE)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_SAGE)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_SAGE)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_CHAN)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_CHAN)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_CHAN)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_CHAN)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_AGIL)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_AGIL)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_AGIL)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_AGIL)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_INTE)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_INTE)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_INTE)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_INTE)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_PO)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_PO)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_PO)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_PO)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_CREATURE)).append(",").append(getStuffStats().getEffect(Constants.STATS_CREATURE)).append(",").append(getDonsStats().getEffect(Constants.STATS_CREATURE)).append(",").append(getBuffsStats().getEffect(Constants.STATS_CREATURE)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_DOMA)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_DOMA)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_DOMA)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_DOMA)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_PDOM)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_PDOM)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_PDOM)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_PDOM)).append("|");
+		ASData.append("0,0,0,0|");//Maitrise ?
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_PERDOM)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_PERDOM)).append(","+getDonsStats().getEffect(Constants.STATS_ADD_PERDOM)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_PERDOM)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_SOIN)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_SOIN)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_SOIN)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_SOIN)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_TRAPDOM)).append(",").append(getStuffStats().getEffect(Constants.STATS_TRAPDOM)).append(",").append(getDonsStats().getEffect(Constants.STATS_TRAPDOM)).append(",").append(getBuffsStats().getEffect(Constants.STATS_TRAPDOM)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_TRAPPER)).append(",").append(getStuffStats().getEffect(Constants.STATS_TRAPPER)).append(",").append(getDonsStats().getEffect(Constants.STATS_TRAPPER)).append(",").append(getBuffsStats().getEffect(Constants.STATS_TRAPPER)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_RETDOM)).append(",").append(getStuffStats().getEffect(Constants.STATS_RETDOM)).append(",").append(getDonsStats().getEffect(Constants.STATS_RETDOM)).append(",").append(getBuffsStats().getEffect(Constants.STATS_RETDOM)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_CC)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_CC)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_CC)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_CC)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_EC)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_EC)).append(",").append(getDonsStats().getEffect(Constants.STATS_ADD_EC)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_EC)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_AFLEE)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_AFLEE)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_AFLEE)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_AFLEE)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_MFLEE)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_MFLEE)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_MFLEE)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_MFLEE)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_NEU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_NEU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_NEU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_NEU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_NEU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_NEU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_NEU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_NEU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_PVP_NEU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_NEU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_NEU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_NEU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_PVP_NEU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_NEU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_NEU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_NEU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_TER)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_TER)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_TER)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_TER)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_TER)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_TER)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_TER)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_TER)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_PVP_TER)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_TER)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_TER)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_TER)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_PVP_TER)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_TER)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_TER)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_TER)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_EAU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_EAU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_EAU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_EAU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_EAU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_EAU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_EAU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_EAU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_PVP_EAU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_EAU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_EAU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_EAU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_PVP_EAU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_EAU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_EAU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_EAU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_AIR)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_AIR)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_AIR)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_AIR)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_AIR)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_AIR)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_AIR)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_AIR)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_PVP_AIR)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_AIR)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_AIR)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_AIR)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_PVP_AIR)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_AIR)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_AIR)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_AIR)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_FEU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_FEU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_FEU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_FEU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_FEU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_FEU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_FEU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_FEU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_R_PVP_FEU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_R_PVP_FEU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_FEU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_R_PVP_FEU)).append("|");
+		ASData.append(_baseStats.getEffect(Constants.STATS_ADD_RP_PVP_FEU)).append(",").append(getStuffStats().getEffect(Constants.STATS_ADD_RP_PVP_FEU)).append(",").append(0).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_FEU)).append(",").append(getBuffsStats().getEffect(Constants.STATS_ADD_RP_PVP_FEU)).append("|");
+		
+		return ASData.toString();
 	}
 	
 	public int getGrade()
@@ -1619,13 +1699,14 @@ public class Personnage {
 
 	public String parseObjetsToDB()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
+		if(_items.isEmpty())return "";
 		for(Entry<Integer,Objet> entry : _items.entrySet())
 		{
 			Objet obj = entry.getValue();
-			str += obj.getGuid()+"|";
+			str.append(obj.getGuid()).append("|");
 		}
-		return str;
+		return str.toString();
 	}
 	
 	public boolean addObjet(Objet newObj,boolean stackIfSimilar)
@@ -1659,27 +1740,48 @@ public class Personnage {
 	}
 	public String parseItemToASK()
 	{
-		String str = "";
-		for(Objet  obj : _items.values())str += obj.parseItem();
-		return str;
+		StringBuilder str = new StringBuilder();
+		if(_items.isEmpty())return "";
+		for(Objet  obj : _items.values())
+		{
+			str.append(obj.parseItem());
+		}
+		return str.toString();
 	}
 
 	public String getBankItemsIDSplitByChar(String splitter)
 	{
-		String str = "";
-		for(int entry : _compte.getBank().keySet())str += entry+splitter;
-		return str;
+		StringBuilder str = new StringBuilder();
+		if(_compte.getBank().isEmpty())return "";
+		for(int entry : _compte.getBank().keySet())
+		{
+			str.append(entry).append(splitter);
+		}
+		return str.toString();
 	}
 	
 	public String getItemsIDSplitByChar(String splitter)
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
+		if(_items.isEmpty())return "";
 		for(int entry : _items.keySet())
 		{
-			if(str.length() != 0) str += splitter;
-			str += entry;
+			if(str.length() != 0) str.append(splitter);
+			str.append(entry);
 		}
-		return str;
+		return str.toString();
+	}
+	
+	public String getStoreItemsIDSplitByChar(String splitter)
+	{
+		StringBuilder str = new StringBuilder();
+		if(_storeItems.isEmpty())return "";
+		for(int entry : _storeItems.keySet())
+		{
+			if(str.length() != 0) str.append(splitter);
+			str.append(entry);
+		}
+		return str.toString();
 	}
 
 	public boolean hasItemGuid(int guid)
@@ -1910,19 +2012,20 @@ public class Personnage {
 	
 	public String parseToPM()
 	{
-		String str = _GUID+";";
-		str += _name+";";
-		str += _gfxID+";";
-		str += _color1+";";
-		str += _color2+";";
-		str += _color3+";";
-		str += getGMStuffString()+";";
-		str += _PDV+","+_PDVMAX+";";
-		str += _lvl+";";
-		str += getInitiative()+";";
-		str += getTotalStats().getEffect(Constants.STATS_ADD_PROS)+";";
-		str += "0";//Side = ?
-		return str;
+		StringBuilder str = new StringBuilder();
+		str.append(_GUID).append(";");
+		str.append(_name).append(";");
+		str.append(_gfxID).append(";");
+		str.append(_color1).append(";");
+		str.append(_color2).append(";");
+		str.append(_color3).append(";");
+		str.append(getGMStuffString()).append(";");
+		str.append(_PDV).append(",").append(_PDVMAX).append(";");
+		str.append(_lvl).append(";");
+		str.append(getInitiative()).append(";");
+		str.append(getTotalStats().getEffect(Constants.STATS_ADD_PROS)).append(";");
+		str.append("0");//Side = ?
+		return str.toString();
 	}
 	
 	public int getNumbEquipedItemOfPanoplie(int panID)
@@ -1971,8 +2074,16 @@ public class Personnage {
 		{
 			PW = _compte.getGameThread().get_out();
 		}
-		if(World.getCarte(newMapID) == null)return;
-		if(World.getCarte(newMapID).getCase(newCellID) == null)return;
+		if(World.getCarte(newMapID) == null)
+		{
+			GameServer.addToLog("Game: INVALID MAP : "+newMapID);
+			return;
+		}
+		if(World.getCarte(newMapID).getCase(newCellID) == null)
+		{
+			GameServer.addToLog("Game: INVALID CELL : "+newCellID+" ON MAP : "+newMapID);
+			return;
+		}
 		if(PW != null)
 		{
 			SocketManager.GAME_SEND_GA2_PACKET(PW,_GUID);
@@ -1981,6 +2092,26 @@ public class Personnage {
 		_curCell.removePlayer(_GUID);
 		_curCarte = World.getCarte(newMapID);
 		_curCell = _curCarte.getCase(newCellID);
+		
+		//Verification de la carte
+		//Verifier la validité du mountpark
+		if(_curCarte.getMountPark() != null && _curCarte.getMountPark().get_guild().get_id() != -1)
+		{
+			if(World.getGuild(_curCarte.getMountPark().get_guild().get_id()) == null)//Ne devrait pas arriver
+			{
+				GameServer.addToLog("[MountPark] Suppression d'un MountPark a Guild invalide. GuildID : "+_curCarte.getMountPark().get_guild().get_id());
+				Carte.MountPark.removeMountPark(_curCarte.getMountPark().get_guild().get_id());
+			}
+		}
+		//Verifier la validité du percepteur
+		if(Percepteur.GetPercoByMapID(_curCarte.get_id()) != null)
+		{
+			if(World.getGuild(Percepteur.GetPercoByMapID(_curCarte.get_id()).get_guildID()) == null)//Ne devrait pas arriver
+			{
+				GameServer.addToLog("[Percepteur] Suppression d'un Percepteur a Guild invalide. GuildID : "+Percepteur.GetPercoByMapID(_curCarte.get_id()).get_guildID());
+				Percepteur.removePercepteur(Percepteur.GetPercoByMapID(_curCarte.get_id()).get_guildID());
+			}
+		}
 		
 		if(PW != null)
 		{
@@ -2043,12 +2174,12 @@ public class Personnage {
 
 	public String parseBankPacket()
 	{
-		String packet = "";
+		StringBuilder packet = new StringBuilder();
 		for(Entry<Integer, Objet> entry : _compte.getBank().entrySet())
-			packet += "O"+entry.getValue().parseItem()+";";
+			packet.append("O").append(entry.getValue().parseItem()).append(";");
 		if(getBankKamas() != 0)
-			packet += "G"+getBankKamas();
-		return packet;
+			packet.append("G").append(getBankKamas());
+		return packet.toString();
 	}
 
 	public void addCapital(int pts)
@@ -2237,24 +2368,28 @@ public class Personnage {
 			SocketManager.GAME_SEND_Im_PACKET(this, "183");
 			return;
 		}
+		
 		_inMountPark = _curCarte.getMountPark();
 		_away = true;
-		String str = parseDragoList();
-		SocketManager.GAME_SEND_ECK_PACKET(this, 16, str);
+		String str = _inMountPark.parseData(get_GUID(), (_inMountPark.get_owner()==-1?true:false));
+		
+		if(_inMountPark.get_owner() == -1 || _inMountPark.get_owner() == this.get_GUID())//Public ou le proprio
+		{
+			SocketManager.GAME_SEND_ECK_PACKET(this, 16, str);
+		}else if(get_guild() != null && 
+				World.getPersonnage(_inMountPark.get_owner()).get_guild() != null && 
+				World.getPersonnage(_inMountPark.get_owner()).get_guild() == get_guild() && 
+				getGuildMember().canDo(Constants.G_USEENCLOS))//Meme guilde + droits
+		{
+			SocketManager.GAME_SEND_ECK_PACKET(this, 16, str);
+		}else
+		{
+			SocketManager.GAME_SEND_Im_PACKET(this, "1101");
+			_inMountPark = null;
+			_away = false;
+		}
 	}
 	
-	private String parseDragoList()
-	{
-		if(_compte.getStable().isEmpty())return "~";
-		String packet = "";
-		for(Dragodinde DD : _compte.getStable())
-		{
-			if(packet.length() >0)packet+= ";";
-			packet += DD.parse();
-		}
-		return packet;
-	}
-
 	public void leftMountPark()
 	{
 		if(_inMountPark == null)return;
@@ -2366,13 +2501,14 @@ public class Personnage {
 
 	public String parseJobData()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
+		if(_metiers.isEmpty())return "";
 		for(StatsMetier SM : _metiers.values())
 		{
-			if(str.length() >0)str+=";";
-			str += SM.getTemplate().getId()+","+SM.getXp();
+			if(str.length() >0)str.append(";");
+			str.append(SM.getTemplate().getId()).append(",").append(SM.getXp());
 		}
-		return str;
+		return str.toString();
 	}
 	
 	public int totalJobBasic()
@@ -2446,42 +2582,44 @@ public class Personnage {
 
 	public String parseToFriendList(int guid)
 	{
-		String str = ";";
-		str += "?;";//FIXME
-		str += _name+";";
+		StringBuilder str = new StringBuilder();
+		str.append(";");
+		str.append("?;");//FIXME
+		str.append(_name).append(";");
 		if(_compte.isFriendWith(guid))
 		{
-			str += _lvl+";";
-			str += _align+";";
+			str.append(_lvl).append(";");
+			str.append(_align).append(";");
 		}else
 		{
-			str += "?;";
-			str += "-1;";
+			str.append("?;");
+			str.append("-1;");
 		}
-		str += _classe+";";
-		str += _sexe+";";
-		str += _gfxID;
-		return str;
+		str.append(_classe).append(";");
+		str.append(_sexe).append(";");
+		str.append(_gfxID);
+		return str.toString();
 	}
 	
 	public String parseToEnemyList(int guid)
 	{
-		String str = ";";
-		str += "?;";//FIXME
-		str += _name+";";
+		StringBuilder str = new StringBuilder();
+		str.append(";");
+		str.append("?;");//FIXME
+		str.append(_name).append(";");
 		if(_compte.isFriendWith(guid))
 		{
-			str += _lvl+";";
-			str += _align+";";
+			str.append(_lvl).append(";");
+			str.append(_align).append(";");
 		}else
 		{
-			str += "?;";
-			str += "-1;";
+			str.append("?;");
+			str.append("-1;");
 		}
-		str += _classe+";";
-		str += _sexe+";";
-		str += _gfxID;
-		return str;
+		str.append(_classe).append(";");
+		str.append(_sexe).append(";");
+		str.append(_gfxID);
+		return str.toString();
 	}
 
 	public StatsMetier getMetierByID(int job)
@@ -2528,7 +2666,7 @@ public class Personnage {
 	{
 		_mountXpGive = parseInt;
 	}
-
+	
 	public void resetVars()
 	{
 		_isTradingWith = 0;
@@ -2541,13 +2679,12 @@ public class Personnage {
 		_curExchange = null;
 		_group = null;
 		_isInBank = false;
-		_inviting = -1;
+		_inviting = 0;
 		_sitted = false;
 		_curJobAction = null;
 		_isZaaping = false;
 		_inMountPark = null;
 		_onMount = false;
-		_isOnPercepteur = false;
 		_isOnPercepteurID = 0;
 		_isClone = false;
 		_isForgetingSpell = false;
@@ -2555,7 +2692,11 @@ public class Personnage {
 		_isInvisible = false;
 		_Follower.clear();
 		_Follows = null;
+		_curTrunk = null;
+		_curHouse = null;
+		_isGhosts = false;
 	}
+	
 	public void addChanel(String chan)
 	{
 		if(_canaux.indexOf(chan) >=0)return;
@@ -2592,16 +2733,11 @@ public class Personnage {
 	{
 		return _deshonor;
 	}
-
-	public boolean isShowingWings()
-	{
-		return _showWings;
-	}
-
+	
 	public void setShowWings(boolean showWings) {
 		_showWings = showWings;
 	}
-
+	
 	public int get_honor()
 	{
 		return _honor;
@@ -2630,12 +2766,12 @@ public class Personnage {
 			SocketManager.GAME_SEND_GIP_PACKET(this,hloose);
 		return;
 		case '+':
-			_showWings = true;
+			setShowWings(true);
 			SocketManager.GAME_SEND_STATS_PACKET(this);
 			SQLManager.SAVE_PERSONNAGE(this, false);
 		break;
 		case '-':
-			_showWings = false;
+			setShowWings(false);
 			_honor -= hloose;
 			SocketManager.GAME_SEND_STATS_PACKET(this);
 			SQLManager.SAVE_PERSONNAGE(this, false);
@@ -2676,7 +2812,9 @@ public class Personnage {
 		{
 			map = _savePos.split(",")[0];
 		}catch(Exception e){};
-		String str = map+"";
+		
+		StringBuilder str = new StringBuilder();
+		str.append(map);
 		int SubAreaID = _curCarte.getSubArea().get_area().get_superArea().get_id();
 		for(short i : _zaaps)
 		{
@@ -2684,9 +2822,9 @@ public class Personnage {
 			if(World.getCarte(i).getSubArea().get_area().get_superArea().get_id() != SubAreaID)continue;
 			int cost = Formulas.calculZaapCost(_curCarte, World.getCarte(i));
 			if(i == _curCarte.get_id()) cost = 0;
-			str += "|"+i+";"+cost;
+			str.append("|").append(i).append(";").append(cost);
 		}
-		return str;
+		return str.toString();
 	}
 	public boolean hasZaap(int mapID)
 	{
@@ -2754,15 +2892,17 @@ public class Personnage {
 	}
 	public String parseZaaps()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
 		boolean first = true;
+		
+		if(_zaaps.isEmpty())return "";
 		for(int i : _zaaps)
 		{
-			if(!first) str += ",";
+			if(!first) str.append(",");
 			first = false;
-			str += i+"";
+			str.append(i);
 		}
-		return str;
+		return str.toString();
 	}
 	public void stopZaaping()
 	{
@@ -2780,23 +2920,23 @@ public class Personnage {
 	
 	public void Zaapi_use(String packet)
 	{
-	Carte map = World.getCarte(Short.valueOf(packet.substring(2)));
-
-	short idcelula = 100;
-	if (map != null)
-	{
-		for (Entry<Integer, Case> entry  : map.GetCases().entrySet())
+		Carte map = World.getCarte(Short.valueOf(packet.substring(2)));
+	
+		short idcelula = 100;
+		if (map != null)
 		{
-		InteractiveObject obj = entry.getValue().getObject();
-		if (obj != null)
+			for (Entry<Integer, Case> entry  : map.GetCases().entrySet())
 			{
-			if (obj.getID() == 7031 || obj.getID() == 7030)
+			InteractiveObject obj = entry.getValue().getObject();
+			if (obj != null)
 				{
-					idcelula = (short) (entry.getValue().getID() + 18);
+				if (obj.getID() == 7031 || obj.getID() == 7030)
+					{
+						idcelula = (short) (entry.getValue().getID() + 18);
+					}
 				}
 			}
 		}
-	}
 		if (map.getSubArea().get_area().get_id() == 7 || map.getSubArea().get_area().get_id() == 11)
 		{
 		int price = 20;
@@ -2807,7 +2947,7 @@ public class Personnage {
 		this.teleport(Short.valueOf(packet.substring(2)), idcelula);
 		SocketManager.GAME_SEND_CLOSE_ZAAPI_PACKET(this);
 		}
-		}
+	}
 		
 	public boolean hasItemTemplate(int i, int q)
 	{
@@ -2854,16 +2994,6 @@ public class Personnage {
 	public void set_isClone(boolean isClone)
 	{
 		_isClone = isClone;
-	}
-	
-	public boolean get_isOnPercepteur()
-	{
-		return _isOnPercepteur;
-	}
-	
-	public void set_isOnPercepteur(boolean isOnPercepteur)
-	{
-		_isOnPercepteur = isOnPercepteur;
 	}
 	
 	public int get_isOnPercepteurID()
@@ -3168,6 +3298,7 @@ public class Personnage {
 	}
 	
 	//Mariage
+	
 	public void MarryTo(Personnage wife)
 	{
 		_wife = wife.get_GUID();
@@ -3177,19 +3308,19 @@ public class Personnage {
 	public String get_wife_friendlist()
 	{
 		Personnage wife = World.getPersonnage(_wife);
-		String str = "";
+		StringBuilder str = new StringBuilder();
 		if(wife != null)
 		{
-			str += wife.get_name()+"|"+wife.get_classe()+wife.get_sexe()+"|"+wife.get_color1()+"|"+wife.get_color2()+"|"+wife.get_color3()+"|";
+			str.append(wife.get_name()).append("|").append(wife.get_classe()+wife.get_sexe()).append("|").append(wife.get_color1()).append("|").append(wife.get_color2()).append("|").append(wife.get_color3()).append("|");
 			if(!wife.isOnline()){
-				str += "|";
+				str.append("|");
 			}else{
-			str += wife.parse_towife() + "|";
+			str.append(wife.parse_towife()).append("|");
 			}
 		}else{
-			str += "|";
+			str.append("|");
 		}
-		return str;
+		return str.toString();
 	}
 	
 	public String parse_towife()
@@ -3220,8 +3351,8 @@ public class Personnage {
 			return;
 		}
 		
-		int cellPosition = Constants.getNearCellidUnused(p);
-		if(cellPosition == 0)
+		int cellPositiontoadd = Constants.getNearCellidUnused(p);
+		if(cellPositiontoadd == -1)
 		{
 			if(p.get_sexe() == 0)
 			{
@@ -3233,12 +3364,12 @@ public class Personnage {
 			return;
 		}
 		
-		teleport(p.get_curCarte().get_id(), cellPosition);
+		teleport(p.get_curCarte().get_id(), (p.get_curCell().getID()+cellPositiontoadd));
 	}
 	
 	public void Divorce()
 	{
-		if(this.isOnline())
+		if(isOnline())
 			SocketManager.GAME_SEND_Im_PACKET(this, "047;"+World.getPersonnage(_wife).get_name());
 		
 		_wife = 0;
@@ -3270,5 +3401,240 @@ public class Personnage {
 			this.set_orientation(toOrientation);
 			SocketManager.GAME_SEND_eD_PACKET_TO_MAP(get_curCarte(), this.get_GUID(), toOrientation);
 		}
+	}
+	/*
+	public void set_FuneralStone()
+	{
+		// Ce transformer en tombe TODO
+		set_gfxID(Integer.parseInt(get_classe()+"3"));
+	}
+	*/
+	public void set_Ghosts()
+	{
+		_isGhosts = true;
+		set_gfxID(8004);
+		set_canAggro(false);
+		set_away(true);
+		teleport((short)8534, 297);
+		//Le teleporter aux zone de mort la plus proche
+		/*for(Carte map : ) FIXME
+		{
+			map.
+		}*/
+	}
+	
+	public void set_Alive()
+	{
+		if(!_isGhosts) return;
+		_isGhosts = false;
+		set_energy(1000);
+		set_gfxID(Integer.parseInt(get_classe()+""+get_sexe()));
+		set_canAggro(true);
+		set_away(false);
+		SocketManager.GAME_SEND_STATS_PACKET(this);
+		SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(get_curCarte(), get_GUID());
+		SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(get_curCarte(), this);
+	}
+   
+    public void setInTrunk(Trunk t)
+    {
+            _curTrunk = t;
+    }
+   
+    public Trunk getInTrunk()
+    {
+            return _curTrunk;
+    }
+    
+    public void setInHouse(House h)
+    {
+            _curHouse = h;
+    }
+   
+    public House getInHouse()
+    {
+            return _curHouse;
+    }
+    
+	public Map<Integer, Integer> getStoreItems()
+	{
+		return _storeItems;
+	}
+	
+    public String parseStoreItemsList() 
+    {
+    	StringBuilder list = new StringBuilder();
+        if(_storeItems.isEmpty())return "";
+        for(Entry<Integer,Integer> obj : _storeItems.entrySet()) 
+        {
+        	Objet O = World.getObjet(obj.getKey());
+        	if(O == null) continue;
+        	list.append(O.getGuid()).append(";").append(O.getQuantity()).append(";").append(O.getTemplate().getID()).append(";").append(O.parseStatsString()).append(";").append(obj.getValue()).append("|");
+        }
+        return (list.length()>0?list.toString().substring(0, list.length()-1):list.toString());
+    }
+    
+    public String parseStoreItemstoBD()
+    {
+    	StringBuilder str = new StringBuilder();
+		for(Entry<Integer, Integer> _storeObjets : _storeItems.entrySet())
+		{
+			str.append(_storeObjets.getKey()).append(",").append(_storeObjets.getValue()).append("|");
+		}
+		return str.toString();
+    }
+    
+    public void addinStore(int ObjID, int price, int qua)
+    {
+		Objet PersoObj = World.getObjet(ObjID);
+		//Si le joueur n'a pas l'item dans son sac ...
+		if(_storeItems.get(ObjID) != null)
+		{
+			_storeItems.remove(ObjID);
+			_storeItems.put(ObjID, price);
+			SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(this, this);
+			return;
+		}
+		if(_items.get(ObjID) == null)
+		{
+			GameServer.addToLog("Le joueur "+_name+" a tenter d'ajouter un objet au store qu'il n'avait pas.");
+			return;
+		}
+		//Si c'est un item équipé ...
+		if(PersoObj.getPosition() != Constants.ITEM_POS_NO_EQUIPED)return;
+		
+		Objet SimilarObj = getSimilarStoreItem(PersoObj);
+		int newQua = PersoObj.getQuantity() - qua;
+		if(SimilarObj == null)//S'il n'y pas d'item du meme Template
+		{
+			//S'il ne reste pas d'item dans le sac
+			if(newQua <= 0)
+			{
+				//On enleve l'objet du sac du joueur
+				removeItem(PersoObj.getGuid());
+				//On met l'objet du sac dans le store, avec la meme quantité
+				_storeItems.put(PersoObj.getGuid(), price);
+				SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(this, PersoObj.getGuid());
+                SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(this, this);
+			}
+			else//S'il reste des objets au joueur
+			{
+				//on modifie la quantité d'item du sac
+				PersoObj.setQuantity(newQua);
+				//On ajoute l'objet a la banque et au monde
+				SimilarObj = Objet.getCloneObjet(PersoObj, qua);
+				World.addObjet(SimilarObj, true);
+				_storeItems.put(SimilarObj.getGuid(), price);
+				
+				//Envoie des packets
+				SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(this, this);
+				SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(this, PersoObj);
+				
+			}
+		}else // S'il y avait un item du meme template
+		{
+			//S'il ne reste pas d'item dans le sac
+			if(newQua <= 0)
+			{
+				//On enleve l'objet du sac du joueur
+				removeItem(PersoObj.getGuid());
+				//On enleve l'objet du monde
+				World.removeItem(PersoObj.getGuid());
+				//On ajoute la quantité a l'objet en banque
+				SimilarObj.setQuantity(SimilarObj.getQuantity() + PersoObj.getQuantity());
+				_storeItems.remove(SimilarObj.getGuid());
+				_storeItems.put(SimilarObj.getGuid(), price);
+				//on envoie l'ajout a la banque de l'objet
+				SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(this, this);
+				//on envoie la supression de l'objet du sac au joueur
+				SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(this, PersoObj.getGuid());
+			}else //S'il restait des objets
+			{
+				//on modifie la quantité d'item du sac
+				PersoObj.setQuantity(newQua);
+				SimilarObj.setQuantity(SimilarObj.getQuantity() + qua);
+				_storeItems.remove(SimilarObj.getGuid());
+				_storeItems.put(SimilarObj.getGuid(), price);
+				SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(this, this);
+				SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(this, PersoObj);
+				
+			}
+		}
+		SocketManager.GAME_SEND_Ow_PACKET(this);
+		SQLManager.SAVE_PERSONNAGE(this, true);
+    }
+
+	private Objet getSimilarStoreItem(Objet obj)
+	{
+		for(Entry<Integer, Integer> value : _storeItems.entrySet())
+		{
+			Objet obj2 = World.getObjet(value.getKey());
+			if(obj2.getTemplate().getType() == 85)
+				continue;
+			if(obj2.getTemplate().getID() == obj.getTemplate().getID() && obj2.getStats().isSameStats(obj.getStats()))
+				return obj2;
+		}
+		return null;
+	}
+	
+	public void removeFromStore(int guid, int qua)
+	{
+		Objet SimilarObj = World.getObjet(guid);
+		//Si le joueur n'a pas l'item dans son store ...
+		if(_storeItems.get(guid) == null)
+		{
+			GameServer.addToLog("Le joueur "+_name+" a tenter de retirer un objet du store qu'il n'avait pas.");
+			return;
+		}
+		
+		Objet PersoObj = getSimilarItem(SimilarObj);
+		
+		int newQua = SimilarObj.getQuantity() - qua;
+		
+		if(PersoObj == null)//Si le joueur n'avait aucun item similaire
+		{
+			//S'il ne reste rien en store
+			if(newQua <= 0)
+			{
+				//On retire l'item du store
+				_storeItems.remove(guid);
+				//On l'ajoute au joueur
+				_items.put(guid, SimilarObj);
+				
+				//On envoie les packets
+				SocketManager.GAME_SEND_OAKO_PACKET(this,SimilarObj);
+				SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(this, this);
+				
+			}
+		}
+		else
+		{
+			//S'il ne reste rien en store
+			if(newQua <= 0)
+			{
+				//On retire l'item de la banque
+				_storeItems.remove(SimilarObj.getGuid());
+				World.removeItem(SimilarObj.getGuid());
+				//On Modifie la quantité de l'item du sac du joueur
+				PersoObj.setQuantity(PersoObj.getQuantity() + SimilarObj.getQuantity());
+				
+				//On envoie les packets
+				SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(this, PersoObj);
+				SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(this, this);
+				
+			}
+		}
+		SocketManager.GAME_SEND_Ow_PACKET(this);
+		SQLManager.SAVE_PERSONNAGE(this, true);
+	}
+	
+	public void removeStoreItem(int guid)
+	{
+		_storeItems.remove(guid);
+	}
+	
+	public void addStoreItem(int guid, int price)
+	{
+		_storeItems.put(guid, price);
 	}
 }

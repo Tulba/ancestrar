@@ -49,6 +49,7 @@ public class Carte {
 		private Carte _map;
 		private int _cellid = -1;
 		private int _price;
+		private Map<Integer,Integer> MountParkDATA = new TreeMap<Integer,Integer>();//DragoID, IDperso
 		
 		public MountPark(int owner, Carte map, int cellid, int size,String data, int guild,int price)
 		{
@@ -60,6 +61,16 @@ public class Carte {
 			_cellid = cellid;
 			_price = price;
 			if(_map != null)_map.setMountPark(this);
+			for(String firstCut : data.split(";"))//PosseseurID,DragoID;PosseseurID2,DragoID2;PosseseurID,DragoID3
+			{
+				try
+				{
+					String[] secondCut = firstCut.split(",");
+					Dragodinde DD = World.getDragoByID(Integer.parseInt(secondCut[1]));
+					if(DD == null) continue;
+					MountParkDATA.put(Integer.parseInt(secondCut[1]), Integer.parseInt(secondCut[0]));
+				}catch(Exception E){};
+			}
 		}
 
 		public int get_owner() {
@@ -109,12 +120,85 @@ public class Carte {
 			return n;
 		}
 
-		public String parseData()
+		public String parseData(int PID, boolean isPublic)
 		{
-			String str ="";
-			return str;
+			if(MountParkDATA.isEmpty())return "~";
+			
+			StringBuilder packet = new StringBuilder();
+			for(Entry<Integer, Integer> MPdata : MountParkDATA.entrySet())
+			{
+				if(MPdata.getValue() == PID && isPublic)//Montrer que ses montures uniquement en public
+				{
+					if(packet.length() > 0)packet.append(";");
+					packet.append(World.getDragoByID(MPdata.getKey()).parse());
+				}else
+				{
+					if(packet.length() > 0)packet.append(";");
+					packet.append(World.getDragoByID(MPdata.getKey()).parse());
+				}
+			}
+			return packet.toString();
 		}
 		
+		public String parseDBData()
+		{
+			StringBuilder str = new StringBuilder();
+			if(MountParkDATA.isEmpty())return "";
+			
+			for(Entry<Integer, Integer> MPdata : MountParkDATA.entrySet())
+			{
+				if(str.length() > 0)str.append(";");
+				str.append(MPdata.getValue()).append(",").append(World.getDragoByID(MPdata.getKey()).get_id());
+			}
+			return str.toString();
+		}
+		
+		public void addData(int DID, int PID)
+		{
+			MountParkDATA.put(DID, PID);
+		}
+		
+		public void removeData(int DID)
+		{
+			MountParkDATA.remove(DID);
+		}
+		
+		public Map<Integer, Integer> getData()
+		{
+			return MountParkDATA;
+		}
+		
+		public int MountParkDATASize()
+		{
+			return MountParkDATA.size();
+		}
+		
+		public static void removeMountPark(int GuildID)
+		{
+			for(Entry<Short, objects.Carte.MountPark> mp : World.getMountPark().entrySet())//Pour chaque enclo si ils en ont plusieurs
+			{
+				if(mp.getValue().get_guild().get_id() == GuildID)
+				{
+					if(!mp.getValue().getData().isEmpty())
+					{
+						for(Entry<Integer, Integer> MPdata : mp.getValue().getData().entrySet())
+						{
+							World.removeDragodinde(MPdata.getKey());//Suppression des dindes dans le world
+							SQLManager.REMOVE_MOUNT(MPdata.getKey());//Suppression des dindes dans chaque enclo
+						}
+					}
+					mp.getValue().getData().clear();
+					mp.getValue().set_owner(0);
+					mp.getValue().set_guild(null);
+					mp.getValue().set_price(3000000);
+					SQLManager.SAVE_MOUNTPARK(mp.getValue());
+					for(Personnage p : mp.getValue().get_map().getPersos())
+					{
+						SocketManager.GAME_SEND_Rp_PACKET(p, mp.getValue());
+					}
+				}
+			}
+		}
 	}
 	
 	public static class InteractiveObject
@@ -833,15 +917,17 @@ public class Carte {
 				case 98://Vendre
 				case 108://Modifier le prix de vente
 					return (_object.getID() >= 6700 && _object.getID() <= 6776);
-					
-				case 104:
+				//Coffre	
+				case 104://Ouvrir
+				case 105://Code
+					return (_object.getID() == 7350 || _object.getID() == 7351 || _object.getID() == 7353);
 				//Action ID non trouvé
 				default:
 					GameServer.addToLog("MapActionID non existant dans Case.canDoAction: "+id);
 					return false;
 			}
 		}
-
+		
 		public int getID()
 		{
 			return _id;
@@ -1052,25 +1138,48 @@ public class Carte {
 				case 81://Vérouiller maison
 					House h = House.get_house_id_by_coord(perso.get_curCarte().get_id(), CcellID);
 					if(h == null)return;
+					perso.setInHouse(h);
 					h.Lock(perso);
 				break;
 				case 84://Rentrer dans une maison
 					House h2 = House.get_house_id_by_coord(perso.get_curCarte().get_id(), CcellID);
 					if(h2 == null)return;
+					perso.setInHouse(h2);
 					h2.HopIn(perso);
 				break;
 				case 97://Acheter maison
 					House h3 = House.get_house_id_by_coord(perso.get_curCarte().get_id(), CcellID);
 					if(h3 == null)return;
+					perso.setInHouse(h3);
 					h3.BuyIt(perso);
 				break;
-				case 104://Ouvrir coffre privé
-					//TODO
-				break;
+				
+                case 104://Ouvrir coffre privé
+                	Trunk trunk = Trunk.get_trunk_id_by_coord(perso.get_curCarte().get_id(), CcellID);
+                	if(trunk == null)
+                    {
+                    	GameServer.addToLog("Game: INVALID TRUNK ON MAP : "+perso.get_curCarte().get_id()+" CELLID : "+CcellID);
+                    	return;
+                    }
+                    perso.setInTrunk(trunk);
+                    trunk.HopIn(perso);
+                break;
+                case 105://Vérouiller coffre
+                    Trunk t = Trunk.get_trunk_id_by_coord(perso.get_curCarte().get_id(), CcellID);
+                    if(t == null)
+                    {
+                    	GameServer.addToLog("Game: INVALID TRUNK ON MAP : "+perso.get_curCarte().get_id()+" CELLID : "+CcellID);
+                    	return;
+                    }
+                    perso.setInTrunk(t);
+                    t.Lock(perso);
+                break;
+                
 				case 98://Vendre
 				case 108://Modifier prix de vente
 					House h4 = House.get_house_id_by_coord(perso.get_curCarte().get_id(), CcellID);
 					if(h4 == null)return;
+					perso.setInHouse(h4);
 					h4.SellIt(perso);
 				break;
 				
@@ -1101,6 +1210,7 @@ public class Carte {
 				case 97://Acheter maison.
 				case 98://Vendre
 				case 104://Ouvrir coffre
+				case 105://Code coffre
 				case 108://Modifier prix de vente
 				case 157://Zaapi
 				break;
@@ -1409,26 +1519,28 @@ public class Carte {
 
 	public String getGMsPackets()
 	{
-		String packets = "";
-		for(Case cell : _cases.values())for(Personnage perso : cell.getPersos().values())packets += "GM|+"+perso.parseToGM()+'\u0000';
-		return packets;
+		StringBuilder packet = new StringBuilder();
+		for(Case cell : _cases.values())for(Personnage perso : cell.getPersos().values())packet.append("GM|+").append(perso.parseToGM()).append('\u0000');
+		return packet.toString();
 	}
 	public String getFightersGMsPackets()
 	{
-		String packets = "";
+		StringBuilder packet = new StringBuilder();
 		for(Entry<Integer,Case> cell : _cases.entrySet())
 		{
 			for(Entry<Integer,Fighter> f : cell.getValue().getFighters().entrySet())
 			{
-				packets += f.getValue().getGmPacket()+'\u0000';
+				packet.append(f.getValue().getGmPacket()).append('\u0000');
 			}
 		}
-		return packets;
+		return packet.toString();
 	}
 	public String getMobGroupGMsPackets()
 	{
 		if(_mobGroups.isEmpty())return "";
-		String packets = "GM|";
+		
+		StringBuilder packet = new StringBuilder();
+		packet.append("GM|");
 		boolean isFirst = true;
 		for(MobGroup entry : _mobGroups.values())
 		{
@@ -1436,18 +1548,20 @@ public class Carte {
 			if(GM.equals(""))continue;
 			
 			if(!isFirst)
-				packets += "|";
+				packet.append("|");
 			
-			packets += GM;
+			packet.append(GM);
 			isFirst = false;
 		}
-		return packets;
+		return packet.toString();
 	}
 	
 	public String getNpcsGMsPackets()
 	{
 		if(_npcs.isEmpty())return "";
-		String packets = "GM|";
+		
+		StringBuilder packet = new StringBuilder();
+		packet.append("GM|");
 		boolean isFirst = true;
 		for(Entry<Integer,NPC> entry : _npcs.entrySet())
 		{
@@ -1455,30 +1569,30 @@ public class Carte {
 			if(GM.equals(""))continue;
 			
 			if(!isFirst)
-				packets += "|";
+				packet.append("|");
 			
-			packets += GM;
+			packet.append(GM);
 			isFirst = false;
 		}
-		return packets;
+		return packet.toString();
 	}
 	
 	public String getObjectsGDsPackets()
 	{
-		String packets = "";
+		StringBuilder toreturn = new StringBuilder();
 		boolean first = true;
 		for(Entry<Integer,Case> entry : _cases.entrySet())
 		{
 			if(entry.getValue().getObject() != null)
 			{
-				if(!first)packets += (char)0x00;
+				if(!first)toreturn.append((char)0x00);
 				first = false;
 				int cellID = entry.getValue().getID();
 				InteractiveObject object = entry.getValue().getObject();
-				packets += "GDF|"+cellID+";"+object.getState()+";"+(object.isInteractive()?"1":"0");
+				toreturn.append("GDF|").append(cellID).append(";").append(object.getState()).append(";").append((object.isInteractive()?"1":"0"));
 			}
 		}
-		return packets;
+		return toreturn.toString();
 	}
 	
 	public int getNbrFight()
@@ -1722,5 +1836,10 @@ public class Carte {
 
 	public Map<Integer, Case> GetCases() {
 		 return _cases;
+	}
+	
+	public int getStoreCount()
+	{
+		return (World.getSeller(get_id()) == null?0:World.getSeller(get_id()).size());
 	}
 }

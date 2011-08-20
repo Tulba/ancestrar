@@ -77,6 +77,9 @@ public class Ancestra {
 	public static int CONFIG_MAX_IDLE_TIME = 1800000;//En millisecondes
 	//HDV
 	public static ArrayList<Integer> NOTINHDV = new ArrayList<Integer>();
+	//UseCompactDATA
+	public static boolean CONFIG_SOCKET_USE_COMPACT_DATA = false;
+	public static int CONFIG_SOCKET_TIME_COMPACT_DATA = 200;
 	
 	public static void main(String[] args)
 	{
@@ -91,18 +94,23 @@ public class Ancestra {
 		System.out.println("==============================================================\n\n");
 		System.out.println(makeHeader());
 		System.out.println("==============================================================\n");
+		System.out.println("Chargement de la configuration :");
 		loadConfiguration();
 		isInit = true;
-		System.out.println("Ok");
-		System.out.println("Connexion a la base de donnee");
-		if(SQLManager.setUpConnexion()) System.out.println("Connexion ok");
+		System.out.println("Configuration Ok !");
+		System.out.println("Connexion a la base de donnee :");
+		if(SQLManager.setUpConnexion()) System.out.println("Connexion Ok !");
 		else
 		{
 			System.out.println("Connexion invalide");
 			Ancestra.closeServers();
 		}
-		System.out.println("Creation du Monde");
+		System.out.println("Creation du Monde :");
+		long startTime = System.currentTimeMillis();
 		World.createWorld();
+		long endTime = System.currentTimeMillis();
+		long differenceTime = (endTime - startTime)/1000;
+		System.out.println("Monde Ok ! en : "+differenceTime+" s");
 		isRunning = true;
 		System.out.println("Lancement du serveur de Jeu sur le port "+CONFIG_GAME_PORT);
 		String Ip = "";
@@ -119,12 +127,17 @@ public class Ancestra {
 		}
 		Ip = IP;
 		gameServer = new GameServer(Ip);
-		System.out.println("Lancement du serveur de Connexion sur le port "+CONFIG_REALM_PORT);
+		System.out.println("Lancement du serveur de Connexion sur le port : "+CONFIG_REALM_PORT);
 		realmServer = new RealmServer();
 		if(CONFIG_USE_IP)
 			System.out.println("Ip du serveur "+IP+" crypt "+GAMESERVER_IP);
 		System.out.println("En attente de connexions");
-		
+		if(CONFIG_SOCKET_USE_COMPACT_DATA)
+		{
+			System.out.println("Lancement du FlushTimer");
+			SendManager.FlushTimer().start();
+			System.out.println("FlushTimer : Ok !");
+		}
 	}
 	
 	private static void loadConfiguration()
@@ -251,20 +264,20 @@ public class Ancestra {
 				}
 				else if(param.equalsIgnoreCase("DB_HOST"))
 				{
-					Ancestra.DB_HOST= value;
+					Ancestra.DB_HOST = value;
 				}else if(param.equalsIgnoreCase("DB_USER"))
 				{
-					Ancestra.DB_USER= value;
+					Ancestra.DB_USER = value;
 				}else if(param.equalsIgnoreCase("DB_PASS"))
 				{
 					if(value == null) value = "";
-					Ancestra.DB_PASS= value;
+					Ancestra.DB_PASS = value;
 				}else if(param.equalsIgnoreCase("STATIC_DB_NAME"))
 				{
-					Ancestra.STATIC_DB_NAME= value;
+					Ancestra.STATIC_DB_NAME = value;
 				}else if(param.equalsIgnoreCase("OTHER_DB_NAME"))
 				{
-					Ancestra.OTHER_DB_NAME= value;
+					Ancestra.OTHER_DB_NAME = value;
 				}else if(param.equalsIgnoreCase("MAX_PERSO_PAR_COMPTE"))
 				{
 					Ancestra.CONFIG_MAX_PERSOS = Integer.parseInt(value);
@@ -276,10 +289,10 @@ public class Ancestra {
 					Ancestra.CONFIG_ALLOW_MULTI = value.equalsIgnoreCase("true");
 				}else if (param.equalsIgnoreCase("LOAD_ACTION_DELAY"))
 				{
-					Ancestra.CONFIG_LOAD_DELAY=(Integer.parseInt(value) * 1000);
+					Ancestra.CONFIG_LOAD_DELAY = (Integer.parseInt(value) * 1000);
 				}else if (param.equalsIgnoreCase("PLAYER_LIMIT"))
 				{
-					Ancestra.CONFIG_PLAYER_LIMIT=Integer.parseInt(value);
+					Ancestra.CONFIG_PLAYER_LIMIT = Integer.parseInt(value);
 				}else if (param.equalsIgnoreCase("ARENA_MAP"))
 				{
 					for(String curID : value.split(","))
@@ -304,8 +317,13 @@ public class Ancestra {
 					{
 						Ancestra.NOTINHDV.add(Integer.parseInt(curID));
 					}
+				}else if (param.equalsIgnoreCase("USE_COMPACT_DATA"))
+				{
+					Ancestra.CONFIG_SOCKET_USE_COMPACT_DATA = value.equalsIgnoreCase("true");
+				}else if (param.equalsIgnoreCase("TIME_COMPACT_DATA"))
+					Ancestra.CONFIG_SOCKET_TIME_COMPACT_DATA = Integer.parseInt(value);
 				}
-			}
+			
 			if(STATIC_DB_NAME == null || OTHER_DB_NAME == null || DB_HOST == null || DB_PASS == null || DB_USER == null)
 			{
 				throw new Exception();
@@ -400,11 +418,11 @@ public class Ancestra {
 	
 	public static String makeHeader()
 	{
-		String mess = "";
-		mess += "Ancestra-R v"+Constants.SERVER_VERSION;
-		mess += "\nPar "+Constants.SERVER_MAKER+" pour Dofus "+Constants.CLIENT_VERSION;
-		mess += "\nThanks Diabu.";
-		mess += "\nhttp://sourceforge.net/projects/ancestrar/\n\n";
-		return mess;
+		StringBuilder mess = new StringBuilder();
+		mess.append("Ancestra-R v"+Constants.SERVER_VERSION);
+		mess.append("\nPar "+Constants.SERVER_MAKER+" pour Dofus "+Constants.CLIENT_VERSION);
+		mess.append("\nThanks Diabu.");
+		mess.append("\nhttp://sourceforge.net/projects/ancestrar/\n\n");
+		return mess.toString();
 	}
 }

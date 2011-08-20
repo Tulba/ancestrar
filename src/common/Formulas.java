@@ -745,13 +745,6 @@ public class Formulas {
 		return rkamas*Ancestra.KAMAS;
 	}
 	
-	public static int getZaapCost(Carte map, Carte map2)
-	{
-		int cost = 0;
-		
-		return cost;
-	}
-	
 	public static int calculElementChangeChance(int lvlM,int lvlA,int lvlP)
 	{
 		int K = 350;
@@ -831,22 +824,22 @@ public class Formulas {
 	
 	public static String parseReponse(String reponse)
 	{
-		String toReturn = "";
+		StringBuilder toReturn = new StringBuilder("");
 		
 		String[] cut = reponse.split("[%]");
 		
 		if(cut.length == 1)return reponse;
 		
-		toReturn += cut[0];
+		toReturn.append(cut[0]);
 		
 		char charact;
 		for (int i = 1; i < cut.length; i++)
 		{
 			charact = (char) Integer.parseInt(cut[i].substring(0, 2),16);
-			toReturn += charact+cut[i].substring(2);
+			toReturn.append(charact).append(cut[i].substring(2));
 		}
 		
-		return toReturn;
+		return toReturn.toString();
 	}
 	
 	public static int spellCost(int nb)
@@ -874,29 +867,37 @@ public class Formulas {
 		return Chance;
 	}
 	
-	public static int getTraqueXP(int lvl) 
+	public static int getTraqueXP(int lvl)
 	{
-		if(lvl < 50)return 10000 * Ancestra.XP_PVM; 
-		if(lvl < 60)return 65000 * Ancestra.XP_PVM; 
-		if(lvl < 70)return 90000 * Ancestra.XP_PVM; 
-		if(lvl < 80)return 120000 * Ancestra.XP_PVM; 
-		if(lvl < 90)return 160000 * Ancestra.XP_PVM; 
-		if(lvl < 100)return 210000 * Ancestra.XP_PVM; 
-		if(lvl < 110)return 270000 * Ancestra.XP_PVM; 
-		if(lvl < 120)return 350000 * Ancestra.XP_PVM; 
-		if(lvl < 130)return 440000 * Ancestra.XP_PVM; 
-		if(lvl < 140)return 540000 * Ancestra.XP_PVM; 
-		if(lvl < 150)return 650000 * Ancestra.XP_PVM; 
-		if(lvl < 155)return 760000 * Ancestra.XP_PVM; 
-		if(lvl < 160)return 880000 * Ancestra.XP_PVM; 
+		if(lvl < 50)return 10000 * Ancestra.XP_PVM;
+		if(lvl < 60)return 65000 * Ancestra.XP_PVM;
+		if(lvl < 70)return 90000 * Ancestra.XP_PVM;
+		if(lvl < 80)return 120000 * Ancestra.XP_PVM;
+		if(lvl < 90)return 160000 * Ancestra.XP_PVM;
+		if(lvl < 100)return 210000 * Ancestra.XP_PVM;
+		if(lvl < 110)return 270000 * Ancestra.XP_PVM;
+		if(lvl < 120)return 350000 * Ancestra.XP_PVM;
+		if(lvl < 130)return 440000 * Ancestra.XP_PVM;
+		if(lvl < 140)return 540000 * Ancestra.XP_PVM;
+		if(lvl < 150)return 650000 * Ancestra.XP_PVM;
+		if(lvl < 155)return 760000 * Ancestra.XP_PVM;
+		if(lvl < 160)return 880000 * Ancestra.XP_PVM;
 		if(lvl < 165)return 1000000 * Ancestra.XP_PVM;
 		if(lvl < 170)return 1130000 * Ancestra.XP_PVM;
-		if(lvl < 175)return 1300000 * Ancestra.XP_PVM; 
-		if(lvl < 180)return 1500000 * Ancestra.XP_PVM; 
-		if(lvl < 185)return 1700000 * Ancestra.XP_PVM; 
-		if(lvl < 190)return 2000000 * Ancestra.XP_PVM; 
-		if(lvl < 195)return 2500000 * Ancestra.XP_PVM; 
-		if(lvl < 200)return 3000000 * Ancestra.XP_PVM; 
-		return 0; 
-	} 
+		if(lvl < 175)return 1300000 * Ancestra.XP_PVM;
+		if(lvl < 180)return 1500000 * Ancestra.XP_PVM;
+		if(lvl < 185)return 1700000 * Ancestra.XP_PVM;
+		if(lvl < 190)return 2000000 * Ancestra.XP_PVM;
+		if(lvl < 195)return 2500000 * Ancestra.XP_PVM;
+		if(lvl < 200)return 3000000 * Ancestra.XP_PVM;
+		return 0;
+	}
+	
+	public static int getLoosEnergy(int lvl, boolean isAgression, boolean isPerco)
+	{
+		int returned = 25*lvl;
+		if(isAgression) returned *= (7/4);
+		if(isPerco) returned *= (3/2);
+		return returned;
+	}
 }

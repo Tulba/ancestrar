@@ -29,25 +29,64 @@ import objects.Monstre.MobGroup;
 import objects.NPC_tmpl.NPC;
 import objects.Objet.ObjTemplate;
 import objects.Personnage.Group;
+import objects.Trunk;
 
 import realm.RealmServer;
 
 public class SocketManager {
-
+	
+	public static void send(Personnage p, String packet)
+	{
+		if(p == null || p.get_compte() == null)return;
+		if(p.get_compte().getGameThread() == null)return;
+		PrintWriter out = p.get_compte().getGameThread().get_out();
+		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
+		{
+			packet = CryptManager.toUtf(packet);
+			if(Ancestra.CONFIG_SOCKET_USE_COMPACT_DATA)
+			{
+				SendManager.send(out, packet);
+			}else
+			{
+				out.print((packet)+(char)0x00);
+				out.flush();
+			}
+		}
+	}
+	
+	public static void send(PrintWriter out, String packet)
+	{
+		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
+		{
+			packet = CryptManager.toUtf(packet);
+			if(Ancestra.CONFIG_SOCKET_USE_COMPACT_DATA)
+			{
+				SendManager.send(out, packet);
+			}else
+			{
+				out.print((packet)+(char)0x00);
+				out.flush();
+			}
+		}
+	}
+	
 	public static String REALM_SEND_HC_PACKET(PrintWriter out)
 	{
+		
 		String alphabet = "abcdefghijklmnopqrstuvwxyz";
+		StringBuilder hashkey = new StringBuilder();
+		
         Random rand = new Random();
-        String hashkey = "";
+        
         for (int i=0; i<32; i++)
         {
-               hashkey = hashkey+ alphabet.charAt(rand.nextInt(alphabet.length()));
+               hashkey.append(alphabet.charAt(rand.nextInt(alphabet.length())));
         }
         String packet = "HC"+hashkey;
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			RealmServer.addToSockLog("Realm: Send>>"+packet);
-		return hashkey;
+		return hashkey.toString();
 	}
 	
 	public static void REALM_SEND_REQUIRED_VERSION(PrintWriter out)
@@ -65,52 +104,31 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			RealmServer.addToSockLog("Conn: Send>>"+packet);
 	}
-	
-	public static void send(Personnage p, String packet)
-	{
-		if(p == null || p.get_compte() == null)return;
-		if(p.get_compte().getGameThread() == null)return;
-		PrintWriter out = p.get_compte().getGameThread().get_out();
-		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
-		{
-			packet = CryptManager.toUtf(packet);
-			out.print((packet)+(char)0x00);
-			out.flush();
-		}
-	}
-	
-	public static void send(PrintWriter out, String packet)
-	{
-		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
-		{
-			packet = CryptManager.toUtf(packet);
-			out.print((packet)+(char)0x00);
-			out.flush();
-		}
-	}
 
 	public static void MULTI_SEND_Af_PACKET(PrintWriter out,int position, int totalAbo, int totalNonAbo, String subscribe,
 			int queueID)
 	{
-		String packet = "Af"+position+"|"+totalAbo+"|"+totalNonAbo+"|"+subscribe+"|"+queueID;
-		send(out,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("Af").append(position).append("|").append(totalAbo).append("|").append(totalNonAbo).append("|").append(subscribe).append("|").append(queueID);
+		send(out,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			RealmServer.addToSockLog("Serv: Send>>"+packet);
+			RealmServer.addToSockLog("Serv: Send>>"+packet.toString());
 	}
 
 	public static void REALM_SEND_Ad_Ac_AH_AlK_AQ_PACKETS(PrintWriter out,
 			String pseudo, int level, String question)
 	{
-		String packet = "Ad"+pseudo+(char)0x00;
-		packet += "Ac0"+(char)0x00;
+		StringBuilder packet = new StringBuilder();
+		packet.append("Ad").append(pseudo).append((char)0x00);
+		packet.append("Ac0").append((char)0x00);
 		//AH[ID];[State];[Completion];[CanLog]
-		packet += "AH1;"+World.get_state()+";110;1"+(char)0x00;
-		packet += "AlK"+level+(char)0x00;
-		packet += "AQ"+question.replace(" ", "+");
+		packet.append("AH1;").append(World.get_state()).append(";110;1").append((char)0x00);
+		packet.append("AlK").append(level).append((char)0x00);
+		packet.append("AQ").append(question.replace(" ", "+"));
 		
-		send(out,packet);
+		send(out,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			RealmServer.addToSockLog("Conn: Send>>"+packet);
+			RealmServer.addToSockLog("Conn: Send>>"+packet.toString());
 	}
 
 	public static void REALM_SEND_BANNED(PrintWriter out)
@@ -212,15 +230,16 @@ public class SocketManager {
 	public static void GAME_SEND_PERSO_LIST(PrintWriter out,
 			Map<Integer, Personnage> persos)
 	{
-		String packet = "ALK31536000000|"+persos.size();
+		StringBuilder packet = new StringBuilder();
+		packet.append("ALK31536000000|").append(persos.size());
 		for(Entry<Integer,Personnage > entry : persos.entrySet())
 		{
-			packet += entry.getValue().parseALK();
+			packet.append(entry.getValue().parseALK());
 			
 		}
-		send(out,packet);
+		send(out,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 		
 	}
 
@@ -307,19 +326,15 @@ public class SocketManager {
 	}
 	public static void GAME_SEND_ASK(PrintWriter out,Personnage perso)
 	{
-		String packet = "ASK|"+
-		perso.get_GUID()+"|"+
-		perso.get_name()+"|"+
-		perso.get_lvl()+"|"+
-		perso.get_classe()+"|"+
-		perso.get_sexe()+"|"+
-		perso.get_gfxID()+"|"+
-		(perso.get_color1()==-1?"-1":Integer.toHexString(perso.get_color1()))+"|"+
-		(perso.get_color2()==-1?"-1":Integer.toHexString(perso.get_color2()))+"|"+
-		(perso.get_color3()==-1?"-1":Integer.toHexString(perso.get_color3()))+"|"+
-		perso.parseItemToASK();
+		StringBuilder packet = new StringBuilder();
+		packet.append("ASK|").append(perso.get_GUID()).append("|").append(perso.get_name()).append("|");
+		packet.append(perso.get_lvl()).append("|").append(perso.get_classe()).append("|").append(perso.get_sexe());
+		packet.append("|").append(perso.get_gfxID()).append("|").append((perso.get_color1()==-1?"-1":Integer.toHexString(perso.get_color1())));
+		packet.append("|").append((perso.get_color2()==-1?"-1":Integer.toHexString(perso.get_color2()))).append("|");
+		packet.append((perso.get_color3()==-1?"-1":Integer.toHexString(perso.get_color3()))).append("|");
+		packet.append(perso.parseItemToASK());
 		
-		send(out,packet);
+		send(out,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
@@ -457,7 +472,7 @@ public class SocketManager {
 	public static void GAME_SEND_MAP_PERCO_GMS_PACKETS(PrintWriter out, Carte carte)
 	{
 		String packet = Percepteur.parseGM(carte);
-		if(packet.equals("") || packet.length() < 4)return;
+		if(packet.length() < 5)return;
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
@@ -570,14 +585,15 @@ public class SocketManager {
 
 	public static void GAME_SEND_FIGHT_GJK_PACKET_TO_FIGHT(Fight fight, int teams,int state, int cancelBtn, int duel, int spec, int time, int type)
 	{
-		String packet = "GJK"+state+"|"+cancelBtn+"|"+duel+"|"+spec+"|"+time+"|"+type;
+		StringBuilder packet = new StringBuilder();
+		packet.append("GJK").append(state).append("|").append(cancelBtn).append("|").append(duel).append("|").append(spec).append("|").append(time).append("|").append(type);
 		for(Fighter f : fight.getFighters(teams))
 		{
 			if(f.hasLeft())continue;
-			send(f.getPersonnage(),packet);
+			send(f.getPersonnage(),packet.toString());
 		}
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Map: Send>>"+packet);
+			GameServer.addToSockLog("Game: Map: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_FIGHT_PLACES_PACKET_TO_FIGHT(Fight fight,int teams, String places, int team)
@@ -603,18 +619,20 @@ public class SocketManager {
 
 	public static void GAME_SEND_GAME_ADDFLAG_PACKET_TO_MAP(Carte map,int arg1, int guid1,int guid2,int cell1,String str1,int cell2,String str2)
 	{
-		String packet = "Gc+"+guid1+";"+arg1+"|"+guid1+";"+cell1+";"+str1+"|"+guid2+";"+cell2+";"+str2;
-		for(Personnage z : map.getPersos()) send(z,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("Gc+").append(guid1).append(";").append(arg1).append("|").append(guid1).append(";").append(cell1).append(";").append(str1).append("|").append(guid2).append(";").append(cell2).append(";").append(str2);
+		for(Personnage z : map.getPersos()) send(z,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Map: Send>>"+packet);
+			GameServer.addToSockLog("Game: Map: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_GAME_ADDFLAG_PACKET_TO_PLAYER(Personnage p, Carte map,int arg1, int guid1,int guid2,int cell1,String str1,int cell2,String str2)
 	{
-		String packet = "Gc+"+guid1+";"+arg1+"|"+guid1+";"+cell1+";"+str1+"|"+guid2+";"+cell2+";"+str2;
-		send(p,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("Gc+").append(guid1).append(";").append(arg1).append("|").append(guid1).append(";").append(cell1).append(";").append(str1).append("|").append(guid2).append(";").append(cell2).append(";").append(str2);
+		send(p,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Map: Send>>"+packet);
+			GameServer.addToSockLog("Game: Map: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_GAME_REMFLAG_PACKET_TO_MAP(Carte map, int guid)
@@ -627,26 +645,29 @@ public class SocketManager {
 	
 	public static void GAME_SEND_ADD_IN_TEAM_PACKET_TO_MAP(Carte map,int teamID,Fighter perso)
 	{
-		String packet = "Gt"+teamID+"|+"+perso.getGUID()+";"+perso.getPacketsName()+";"+perso.get_lvl();
-		for(Personnage z : map.getPersos()) send(z,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("Gt").append(teamID).append("|+").append(perso.getGUID()).append(";").append(perso.getPacketsName()).append(";").append(perso.get_lvl());
+		for(Personnage z : map.getPersos()) send(z,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Map: Send>>"+packet);
+			GameServer.addToSockLog("Game: Map: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_ADD_IN_TEAM_PACKET_TO_PLAYER(Personnage p, Carte map,int teamID,Fighter perso)
 	{
-		String packet = "Gt"+teamID+"|+"+perso.getGUID()+";"+perso.getPacketsName()+";"+perso.get_lvl();
-		send(p,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("Gt").append(teamID).append("|+").append(perso.getGUID()).append(";").append(perso.getPacketsName()).append(";").append(perso.get_lvl());
+		send(p,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Map: Send>>"+packet);
+			GameServer.addToSockLog("Game: Map: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_REMOVE_IN_TEAM_PACKET_TO_MAP(Carte map,int teamID,Fighter perso)
 	{
-		String packet = "Gt"+teamID+"|-"+perso.getGUID()+";"+perso.getPacketsName()+";"+perso.get_lvl();
-		for(Personnage z : map.getPersos()) send(z,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("Gt").append(teamID).append("|-").append(perso.getGUID()).append(";").append(perso.getPacketsName()).append(";").append(perso.get_lvl());
+		for(Personnage z : map.getPersos()) send(z,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Map: Send>>"+packet);
+			GameServer.addToSockLog("Game: Map: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_MAP_MOBS_GMS_PACKETS_TO_MAP(Carte map)
@@ -737,10 +758,11 @@ public class SocketManager {
 
 	public static void GAME_SEND_GJK_PACKET(Personnage out,int state,int cancelBtn,int duel,int spec,int time,int unknown)
 	{
-		String packet = "GJK"+state+"|"+cancelBtn+"|"+duel+"|"+spec+"|"+time+"|"+unknown;
-		send(out,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("GJK").append(state).append("|").append(cancelBtn).append("|").append(duel).append("|").append(spec).append("|").append(time).append("|").append(unknown);
+		send(out,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 
 	public static void GAME_SEND_FIGHT_PLACES_PACKET(PrintWriter out,String places, int team)
@@ -830,33 +852,35 @@ public class SocketManager {
 	}
 	public static void GAME_SEND_GIC_PACKETS_TO_FIGHT(Fight fight,int teams)
 	{
-		String packet = "GIC|";
+		StringBuilder packet = new StringBuilder();
+		packet.append("GIC|");
 		for(Fighter p : fight.getFighters(3))
 		{
 			if(p.get_fightCell() == null)continue;
-			packet += p.getGUID()+";"+p.get_fightCell().getID()+";1|";
+			packet.append(p.getGUID()).append(";").append(p.get_fightCell().getID()).append(";1|");
 		}
 		for(Fighter perso:fight.getFighters(teams))
 		{
 			if(perso.hasLeft())continue;
 			if(perso.getPersonnage() == null || !perso.getPersonnage().isOnline())continue;
-			send(perso.getPersonnage(),packet);
+			send(perso.getPersonnage(),packet.toString());
 		}
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Fight: Send>>"+packet);
+			GameServer.addToSockLog("Game: Fight: Send>>"+packet.toString());
 	}
 	public static void GAME_SEND_GIC_PACKET_TO_FIGHT(Fight fight,int teams,Fighter f)
 	{
-		String packet = "GIC|"+f.getGUID()+";"+f.get_fightCell().getID()+";1|";
+		StringBuilder packet = new StringBuilder();
+		packet.append("GIC|").append(f.getGUID()).append(";").append(f.get_fightCell().getID()).append(";1|");
 
 		for(Fighter perso:fight.getFighters(teams))
 		{
 			if(perso.hasLeft())continue;
 			if(perso.getPersonnage() == null || !perso.getPersonnage().isOnline())continue;
-			send(perso.getPersonnage(),packet);
+			send(perso.getPersonnage(),packet.toString());
 		}
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Fight: Send>>"+packet);
+			GameServer.addToSockLog("Game: Fight: Send>>"+packet.toString());
 	}
 	public static void GAME_SEND_GS_PACKET_TO_FIGHT(Fight fight,int teams)
 	{
@@ -898,31 +922,29 @@ public class SocketManager {
 	}
 	public static void GAME_SEND_GTM_PACKET_TO_FIGHT(Fight fight, int teams)
 	{
-		String packet = "GTM";
+		StringBuilder packet = new StringBuilder();
+		packet.append("GTM");
 		for(Fighter f : fight.getFighters(3))
 		{
-			packet += "|"+f.getGUID()+";";
+			packet.append("|").append(f.getGUID()).append(";");
 			if(f.isDead())
 			{
-				packet += "1";
+				packet.append("1");
 				continue;
 			}else
-			packet += "0;"
-			+f.getPDV()+";"
-			+f.getPA()+";"
-			+f.getPM()+";"
-			+(f.isHide()?"-1":f.get_fightCell().getID())+";"//On envoie pas la cell d'un invisible :p
-			+";"//??
-			+f.getPDVMAX();
+			packet.append("0;").append(f.getPDV()+";").append(f.getPA()+";").append(f.getPM()+";");
+			packet.append((f.isHide()?"-1":f.get_fightCell().getID())).append(";");//On envoie pas la cell d'un invisible :p
+			packet.append(";");//??
+			packet.append(f.getPDVMAX());
 		}
 		for(Fighter f : fight.getFighters(teams))
 		{
 			if(f.hasLeft())continue;
 			if(f.getPersonnage() == null || !f.getPersonnage().isOnline())continue;
-			send(f.getPersonnage(),packet);
+			send(f.getPersonnage(),packet.toString());
 		}
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Fight : Send>>"+packet);
+			GameServer.addToSockLog("Game: Fight : Send>>"+packet.toString());
 	}
 
 	public static void GAME_SEND_GAMETURNSTART_PACKET_TO_FIGHT(Fight fight,int teams, int guid, int time)
@@ -1154,15 +1176,16 @@ public class SocketManager {
 	
 	public static void GAME_SEND_FIGHT_GIE_TO_FIGHT(Fight fight, int teams,int mType,int cible,int value,String mParam2,String mParam3,String mParam4, int turn,int spellID)
 	{
-		String packet = "GIE"+mType+";"+cible+";"+value+";"+mParam2+";"+mParam3+";"+mParam4+";"+turn+";"+spellID;
+		StringBuilder packet = new StringBuilder();
+		packet.append("GIE").append(mType).append(";").append(cible).append(";").append(value).append(";").append(mParam2).append(";").append(mParam3).append(";").append(mParam4).append(";").append(turn).append(";").append(spellID);
 		for(Fighter f : fight.getFighters(teams))
 		{
 			if(f.hasLeft() || f.getPersonnage() == null)continue;
 			if(f.getPersonnage().isOnline())
-			send(f.getPersonnage(),packet);
+			send(f.getPersonnage(),packet.toString());
 		}
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Fight : Send>>"+packet);
+			GameServer.addToSockLog("Game: Fight : Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_MAP_FIGHT_GMS_PACKETS_TO_FIGHT(Fight fight, int teams,Carte map)
@@ -1188,7 +1211,8 @@ public class SocketManager {
 			GameServer.addToSockLog("Game: Fight: Send>>"+packet);
 	}
 	
-	public static void GAME_SEND_FIGHT_PLAYER_JOIN(Fight fight,int teams, Fighter _fighter) {
+	public static void GAME_SEND_FIGHT_PLAYER_JOIN(Fight fight,int teams, Fighter _fighter)
+	{
 		String packet = _fighter.getGmPacket();
 		
 		for(Fighter f : fight.getFighters(teams))
@@ -1215,18 +1239,19 @@ public class SocketManager {
 	
 	public static void GAME_SEND_FIGHT_LIST_PACKET(PrintWriter out,Carte map)
 	{
-		String packet = "fL";
+		StringBuilder packet = new StringBuilder();
+		packet.append("fL");
 		for(Entry<Integer,Fight> entry : map.get_fights().entrySet())
 		{
 			if(packet.length()>2)
 			{
-				packet += "|";
+				packet.append("|");
 			}
-			packet += entry.getValue().parseFightInfos();
+			packet.append(entry.getValue().parseFightInfos());
 		}
-		send(out,packet);
+		send(out,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_cMK_PACKET_TO_MAP(Carte map,String suffix,int guid,String name,String msg)
@@ -1245,7 +1270,7 @@ public class SocketManager {
 					send(perso,packet);
 		}
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: ALL("+World.getOnlinePersos().size()+"): Send>>"+packet);
+			GameServer.addToSockLog("Game: Guild: Send>>"+packet);
 	}
 	public static void GAME_SEND_cMK_PACKET_TO_ALL(String suffix,int guid,String name,String msg)
 	{
@@ -1369,6 +1394,14 @@ public class SocketManager {
 	public static void GAME_SEND_ITEM_LIST_PACKET_PERCEPTEUR(PrintWriter out, Percepteur perco)
 	{
 		String packet = "EL"+perco.getItemPercepteurList();
+		send(out,packet);
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet);	
+	}
+	
+	public static void GAME_SEND_ITEM_LIST_PACKET_SELLER(Personnage p, Personnage out)
+	{
+		String packet = "EL"+p.parseStoreItemsList();
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);	
@@ -1638,17 +1671,18 @@ public class SocketManager {
 	
 	public static void GAME_SEND_ALL_PM_ADD_PACKET(PrintWriter out,Group g)
 	{
-		String packet = "PM+";
+		StringBuilder packet = new StringBuilder();
+		packet.append("PM+");
 		boolean first = true;
 		for(Personnage p : g.getPersos())
 		{
-			if(!first) packet += "|";
-			packet += p.parseToPM();
+			if(!first) packet.append("|");
+			packet.append(p.parseToPM());
 			first = false;
 		}
-		send(out,packet);
+		send(out,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_PM_ADD_PACKET_TO_GROUP(Group g, Personnage p)
@@ -1686,13 +1720,14 @@ public class SocketManager {
 	public static void GAME_SEND_FIGHT_DETAILS(PrintWriter out, Fight fight)
 	{
 		if(fight == null)return;
-		String packet = "fD"+fight.get_id()+"|";
-		for(Fighter f : fight.getFighters(1))packet += f.getPacketsName()+"~"+f.get_lvl()+";";
-		packet += "|";
-		for(Fighter f : fight.getFighters(2))packet += f.getPacketsName()+"~"+f.get_lvl()+";";
-		send(out,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("fD").append(fight.get_id()).append("|");
+		for(Fighter f : fight.getFighters(1))packet.append(f.getPacketsName()).append("~").append(f.get_lvl()).append(";");
+		packet.append("|");
+		for(Fighter f : fight.getFighters(2))packet.append(f.getPacketsName()).append("~").append(f.get_lvl()).append(";");
+		send(out,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 
 	public static void GAME_SEND_IQ_PACKET(Personnage perso, int guid,	int qua)
@@ -1736,19 +1771,26 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
-
-	public static void GAME_SEND_JX_PACKET(Personnage perso,ArrayList<StatsMetier> SMs)
+	
+	public static void GAME_SEND_EL_TRUNK_PACKET(Personnage perso, Trunk t)
 	{
-		String packet = "JX";
-		for(StatsMetier sm : SMs)
-		{
-			packet += "|"+sm.getTemplate().getId()+";"
-					+ sm.get_lvl()+";"
-					+ sm.getXpString(";")+";";
-		}
+		String packet = "EL"+t.parseToTrunkPacket();
 		send(perso,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
+	}
+
+	public static void GAME_SEND_JX_PACKET(Personnage perso,ArrayList<StatsMetier> SMs)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("JX");
+		for(StatsMetier sm : SMs)
+		{
+			packet.append("|").append(sm.getTemplate().getId()).append(";").append(sm.get_lvl()).append(";").append(sm.getXpString(";")).append(";");
+		}
+		send(perso,packet.toString());
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 	public static void GAME_SEND_JO_PACKET(Personnage perso,ArrayList<StatsMetier> SMs)
 	{
@@ -1870,38 +1912,39 @@ public class SocketManager {
 	}
 	public static void GAME_SEND_Rp_PACKET(Personnage perso, MountPark MP)
 	{
-		String packet = "";
+		StringBuilder packet = new StringBuilder();
 		if(MP == null)return;
 		
-		packet = "Rp"+MP.get_owner()+";"+MP.get_price()+";"+MP.get_size()+";"+MP.getObjectNumb()+";";
+		packet.append("Rp").append(MP.get_owner()).append(";").append(MP.get_price()).append(";").append(MP.get_size()).append(";").append(MP.getObjectNumb()).append(";");
 			
 		Guild G = MP.get_guild();
 		//Si une guilde est definie
 		if(G != null)
 		{
-			packet += G.get_name()+";"+G.get_emblem();
+			packet.append(G.get_name()).append(";").append(G.get_emblem());
 		}
 		else
 		{
-			packet += ";";
+			packet.append(";");
 		}
 		
-		send(perso,packet);
+		send(perso,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 	public static void GAME_SEND_OS_PACKET(Personnage perso, int pano)
 	{
-		String packet = "OS";
+		StringBuilder packet = new StringBuilder();
+		packet.append("OS");
 		int num = perso.getNumbEquipedItemOfPanoplie(pano);
-		if(num <= 0) packet += "-"+pano;
+		if(num <= 0) packet.append("-").append(pano);
 		else
 		{
-			packet += "+"+pano+"|";
+			packet.append("+").append(pano).append("|");
 			ItemSet IS = World.getItemSet(pano);
 			if(IS != null)
 			{
-				String items = "";
+				StringBuilder items = new StringBuilder();
 				//Pour chaque objet de la pano
 				for(ObjTemplate OT : IS.getItemTemplates())
 				{
@@ -1909,16 +1952,16 @@ public class SocketManager {
 					if(perso.hasEquiped(OT.getID()))
 					{
 						//On l'ajoute au packet
-						if(items.length() >0)items+=";";
-						items += OT.getID();
+						if(items.length() >0)items.append(";");
+						items.append(OT.getID());
 					}
 				}
-				packet += items+"|"+IS.getBonusStatByItemNumb(num).parseToItemSetStats();
+				packet.append(items.toString()).append("|").append(IS.getBonusStatByItemNumb(num).parseToItemSetStats());
 			}
 		}	
-		send(perso,packet);
+		send(perso,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 
 	public static void GAME_SEND_MOUNT_DESCRIPTION_PACKET(Personnage perso,Dragodinde DD)
@@ -1971,7 +2014,6 @@ public class SocketManager {
 	
 	public static void GAME_SEND_ADD_PERCO_TO_MAP(Carte map)
 	{
-		if(Percepteur.parseGM(map).length() < 4) return;
 		String packet = "GM|"+Percepteur.parseGM(map);
 		for(Personnage z : map.getPersos()) send(z,packet);
 		if(Ancestra.CONFIG_DEBUG)
@@ -2066,10 +2108,11 @@ public class SocketManager {
 	
 	public static void GAME_SEND_gS_PACKET(Personnage p, GuildMember gm)
 	{
-		String packet = "gS"+gm.getGuild().get_name()+"|"+gm.getGuild().get_emblem().replace(',', '|')+"|"+gm.parseRights();
-		send(p,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("gS").append(gm.getGuild().get_name()).append("|").append(gm.getGuild().get_emblem().replace(',', '|')).append("|").append(gm.parseRights());
+		send(p,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 	
 	public static void GAME_SEND_gJ_PACKET(Personnage p, String str)
@@ -2099,11 +2142,11 @@ public class SocketManager {
 		{
 			xpMax = World.getExpLevel(g.get_lvl()+1).guilde;
 		}
-		
-		String packet = "gIG"+(g.getSize()>9?1:0)+"|"+g.get_lvl()+"|"+xpMin+"|"+g.get_xp()+"|"+xpMax;
-		send(p,packet);
+		StringBuilder packet = new StringBuilder();
+		packet.append("gIG").append((g.getSize()>9?1:0)).append("|").append(g.get_lvl()).append("|").append(xpMin).append("|").append(g.get_xp()).append("|").append(xpMax);
+		send(p,packet.toString());
 		if(Ancestra.CONFIG_DEBUG)
-			GameServer.addToSockLog("Game: Send>>"+packet);
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 	
 	public static void REALM_SEND_MESSAGE(PrintWriter out, String args)
@@ -2430,4 +2473,21 @@ public class SocketManager {
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
 	} 
+    public static void GAME_SEND_MERCHANT_LIST(Personnage P, short mapID) 
+    {
+    	StringBuilder packet = new StringBuilder();
+    	packet.append("GM|~");
+    	if(World.getSeller(P.get_curCarte().get_id()) == null) return;
+        for (Integer pID : World.getSeller(P.get_curCarte().get_id())) 
+        {
+        	if(!World.getPersonnage(pID).isOnline() && World.getPersonnage(pID).is_showSeller())
+        	{
+        		packet.append(World.getPersonnage(pID).parseToMerchant()).append("|");
+            }
+        }
+        if(packet.length() < 5) return;
+        send(P, packet.toString());
+        if (Ancestra.CONFIG_DEBUG)
+        	GameServer.addToSockLog("Game: Send>>" + packet.toString());
+    }
 }

@@ -1,3 +1,46 @@
+[17/08/2011]
+- Personnage/GameThread/Carte/World : Ajout du mode marchand.
+
+[15/08/2011]
+- [...] : Mise en place de nombreux StringBuilder (Plus rapide que la méthode classique (THX Vendethiel)).
+
+[14/08/2011]
+- World/GameThread : Correction du mariage (OffiLike).
+- Fight : Correction de certains bugs porté/porteur (THX Adlesne).
+
+[13/08/2011]
+- Fight : Suppression de l'envoi de certains paquets aux joueurs morts/left.
+
+[09/08/2011]
+- Personnage : Ajout de vérification lorsqu'un personnage arrive sur une carte : 	Si Perco(GuildID) invalide : Suppression
+																					Si Enclo(GuildID) invalide : Remise en vente.
+- Fight : Correction de la formule InitOrdreJeu() (un joueur sur deux (Joueur1 - MobX - Joueur2 - MobY)).
+
+[08/08/2011]
+- Trunk/World/GameThread/House/Carte ... : Ajout du système de coffre (THX Adlesne).
+- Trunk : Ajout de gestion de droit de guilde sur le coffre (THX Adlesne).
+- World : Sauvegarde des coffres (=> SaveAll).
+- World/Carte ... : Correction de divers problèmes d'enclo (Perte de drago etc ...).
+- Carte : Correction des droits d'accès aux enclo (Droit de guilde).
+- World : Sauvegarde des enclos  (=> SaveAll).
+- GameThread : Ajout de la limitation monture des enclos.
+- World : Correction de quelques problèmes de sauvegarde : Maisons/Percepteurs/Enclos.
+- SQLManager : Suppression de requetes SQL inutiles.
+- World/Personnage/Guild ... : Correction de la suppression de guilde : 		Supression des percos
+																				Remise en vente des enclos
+																				Retrait des maisons de guilde.
+- World/Personnage : Correction de la suppression de personnage :	Passation des pouvoirs dans la guilde si meneur.
+- House/Trunk/World : La vente d'une maison entraine la téléportation du coffre dans la banque.
+- Carte/GameThread : La vente d'un enclo plein est désormais interdit.
+(Patch 103 a appliquer /!\ Entraine la suppression de toutes les dragodindes)
+
+[02/08/2011]
+- Constants : Il est désormais possible d'équiper un sac (THX Adlesne).
+- Fight/Formulas/GameThread/Personnage : Système d'énergie 50% (Manque : tombe, gain d'énergie etc ...).
+
+[20/07/2011]
+- GameThread : Correction de la limitation en pod (un fois les items supprimés il est possible de ce déplacer).
+
 [15/07/2011]
 - GameThread/Personnage : Correction de la fonction "Suivre le déplacement" (Groupe et mariés) (THX DasBoShit).
 - GameThread : Ajout de la fonction "Suivez le tous" (Groupe).
@@ -5,7 +48,6 @@
 [11/07/2011]
 - Fight/SpellEffect : 	Pandanlku est débuffable.
 						Odorat enlève des Pa/Pm correctement.
-						Transfert de vie est corrigé, le lanceur et les ennemis ne récupèrent plus la vie.
 						Lorsque l'on utilise Stabilisation :
 							=> On ne peut plus pousser le joueur
 							=> On ne peut plus attirer le joueur

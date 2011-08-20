@@ -259,10 +259,11 @@ public class Monstre
 
 		public String parseGM()
 		{
-			String mobIDs = "";
-			String mobGFX = "";
-			String mobLevels = "";
-			String colors = "";
+			StringBuilder mobIDs = new StringBuilder();
+			StringBuilder mobGFX = new StringBuilder();
+			StringBuilder mobLevels = new StringBuilder();
+			StringBuilder colors = new StringBuilder();
+			StringBuilder toreturn = new StringBuilder();
 			
 			boolean isFirst = true;
 			if(_Mobs.isEmpty())return "";
@@ -271,19 +272,19 @@ public class Monstre
 			{
 				if(!isFirst)
 				{
-					mobIDs += ",";
-					mobGFX += ",";
-					mobLevels += ",";
+					mobIDs.append(",");
+					mobGFX.append(",");
+					mobLevels.append(",");
 				}
-				mobIDs += entry.getValue().getTemplate().getID();
-				mobGFX += entry.getValue().getTemplate().getGfxID()+"^100";
-				mobLevels += entry.getValue().getLevel();
-				colors += entry.getValue().getTemplate().getColors() + ";0,0,0,0;";
+				mobIDs.append(entry.getValue().getTemplate().getID());
+				mobGFX.append(entry.getValue().getTemplate().getGfxID()).append("^100");
+				mobLevels.append(entry.getValue().getLevel());
+				colors.append(entry.getValue().getTemplate().getColors()).append(";0,0,0,0;");
 				
 				isFirst = false;
 			}
-			//String color = _Mobs.get(_Mobs.keySet().toArray()[0]).getTemplate().getColors();
-			return "+"+cellID+";"+orientation+";0;"+id+";"+mobIDs+";-3;"+mobGFX+";"+mobLevels+";"+colors;//+";0,0,0,0;-1,-1,-1;0,0,0,0;";
+			toreturn.append("+").append(cellID).append(";").append(orientation).append(";0;").append(id).append(";").append(mobIDs).append(";-3;").append(mobGFX).append(";").append(mobLevels).append(";").append(colors);
+			return toreturn.toString();
 		}
 
 		public Map<Integer, MobGrade> getMobs() {

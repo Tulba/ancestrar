@@ -290,19 +290,21 @@ public class HDV {
 		
 		public String parseToEHl()
 		{
-			String toReturn = "";
+			StringBuilder toReturn = new StringBuilder();
 
 			int[] price = getFirsts();
-			toReturn += ligneID+";"+_strStats+";"+(price[0]==0?"":price[0])+";"+(price[1]==0?"":price[1])+";"+(price[2]==0?"":price[2]);
+			toReturn.append(ligneID).append(";").append(_strStats).append(";").append((price[0]==0?"":price[0])).append(";").append((price[1]==0?"":price[1])).append(";").append((price[2]==0?"":price[2]));
 			
-			return toReturn;
+			return toReturn.toString();
 		}		
 		public String parseToEHm()
 		{
-			int[] prix = getFirsts();
-			String toReturn = ligneID+"|"+templateID+"|"+_strStats+"|"+(prix[0]==0?"":prix[0])+"|"+(prix[1]==0?"":prix[1])+"|"+(prix[2]==0?"":prix[2]);
+			StringBuilder toReturn = new StringBuilder();
 			
-			return toReturn;
+			int[] prix = getFirsts();
+			toReturn.append(ligneID).append("|").append(templateID).append("|").append(_strStats).append("|").append((prix[0]==0?"":prix[0])).append("|").append((prix[1]==0?"":prix[1])).append("|").append((prix[2]==0?"":prix[2]));
+			
+			return toReturn.toString();
 		}
 		
 		public void trier(byte index)
@@ -389,21 +391,29 @@ public class HDV {
 		}
 		public String parseToEL()
 		{
+			StringBuilder toReturn = new StringBuilder();
+			
 			int count = getAmount(true);//Transfère dans le format (1,10,100) le montant qui etait dans le format (1,2,3)
-			return _ligneID+";"+count+";"+_obj.getTemplate().getID()+";"+_obj.parseStatsString()+";"+_price+";350";//350 = temps restant
+			toReturn.append(_ligneID).append(";").append(count).append(";").append(_obj.getTemplate().getID()).append(";").append(_obj.parseStatsString()).append(";").append(_price).append(";350");//350 = temps restant
+			
+			return toReturn.toString();
 		}
 		public String parseToEmK()
 		{
+			StringBuilder toReturn = new StringBuilder();
+			
 			int count = getAmount(true);//Transfère dans le format (1,10,100) le montant qui etait dans le format (1,2,3)
-			return _obj.getGuid()+"|"+count+"|"+_obj.getTemplate().getID()+"|"+_obj.parseStatsString()+"|"+_price+"|350";//350 = temps restant
+			toReturn.append(_obj.getGuid()).append("|").append(count).append("|").append(_obj.getTemplate().getID()).append("|").append(_obj.parseStatsString()).append("|").append(_price).append("|350");//350 = temps restant
+			
+			return toReturn.toString();
 		}
-		
+		/*
 		public String parseItem(char divider)
 		{
 			int count = getAmount(true);//Transfère dans le format (1,10,100) le montant qui etait dans le format (1,2,3)
 			return _ligneID+divider+count+divider+_obj.getTemplate().getID()+divider+_obj.parseStatsString()+divider+_price+divider+"350";//350 = temps restant
 		}
-		
+		*/
 		public int compareTo(HdvEntry o)
 		{
 			HdvEntry e = (HdvEntry)o;

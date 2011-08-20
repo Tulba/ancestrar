@@ -49,10 +49,11 @@ public class Animations {
 		return AnimationId;
 	}
 	
-	public static String PrepareToGA(Animations animation) {
-	String Packet;
-	Packet = animation.getAnimationId() + "," + animation.getArea() + "," + animation.getAction() + "," + animation.getSize();
-	return Packet;
+	public static String PrepareToGA(Animations animation) 
+	{
+		StringBuilder Packet = new StringBuilder();
+		Packet.append(animation.getAnimationId()).append(",").append(animation.getArea()).append(",").append(animation.getAction()).append(",").append(animation.getSize());
+		return Packet.toString();
 	}
 	
 }

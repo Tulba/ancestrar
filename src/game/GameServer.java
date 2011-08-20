@@ -194,7 +194,7 @@ public class GameServer implements Runnable{
 			} catch (IOException e) {}//ne devrait pas avoir lieu
 		}
 	}
-
+	
 	public void delClient(GameThread gameThread)
 	{
 		_clients.remove(gameThread);

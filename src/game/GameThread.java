@@ -168,13 +168,13 @@ public class GameThread implements Runnable
 				parseGuildPacket(packet);
 			break;
 			case 'h':
-				parseHouseSecPacket(packet);
+				parseHousePacket(packet);
 			break;
 			case 'i':
 				parse_enemyPacket(packet);
 			break;
 			case 'K':
-				parseHousePacket(packet);
+				parseHouseKodePacket(packet);
 			break;
 			case 'O':
 				parseObjectPacket(packet);
@@ -194,7 +194,7 @@ public class GameThread implements Runnable
 		}
 	}
 	
-	private void parseHouseSecPacket(String packet)
+	private void parseHousePacket(String packet)
 	{
 		switch(packet.charAt(1))
 		{
@@ -221,7 +221,7 @@ public class GameThread implements Runnable
 		}
 	}
 	
-	private void parseHousePacket(String packet)
+	private void parseHouseKodePacket(String packet)
 	{
 		switch(packet.charAt(1))
 		{
@@ -240,11 +240,17 @@ public class GameThread implements Runnable
 		{
 		case '0'://Envoi du code
 			packet = packet.substring(4);
-			House.OpenHouse(_perso, packet, false);
+			if(_perso.getInTrunk() != null)
+					Trunk.OpenTrunk(_perso, packet, false);
+				else
+					House.OpenHouse(_perso, packet, false);
 		break;
-		case '1'://Changement du code.
+		case '1'://Changement du code
 			packet = packet.substring(4);
-			House.LockHouse(_perso, packet);
+			if(_perso.getInTrunk() != null)
+				Trunk.LockTrunk(_perso, packet);
+			else
+			    House.LockHouse(_perso, packet);
 		break;
 		}
 	}
@@ -510,7 +516,7 @@ public class GameThread implements Runnable
 					TiD = Integer.parseInt(PercoID);
 				}catch(Exception e){};
 				
-				Percepteur perco = Percepteur.GetPerco(TiD);
+				Percepteur perco = World.getPerco(TiD);
 				if(perco == null) return;
 				
 				int FightID = -1;
@@ -533,7 +539,7 @@ public class GameThread implements Runnable
 				
 				if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("[DEBUG] Percepteur INFORMATIONS : TiD:"+TiD+", FightID:"+FightID+", MapID:"+MapID+", CellID"+CellID);
 				if(TiD == -1 || FightID == -1 || MapID == -1 || CellID == -1) return;
-				if(_perso.get_fight() == null)
+				if(_perso.get_fight() == null && !_perso.is_away())
 				{
 					if(_perso.get_curCarte().get_id() != MapID)
 					{
@@ -547,11 +553,11 @@ public class GameThread implements Runnable
 
 	private void guild_remove_perco(String packet) 
 	{
-		if(_perso.get_guild() == null)return;
+		if(_perso.get_guild() == null || _perso.get_fight() != null || _perso.is_away())return;
 		if(!_perso.getGuildMember().canDo(Constants.G_POSPERCO))return;//On peut le retirer si on a le droit de le poser
 		byte IDPerco = Byte.parseByte(packet);
-		Percepteur perco = Percepteur.GetPerco(IDPerco);
-		if(perco.get_inFight() > 0) return;
+		Percepteur perco = World.getPerco(IDPerco);
+		if(perco == null || perco.get_inFight() > 0) return;
 		SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_perso.get_curCarte(), IDPerco);
 		SQLManager.DELETE_PERCO(perco.getGuid());
 		perco.DelPerco(perco.getGuid());
@@ -571,7 +577,7 @@ public class GameThread implements Runnable
 
 	private void guild_add_perco() 
 	{
-		if(_perso.get_guild() == null)return;
+		if(_perso.get_guild() == null || _perso.get_fight() != null || _perso.is_away())return;
 		if(!_perso.getGuildMember().canDo(Constants.G_POSPERCO))return;//Pas le droit de le poser
 		if(_perso.get_guild().getMembers().size() < 10)return;//Guilde invalide
 		short price = (short)(1000+10*_perso.get_guild().get_lvl());//Calcul du prix du percepteur
@@ -597,7 +603,7 @@ public class GameThread implements Runnable
 		//Ajout du Perco.
 		int id = SQLManager.GetNewIDPercepteur();
 		Percepteur perco = new Percepteur(id, _perso.get_curCarte().get_id(), _perso.get_curCell().getID(), (byte)3, _perso.get_guild().get_id(), random1, random2, "", 0, 0);
-		Percepteur.addPerco(perco);
+		World.addPerco(perco);
 		SocketManager.GAME_SEND_ADD_PERCO_TO_MAP(_perso.get_curCarte());
 		SQLManager.ADD_PERCO_ON_MAP(id, _perso.get_curCarte().get_id(), _perso.get_guild().get_id(), _perso.get_curCell().getID(), 3, random1, random2);
 		for(Personnage z : _perso.get_guild().getMembers())
@@ -622,6 +628,7 @@ public class GameThread implements Runnable
 			return;
 		}
 		
+		if(_perso.get_fight() != null || _perso.is_away())return;
 		short MapID = Short.parseShort(packet);
 		MountPark MP = World.getCarte(MapID).getMountPark();
 		if(MP.get_guild().get_id() != _perso.get_guild().get_id())
@@ -649,8 +656,10 @@ public class GameThread implements Runnable
 			return;
 		}
 		
+		if(_perso.get_fight() != null || _perso.is_away())return;
 		int HouseID = Integer.parseInt(packet);
-		House h = House.get_HouseID(HouseID);
+		House h = World.getHouses().get(HouseID);
+		if(h == null) return;
 		if(_perso.get_guild().get_id() != h.get_guild_id()) 
 		{
 			SocketManager.GAME_SEND_Im_PACKET(_perso, "1135");
@@ -919,7 +928,7 @@ public class GameThread implements Runnable
 			SocketManager.GAME_SEND_gIB_PACKET(_perso, _perso.get_guild().parsePercotoGuild());
 		break;
 		case 'F'://Enclos
-			SocketManager.GAME_SEND_gIF_PACKET(_perso, SQLManager.parseMPtoGuild(_perso.get_guild().get_id()));
+			SocketManager.GAME_SEND_gIF_PACKET(_perso, World.parseMPtoGuild(_perso.get_guild().get_id()));
 		break;
 		case 'G'://General
 			SocketManager.GAME_SEND_gIG_PACKET(_perso, _perso.get_guild());
@@ -946,7 +955,7 @@ public class GameThread implements Runnable
 			SocketManager.GAME_SEND_gC_PACKET(_perso, "Ea");
 			return;
 		}
-		if(_perso.get_fight() != null )return;
+		if(_perso.get_fight() != null || _perso.is_away())return;
 		try
 		{
 			String[] infos = packet.substring(2).split("\\|");
@@ -1088,7 +1097,7 @@ public class GameThread implements Runnable
 					return;
 				}
 				byte enclosMax = (byte)Math.floor(_perso.get_guild().get_lvl()/10);
-				byte TotalEncloGuild = SQLManager.TotalMPGuild(_perso.get_guild().get_id()); 
+				byte TotalEncloGuild = (byte)World.totalMPGuild(_perso.get_guild().get_id());
 				if(TotalEncloGuild >= enclosMax)
 				{
 					SocketManager.GAME_SEND_Im_PACKET(_perso, "1103");
@@ -1137,6 +1146,11 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_R_PACKET(_perso, "v");//Fermeture du panneau
 				int price = Integer.parseInt(packet.substring(2));
 				MountPark MP1 = _perso.get_curCarte().getMountPark();
+				if(!MP1.getData().isEmpty())
+				{
+					SocketManager.GAME_SEND_MESSAGE(_perso, "[ENCLO] Impossible de vendre un enclo plein.", Ancestra.CONFIG_MOTD_COLOR);
+					return;
+				}
 				if(MP1.get_owner() == -1)
 				{
 					SocketManager.GAME_SEND_Im_PACKET(_perso, "194");
@@ -1183,17 +1197,17 @@ public class GameThread implements Runnable
 		_perso.getMount().setName(name);
 		SocketManager.GAME_SEND_Rn_PACKET(_perso, name);
 	}
-
+	
 	private void Mount_ride()
 	{
-		if(_perso.get_lvl()<60 || _perso.getMount() == null || !_perso.getMount().isMountable())
+		if(_perso.get_lvl()<60 || _perso.getMount() == null || !_perso.getMount().isMountable() || _perso._isGhosts)
 		{
 			SocketManager.GAME_SEND_Re_PACKET(_perso,"Er", null);
 			return;
 		}
 		_perso.toogleOnMount();
 	}
-
+	
 	private void Mount_description(String packet)
 	{
 		int DDid = -1;
@@ -1609,7 +1623,7 @@ public class GameThread implements Runnable
 			guid = Integer.parseInt(packet.substring(2).split("\\|")[0]);
 			qua = Integer.parseInt(packet.split("\\|")[1]);
 		}catch(Exception e){};
-		if(guid == -1 || qua <= 0 || !_perso.hasItemGuid(guid))return;
+		if(guid == -1 || qua <= 0 || !_perso.hasItemGuid(guid) || _perso.get_fight() != null || _perso.is_away())return;
 		Objet obj = World.getObjet(guid);
 		
 		_perso.set_curCell(_perso.get_curCell());
@@ -1674,7 +1688,8 @@ public class GameThread implements Runnable
 		{
 			Target = World.getPersonnage(targetGuid);
 		}
-		if(!_perso.hasItemGuid(guid))return;
+		if(!_perso.hasItemGuid(guid) || _perso.get_fight() != null || _perso.is_away())return;
+		if(Target != null && (Target.get_fight() != null || Target.is_away()))return;
 		Objet obj = World.getObjet(guid);
 		if(obj == null) return;
 		ObjTemplate T = obj.getTemplate();
@@ -1851,7 +1866,7 @@ public class GameThread implements Runnable
 				qua = Integer.parseInt(infos[1]);
 			}catch(Exception e){};
 			Objet obj = World.getObjet(guid);
-			if(obj == null || !_perso.hasItemGuid(guid) || qua <= 0)
+			if(obj == null || !_perso.hasItemGuid(guid) || qua <= 0 || _perso.get_fight() != null || _perso.is_away())
 			{
 				SocketManager.GAME_SEND_DELETE_OBJECT_FAILED_PACKET(_out);
 				return;
@@ -1968,6 +1983,28 @@ public class GameThread implements Runnable
 				Exchange_onMoveItem(packet);
 			break;
 			
+			case 'q'://Mode marchand
+				if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away())return;
+		        if (_perso.get_curCarte().getStoreCount() == 5)
+		        {
+		        	SocketManager.GAME_SEND_Im_PACKET(_perso, "125;5");
+		        	return;
+		        }
+		        if (_perso.parseStoreItemsList().isEmpty())
+		        {
+		        	SocketManager.GAME_SEND_Im_PACKET(_perso, "123");
+		        	return;
+		        }
+		        Carte map = _perso.get_curCarte();
+		        _perso.set_showSeller(true);
+		        World.addSeller(_perso);
+		        kick();
+		        for(Personnage z : map.getPersos())
+		        {
+		        	if(z != null && z.isOnline())
+		        		SocketManager.GAME_SEND_MERCHANT_LIST(z, z.get_curCarte().get_id());
+		        }
+			break;
 			case 'r'://Rides => Monture
 				Exchange_mountPark(packet);
 			break;
@@ -1980,14 +2017,14 @@ public class GameThread implements Runnable
 			break;
 			
 			case 'V'://Fin de l'échange
-				Exchange_finish_buy(packet);
+				Exchange_finish_buy();
 			break;
 		}
 	}
 	
 	private void Exchange_HDV(String packet)
 	{
-		if(_perso.get_isTradingWith() > 0)return;
+		if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away())return;
 		int templateID;
 		switch(packet.charAt(2))
 		{
@@ -2049,6 +2086,8 @@ public class GameThread implements Runnable
 		//Si dans un enclos
 		if(_perso.getInMountPark() != null)
 		{
+			MountPark MP = _perso.getInMountPark();
+			if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null)return;
 			char c = packet.charAt(2);
 			packet = packet.substring(3);
 			int guid = -1;
@@ -2060,8 +2099,12 @@ public class GameThread implements Runnable
 			{
 				case 'C'://Parcho => Etable (Stocker)
 					if(guid == -1 || !_perso.hasItemGuid(guid))return;
+					if(MP.get_size() <= MP.MountParkDATASize())
+					{
+						SocketManager.GAME_SEND_Im_PACKET(_perso, "1145");
+						return;
+					}
 					Objet obj = World.getObjet(guid);
-					
 					//on prend la DD demandée
 					int DDid = obj.getStats().getEffect(995);
 					Dragodinde DD = World.getDragoByID(DDid);
@@ -2072,13 +2115,12 @@ public class GameThread implements Runnable
 						if(color <1)return;
 						DD = new Dragodinde(color);
 					}
-					
 					//On enleve l'objet du Monde et du Perso
 					_perso.removeItem(guid);
 					World.removeItem(guid);
 					//on ajoute la dinde a l'étable
-					_compte.getStable().add(DD);
-					
+					MP.addData(DD.get_id(), _perso.get_GUID());
+					SQLManager.UPDATE_MOUNTPARK(MP);
 					//On envoie les packet
 					SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso,obj.getGuid());
 					SocketManager.GAME_SEND_Ee_PACKET(_perso, '+', DD.parse());
@@ -2086,10 +2128,24 @@ public class GameThread implements Runnable
 				case 'c'://Etable => Parcho(Echanger)
 					Dragodinde DD1 = World.getDragoByID(guid);
 					//S'il n'a pas la dinde
-					if(!_compte.getStable().contains(DD1) || DD1 == null)return;
+					if(DD1 == null || !MP.getData().containsKey(DD1.get_id()))return;
+					if(MP.getData().get(DD1.get_id()) != _perso.get_GUID() && 
+						World.getPersonnage(MP.getData().get(DD1.get_id())).get_guild() != _perso.get_guild())
+					{
+						//Pas la même guilde, pas le même perso
+						return;
+					}
+					if(MP.getData().get(DD1.get_id()) != _perso.get_GUID() && 
+							World.getPersonnage(MP.getData().get(DD1.get_id())).get_guild() == _perso.get_guild() &&
+							!_perso.getGuildMember().canDo(Constants.G_OTHDINDE))
+					{
+						//Même guilde, pas le droit
+						SocketManager.GAME_SEND_Im_PACKET(_perso, "1101");
+						return;
+					}
 					//on retire la dinde de l'étable
-					_compte.getStable().remove(DD1);
-					
+					MP.removeData(DD1.get_id());
+					SQLManager.UPDATE_MOUNTPARK(MP);
 					//On créer le parcho
 					ObjTemplate T = Constants.getParchoTemplateByMountColor(DD1.get_color());
 					Objet obj1 = T.createNewItem(1, false);
@@ -2111,9 +2167,25 @@ public class GameThread implements Runnable
 				case 'g'://Equiper
 					Dragodinde DD3 = World.getDragoByID(guid);
 					//S'il n'a pas la dinde
-					if(!_compte.getStable().contains(DD3) || DD3 == null || _perso.getMount() != null)return;
+					if(DD3 == null || !MP.getData().containsKey(DD3.get_id()) || _perso.getMount() != null)return;
 					
-					_compte.getStable().remove(DD3);
+					if(MP.getData().get(DD3.get_id()) != _perso.get_GUID() && 
+							World.getPersonnage(MP.getData().get(DD3.get_id())).get_guild() != _perso.get_guild())
+					{
+						//Pas la même guilde, pas le même perso
+						return;
+					}
+					if(MP.getData().get(DD3.get_id()) != _perso.get_GUID() && 
+							World.getPersonnage(MP.getData().get(DD3.get_id())).get_guild() == _perso.get_guild() &&
+							!_perso.getGuildMember().canDo(Constants.G_OTHDINDE))
+					{
+						//Même guilde, pas le droit
+						SocketManager.GAME_SEND_Im_PACKET(_perso, "1101");
+						return;
+					}
+					
+					MP.removeData(DD3.get_id());
+					SQLManager.UPDATE_MOUNTPARK(MP);
 					_perso.setMount(DD3);
 					
 					//Packets
@@ -2131,7 +2203,8 @@ public class GameThread implements Runnable
 						if(_perso.isOnMount())return;
 						
 						Dragodinde DD2 = _perso.getMount();
-						_compte.getStable().add(DD2);
+						MP.addData(DD2.get_id(), _perso.get_GUID());
+						SQLManager.UPDATE_MOUNTPARK(MP);
 						_perso.setMount(null);
 						
 						//Packets
@@ -2167,11 +2240,58 @@ public class GameThread implements Runnable
 
 	private void Exchange_onMoveItem(String packet)
 	{
-		//Percepteur
-		if(_perso.get_isOnPercepteur())
+		//Store
+		if(_perso.get_isTradingWith() == _perso.get_GUID())
 		{
-			Percepteur perco = Percepteur.GetPerco(_perso.get_isOnPercepteurID());
-			if(perco.get_inFight() > 0)return;
+			switch(packet.charAt(2))
+			{
+			case 'O'://Objets
+				if(packet.charAt(3) == '+')
+				{
+					String[] infos = packet.substring(4).split("\\|");
+					try
+					{
+						
+						int guid = Integer.parseInt(infos[0]);
+						int qua  = Integer.parseInt(infos[1]);
+						int price  = Integer.parseInt(infos[2]);
+						
+						Objet obj = World.getObjet(guid);
+						if(obj == null)return;
+						
+						if(qua > obj.getQuantity())
+							qua = obj.getQuantity();
+						
+						_perso.addinStore(obj.getGuid(), price, qua);
+						
+					}catch(NumberFormatException e){};
+				}else
+				{
+					String[] infos = packet.substring(4).split("\\|");
+					try
+					{
+						int guid = Integer.parseInt(infos[0]);
+						int qua  = Integer.parseInt(infos[1]);
+						
+						if(qua <= 0)return;
+						
+						Objet obj = World.getObjet(guid);
+						if(obj == null)return;
+						if(qua > obj.getQuantity())return;
+						if(qua < obj.getQuantity()) qua = obj.getQuantity();
+						
+						_perso.removeFromStore(obj.getGuid(), qua);
+					}catch(NumberFormatException e){};
+				}
+			break;
+			}
+			return;
+		}
+		//Percepteur
+		if(_perso.get_isOnPercepteurID() > 0)
+		{
+			Percepteur perco = World.getPerco(_perso.get_isOnPercepteurID());
+			if(perco == null || perco.get_inFight() > 0)return;
 			switch(packet.charAt(2))
 			{
 			case 'G'://Kamas
@@ -2219,9 +2339,10 @@ public class GameThread implements Runnable
 			perco.LogXpDrop(perco.getXp());
 			perco.setXp(0);
 			SQLManager.UPDATE_GUILD(_perso.get_guild());
+			return;
 		}
 		//HDV
-		if(_perso.get_isTradingWith() < 0)//HDV
+		if(_perso.get_isTradingWith() < 0)
 		{
 			switch(packet.charAt(3))
 			{
@@ -2288,7 +2409,7 @@ public class GameThread implements Runnable
 					SocketManager.GAME_SEND_EXCHANGE_OTHER_MOVE_OK(_out,'+',"",toAdd.parseToEmK());	//Envoie un packet pour ajouter l'item dans la fenetre de l'HDV du client
 				break;
 			}
-			
+			return;
 		}
 		//Metier
 		if(_perso.getCurJobAction() != null)
@@ -2394,6 +2515,71 @@ public class GameThread implements Runnable
 			}
 			return;
 		}
+		//Coffre
+	    if(_perso.getInTrunk() != null)
+        {
+                if(_perso.get_curExchange() != null)return;
+                Trunk t = _perso.getInTrunk();
+                if(t == null) return;
+               
+                switch(packet.charAt(2))
+                {
+                	case 'G'://Kamas
+                    	long kamas = 0;
+                    	try
+                    	{
+                    		kamas = Integer.parseInt(packet.substring(3));
+                        }catch(Exception e){};
+                        if(kamas == 0)return;
+                               
+                        if(kamas > 0)//Si On ajoute des kamas au coffre
+                        {
+                            if(_perso.get_kamas() < kamas)kamas = _perso.get_kamas();
+                            t.set_kamas(t.get_kamas() + kamas);//On ajoute les kamas au coffre
+                            _perso.set_kamas(_perso.get_kamas()-kamas);//On retire les kamas du personnage
+                            SocketManager.GAME_SEND_STATS_PACKET(_perso);
+                        }else // On retire des kamas au coffre
+                        {
+                        	kamas = -kamas;//On repasse en positif
+                        	if(t.get_kamas() < kamas)kamas = t.get_kamas();
+                        	t.set_kamas(t.get_kamas()-kamas);//On retire les kamas de la banque
+                         	_perso.set_kamas(_perso.get_kamas()+kamas);//On ajoute les kamas du personnage
+                         	SocketManager.GAME_SEND_STATS_PACKET(_perso);
+                        }
+                        for(Personnage P : World.getOnlinePersos())
+                        {
+                        	if(P.getInTrunk() != null && _perso.getInTrunk().get_id() == P.getInTrunk().get_id())
+                            {
+                        		SocketManager.GAME_SEND_EsK_PACKET(P,"G"+t.get_kamas());
+                         	}
+                        }
+                        SQLManager.UPDATE_TRUNK(t);
+                    break;
+              	
+                	case 'O'://Objet
+                		int guid = 0;
+                		int qua = 0;
+                		try
+                		{
+                			guid = Integer.parseInt(packet.substring(4).split("\\|")[0]);
+                			qua = Integer.parseInt(packet.substring(4).split("\\|")[1]);
+                		}catch(Exception e){};
+                		if(guid == 0 || qua <= 0)return;
+                               
+                		switch(packet.charAt(3))
+                		{
+                			case '+'://Ajouter a la banque
+                				t.addInTrunk(guid, qua, _perso);
+                			break;
+                                       
+                			case '-'://Retirer de la banque
+                				t.removeFromTrunk(guid,qua, _perso);
+                			break;
+                		}
+                	break;
+                }
+                return;
+        }
 		if(_perso.get_curExchange() == null)return;
 		switch(packet.charAt(2))
 		{
@@ -2486,6 +2672,69 @@ public class GameThread implements Runnable
 	private void Exchange_onBuyItem(String packet)
 	{
 		String[] infos = packet.substring(2).split("\\|");
+		
+        if (_perso.get_isTradingWith() > 0) 
+        {
+            Personnage seller = World.getPersonnage(_perso.get_isTradingWith());
+            if (seller != null) 
+            {
+            	int itemID = 0;
+            	int qua = 0;
+            	int price = 0;
+            	try
+        		{
+            		itemID = Integer.valueOf(infos[0]);
+            		qua = Integer.valueOf(infos[1]);
+        		}catch(Exception e){return;}
+        		
+                if (!seller.getStoreItems().containsKey(itemID) || qua <= 0) 
+                {
+                    SocketManager.GAME_SEND_BUY_ERROR_PACKET(_out);
+                    return;
+                }
+                price = seller.getStoreItems().get(itemID);
+                Objet itemStore = World.getObjet(itemID);
+                if(itemStore == null) return;
+                
+                if(qua > itemStore.getQuantity()) qua = itemStore.getQuantity();
+                if(qua == itemStore.getQuantity())
+                {
+                	seller.getStoreItems().remove(itemStore.getGuid());
+                	_perso.addObjet(itemStore, true);
+                }else
+                {
+                	seller.getStoreItems().remove(itemStore.getGuid());
+                	itemStore.setQuantity(itemStore.getQuantity()-qua);
+                	SQLManager.SAVE_ITEM(itemStore);
+                	seller.addStoreItem(itemStore.getGuid(), price);
+                	
+                	Objet clone = Objet.getCloneObjet(itemStore, qua);
+                    SQLManager.SAVE_NEW_ITEM(clone);
+                    _perso.addObjet(clone, true);
+                }
+               
+	            SQLManager.SAVE_PERSONNAGE(seller, true);
+	            //remove kamas
+	            _perso.addKamas(-price * qua);
+	            //add seller kamas
+	            seller.addKamas(price * qua);
+	            //send packets
+	            SocketManager.GAME_SEND_STATS_PACKET(_perso);
+	            SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(seller, _perso);
+	            SocketManager.GAME_SEND_BUY_OK_PACKET(_out);
+	            if(seller.getStoreItems().isEmpty())
+	            {
+	            	if(World.getSeller(seller.get_curCarte().get_id()) != null && World.getSeller(seller.get_curCarte().get_id()).contains(seller.get_GUID()))
+	        		{
+	        			World.removeSeller(seller.get_GUID(), seller.get_curCarte().get_id());
+	        			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(seller.get_curCarte(), seller.get_GUID());
+	        			Exchange_finish_buy();
+	        		}
+	            }
+            }
+            return;
+        }
+        
 		try
 		{
 			int tempID = Integer.parseInt(infos[0]);
@@ -2529,15 +2778,19 @@ public class GameThread implements Runnable
 		};
 	}
 
-	private void Exchange_finish_buy(String packet)
+	private void Exchange_finish_buy()
 	{
-		if(_perso.get_curExchange() == null &&
-				!_perso.isInBank() &&
-				_perso.getCurJobAction() == null &&
-				_perso.get_isTradingWith() == 0 &&
-				_perso.getInMountPark() == null)return;
+		if(_perso.get_isTradingWith() == 0 &&
+		   _perso.get_curExchange() == null &&
+		   _perso.getCurJobAction() == null &&
+		   _perso.getInMountPark() == null &&
+		   !_perso.isInBank() &&
+		   _perso.get_isOnPercepteurID() == 0 &&
+		   _perso.getInTrunk() == null)
+			return;
+		
 		//Si échange avec un personnage
-		if(	_perso.get_curExchange() != null)
+		if(_perso.get_curExchange() != null)
 		{
 			_perso.get_curExchange().cancel();
 			_perso.set_isTradingWith(0);
@@ -2565,9 +2818,11 @@ public class GameThread implements Runnable
 				}
 			}
 		}
-		if(_perso.get_isOnPercepteur())
+		//Si perco
+		if(_perso.get_isOnPercepteurID() > 0)
 		{
-			Percepteur perco = Percepteur.GetPerco(_perso.get_isOnPercepteurID());
+			Percepteur perco = World.getPerco(_perso.get_isOnPercepteurID());
+			if(perco == null) return;
 			for(Personnage z : World.getGuild(perco.get_guildID()).getMembers())
 			{
 				if(z.isOnline())
@@ -2586,7 +2841,6 @@ public class GameThread implements Runnable
 			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_perso.get_curCarte(), perco.getGuid());
 			perco.DelPerco(perco.getGuid());
 			SQLManager.DELETE_PERCO(perco.getGuid());
-			_perso.set_isOnPercepteur(false);
 			_perso.set_isOnPercepteurID(0);
 		}
 		
@@ -2594,8 +2848,8 @@ public class GameThread implements Runnable
 		SocketManager.GAME_SEND_EV_PACKET(_out);
 		_perso.set_isTradingWith(0);
 		_perso.set_away(false);
-		//Sauvagarde du perso et des item aprés.
 		_perso.setInBank(false);
+		_perso.setInTrunk(null);
 	}
 
 	private void Exchange_start(String packet)
@@ -2693,19 +2947,37 @@ public class GameThread implements Runnable
 				target.set_isTradingWith(_perso.get_GUID());
 			}catch(NumberFormatException e){}
 			break;
+            case '4'://StorePlayer
+            	int pID = 0;
+            	//int cellID = 0;//Inutile
+            	try
+				{
+            		pID = Integer.valueOf(packet.split("\\|")[1]);
+            		//cellID = Integer.valueOf(packet.split("\\|")[2]);
+				}catch(NumberFormatException e){return;};
+				if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away())return;
+				Personnage seller = World.getPersonnage(pID);
+				if(seller == null) return;
+				_perso.set_isTradingWith(pID);
+				SocketManager.GAME_SEND_ECK_PACKET(_perso, 4, seller.get_GUID()+"");
+				SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(seller, _perso);
+            break;
+			case '6'://StoreItems
+				if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away())return;
+                _perso.set_isTradingWith(_perso.get_GUID());
+                SocketManager.GAME_SEND_ECK_PACKET(_perso, 6, "");
+                SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(_perso, _perso);
+			break;
 			case '8'://Si Percepteur
 				try
 				{
 					int PercepteurID = Integer.parseInt(packet.substring(4));
-					Percepteur perco = Percepteur.GetPerco(PercepteurID);
-					if(perco == null)return;
-					if(perco.get_inFight() > 0)return;
-					if(perco.get_Exchange())return;
+					Percepteur perco = World.getPerco(PercepteurID);
+					if(perco == null || perco.get_inFight() > 0 || perco.get_Exchange())return;
 					perco.set_Exchange(true);
 					SocketManager.GAME_SEND_ECK_PACKET(_out, 8, perco.getGuid()+"");
 					SocketManager.GAME_SEND_ITEM_LIST_PACKET_PERCEPTEUR(_out, perco);
 					_perso.set_isTradingWith(perco.getGuid());
-					_perso.set_isOnPercepteur(true);
 					_perso.set_isOnPercepteurID(perco.getGuid());
 				}catch(NumberFormatException e){};
 			break;
@@ -3274,13 +3546,19 @@ public class GameThread implements Runnable
 						_perso.set_curCell(nextCell);
 						_perso.set_orientation(CryptManager.getIntByHashedValue(path.charAt(path.length()-3)));
 						_perso.get_curCell().addPerso(_perso);
-						_perso.set_away(false);
+						if(!_perso._isGhosts) _perso.set_away(false);
+						
 						if(targetCell.getObject() != null)
 						{
 							//Si c'est une "borne" comme Emotes, ou Création guilde
 							if(targetCell.getObject().getID() == 1324)
 							{
 								Constants.applyPlotIOAction(_perso,_perso.get_curCarte().get_id(),targetCell.getID());
+							}
+							//Statues phoenix
+							else if(targetCell.getObject().getID() == 542)
+							{
+								if(_perso._isGhosts) _perso.set_Alive();
 							}
 						}
 						_perso.get_curCarte().onPlayerArriveOnCell(_perso,_perso.get_curCell().getID());
@@ -3339,6 +3617,7 @@ public class GameThread implements Runnable
 		SocketManager.GAME_SEND_MAP_OBJECTS_GDS_PACKETS(_out,_perso.get_curCarte());
 		SocketManager.GAME_SEND_GDK_PACKET(_out);
 		SocketManager.GAME_SEND_MAP_FIGHT_COUNT(_out, _perso.get_curCarte());
+		SocketManager.GAME_SEND_MERCHANT_LIST(_perso, _perso.get_curCarte().get_id());
 		//Les drapeau de combats
 		Fight.FightStateAddFlag(_perso.get_curCarte(), _perso);
 		//items au sol
@@ -3387,7 +3666,13 @@ public class GameThread implements Runnable
 				_perso.setisOK(Integer.parseInt(packet.substring(5,6)));
 				SocketManager.GAME_SEND_cMK_PACKET_TO_MAP(_perso.get_curCarte(), "", _perso.get_GUID(), _perso.get_name(), "Oui");
 				if(World.getMarried(0).getisOK() > 0 && World.getMarried(1).getisOK() > 0)
+				{
 					World.Wedding(World.getMarried(0), World.getMarried(1), 1);
+				}
+				if(World.getMarried(0) != null && World.getMarried(1) != null)
+				{
+					World.PriestRequest((World.getMarried(0)==_perso?World.getMarried(1):World.getMarried(0)), (World.getMarried(0)==_perso?World.getMarried(1).get_curCarte():World.getMarried(0).get_curCarte()), _perso.get_isTalkingWith());
+				}
 			break;
 			case 619://Mariage non
 				_perso.setisOK(0);
@@ -3419,7 +3704,7 @@ public class GameThread implements Runnable
 	private void house_action(String packet)
 	{
 		int actionID = Integer.parseInt(packet.substring(5));
-		House h = House.get_selectedHouse();
+		House h = _perso.getInHouse();
 		if(h == null) return;
 		switch(actionID)
 		{
@@ -3446,13 +3731,14 @@ public class GameThread implements Runnable
 			if(_perso.get_isTalkingWith() != 0 ||
 			   _perso.get_isTradingWith() != 0 ||
 			   _perso.getCurJobAction() != null ||
-			   _perso.get_curExchange() != null)
+			   _perso.get_curExchange() != null ||
+			   _perso.is_away())
 					{
 						return;
 					}
 			int id = Integer.parseInt(packet.substring(5));
-			Percepteur target = Percepteur.GetPerco(id);
-			if(target.get_inFight() > 0) return;
+			Percepteur target = World.getPerco(id);
+			if(target == null || target.get_inFight() > 0) return;
 			if(target.get_Exchange())
 			{
 				
@@ -3604,8 +3890,9 @@ public class GameThread implements Runnable
 		{
 			int guid = Integer.parseInt(packet.substring(5));
 			if(_perso.is_away() || _perso.get_fight() != null){SocketManager.GAME_SEND_DUEL_Y_AWAY(_out, _perso.get_GUID());return;}
-			if(World.getPersonnage(guid) == null) return;
-			if(World.getPersonnage(guid).is_away() || World.getPersonnage(guid).get_fight() != null || World.getPersonnage(guid).get_curCarte().get_id() != _perso.get_curCarte().get_id()){SocketManager.GAME_SEND_DUEL_E_AWAY(_out, _perso.get_GUID());return;}
+			Personnage Target = World.getPersonnage(guid);
+			if(Target == null) return;
+			if(Target.is_away() || Target.get_fight() != null || Target.get_curCarte().get_id() != _perso.get_curCarte().get_id()){SocketManager.GAME_SEND_DUEL_E_AWAY(_out, _perso.get_GUID());return;}
 			_perso.set_duelID(guid);
 			_perso.set_away(true);
 			World.getPersonnage(guid).set_duelID(_perso.get_GUID());
@@ -3621,8 +3908,9 @@ public class GameThread implements Runnable
 		{
 			if(_perso.getPodUsed() > _perso.getMaxPod())
 			{
-				//TODO : Bug après vidage de l'inventaire
 				SocketManager.GAME_SEND_Im_PACKET(_perso, "112");
+				SocketManager.GAME_SEND_GA_PACKET(_out, "", "0", "", "");
+				removeAction(GA);
 				return;
 			}
 			AtomicReference<String> pathRef = new AtomicReference<String>(path);
@@ -3631,7 +3919,7 @@ public class GameThread implements Runnable
 			//Si déplacement inutile
 			if(result == 0)
 			{
-				SocketManager.GAME_SEND_GA_PACKET(_out,"", "0", "", "");
+				SocketManager.GAME_SEND_GA_PACKET(_out, "", "0", "", "");
 				removeAction(GA);
 				return;
 			}

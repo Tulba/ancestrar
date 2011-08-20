@@ -1205,6 +1205,7 @@ public class Constants
 			break;
 			
 			case ITEM_TYPE_CAPE:
+			case ITEM_TYPE_SAC_DOS:
 				if(place == ITEM_POS_CAPE)return true;
 			break;
 			
@@ -2829,7 +2830,7 @@ public class Constants
 		for(int a = 1;a<100;a++)if(getParchoTemplateByMountColor(a)!=null)if(getParchoTemplateByMountColor(a).getID() == tID)return a; 
 		return -1;
 	}
-
+	
 	public static void applyPlotIOAction(Personnage perso,int mID, int cID)
 	{
 		//Gère les differentes actions des "bornes" (IO des émotes)

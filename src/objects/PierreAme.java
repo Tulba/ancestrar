@@ -37,16 +37,16 @@ public class PierreAme extends Objet{
 	
 	public String parseStatsString()
 	{
-		String stats = "";
+		StringBuilder stats = new StringBuilder();
 		boolean isFirst = true;
 		for(Couple<Integer, Integer> coupl : _monsters)
 		{
 			if(!isFirst)
-				stats+=",";
+				stats.append(",");
 			
 			try
 			{
-				stats += "26f#0#0#"+Integer.toHexString(coupl.first);
+				stats.append("26f#0#0#").append(Integer.toHexString(coupl.first));
 			}catch(Exception e)
 			{
 				e.printStackTrace();
@@ -55,37 +55,36 @@ public class PierreAme extends Objet{
 			
 			isFirst = false;
 		}
-		return stats;
+		return stats.toString();
 	}
 	
 	public String parseGroupData()//Format : id,lvlMin,lvlMax;id,lvlMin,lvlMax...
 	{
-		String toReturn = "";
+		StringBuilder toReturn = new StringBuilder();
 		boolean isFirst = true;
-		
 		for(Couple<Integer, Integer> curMob : _monsters)
 		{
 			if(!isFirst)
-				toReturn+=";";
+				toReturn.append(";");
 			
-			toReturn += curMob.first+","+curMob.second+","+curMob.second;
+			toReturn.append(curMob.first).append(",").append(curMob.second).append(",").append(curMob.second);
 			
 			isFirst = false;
 		}
-		return toReturn;
+		return toReturn.toString();
 	}
 	
 	public String parseToSave()
 	{
-		String toReturn = "";
+		StringBuilder toReturn = new StringBuilder();
 		boolean isFirst = true;
 		for(Couple<Integer, Integer> curMob : _monsters)
 		{
 			if(!isFirst)
-				toReturn += "|";
-			toReturn += curMob.first + "," + curMob.second;
+				toReturn.append("|");
+			toReturn.append(curMob.first).append(",").append(curMob.second);
 			isFirst = false;
 		}
-		return toReturn;
+		return toReturn.toString();
 	}
 }

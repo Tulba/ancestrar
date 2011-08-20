@@ -86,17 +86,18 @@ public class Metier {
 		}
 		public String parseJS()
 		{
-			String str = "|"+_template.getId()+";";
+			StringBuilder str = new StringBuilder();
+			str.append("|").append(_template.getId()).append(";");
 			boolean first = true;
 			for(JobAction JA : _posActions)
 			{
-				if(!first)str += ",";
+				if(!first)str.append(",");
 				else first = false;
-				str += JA.getSkillID()+"~"+JA.getMin()+"~";
-				if(JA.isCraft())str += "0~0~"+JA.getChance();
-				else str += JA.getMax()+"~0~"+JA.getTime();
+				str.append(JA.getSkillID()).append("~").append(JA.getMin()).append("~");
+				if(JA.isCraft())str.append("0~0~").append(JA.getChance());
+				else str.append(JA.getMax()).append("~0~").append(JA.getTime());
 			}
-			return str;
+			return str.toString();
 		}
 		public long getXp()
 		{
@@ -155,10 +156,11 @@ public class Metier {
 		
 		public String getXpString(String s)
 		{
-			String str = World.getExpLevel(_lvl).metier+s;
-			str += _xp+s;
-			str += World.getExpLevel((_lvl<100?_lvl+1:_lvl)).metier;
-			return str;
+			StringBuilder str = new StringBuilder();
+			str.append( World.getExpLevel(_lvl).metier).append(s);
+			str.append(_xp).append(s);
+			str.append(World.getExpLevel((_lvl<100?_lvl+1:_lvl)).metier);
+			return str.toString();
 		}
 		public Metier getTemplate() {
 			

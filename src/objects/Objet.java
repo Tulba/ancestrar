@@ -212,10 +212,7 @@ public class Objet {
 		
 		public String parseItemTemplateStats()
 		{
-			String str = "";
-			str += this.ID+";";
-			str += StrTemplate;
-			return str;
+			return (this.ID+";"+StrTemplate);
 		}
 
 		public void applyAction(Personnage perso, Personnage target, int objID, short cellid)
@@ -366,9 +363,11 @@ public class Objet {
 	}
 	
 	public String parseItem()
-	{	
+	{
+		StringBuilder str = new StringBuilder();
 		String posi = position==Constants.ITEM_POS_NO_EQUIPED?"":Integer.toHexString(position);
-		return Integer.toHexString(guid)+"~"+Integer.toHexString(template.getID())+"~"+Integer.toHexString(quantity)+"~"+posi+"~"+parseStatsString()+";";
+		str.append(Integer.toHexString(guid)).append("~").append(Integer.toHexString(template.getID())).append("~").append(Integer.toHexString(quantity)).append("~").append(posi).append("~").append(parseStatsString()).append(";");
+		return str.toString();
 	}
 
 	public String parseStatsString()
@@ -376,17 +375,17 @@ public class Objet {
 		if(getTemplate().getType() == 83)	//Si c'est une pierre d'âme vide
 			return getTemplate().getStrTemplate();
 		
-		String stats = "";
+		StringBuilder stats = new StringBuilder();
 		boolean isFirst = true;
 		for(SpellEffect SE : Effects)
 		{
 			if(!isFirst)
-				stats+=",";
+				stats.append(",");
 			
 			String[] infos = SE.getArgs().split(";");
 			try
 			{
-				stats += Integer.toHexString(SE.getEffectID())+"#"+infos[0]+"#"+infos[1]+"#0#"+infos[5];
+				stats.append(Integer.toHexString(SE.getEffectID())).append("#").append(infos[0]).append("#").append(infos[1]).append("#0#").append(infos[5]);
 			}catch(Exception e)
 			{
 				e.printStackTrace();
@@ -398,26 +397,30 @@ public class Objet {
 		
 		for(Entry<Integer,Integer> entry : Stats.getMap().entrySet())
 		{
-			if(!isFirst)stats+=",";
+			if(!isFirst)
+				stats.append(",");
+			
 			String jet = "0d0+"+entry.getValue();
-			stats += Integer.toHexString(entry.getKey())+"#"+Integer.toHexString(entry.getValue())+"#0#0#"+jet;
+			stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(entry.getValue())).append("#0#0#").append(jet);
 			isFirst = false;
 		}
 		
 		for(Entry<Integer,String> entry : txtStats.entrySet())
 		{
-			if(!isFirst)stats+=",";
+			if(!isFirst)
+				stats.append(",");
+			
 			if(entry.getKey() == Constants.CAPTURE_MONSTRE)
 			{
-				stats +=  Integer.toHexString(entry.getKey())+"#0#0#"+entry.getValue();	
+				stats.append(Integer.toHexString(entry.getKey())).append("#0#0#").append(entry.getValue());	
 			}
 			else
 			{
-				stats +=  Integer.toHexString(entry.getKey())+"#0#0#0#"+entry.getValue();
+				stats.append(Integer.toHexString(entry.getKey())).append("#0#0#0#").append(entry.getValue());
 			}
 			isFirst = false;
 		}
-		return stats;
+		return stats.toString();
 	}
 	
 	public String parseToSave()
@@ -428,17 +431,17 @@ public class Objet {
 	/* *********FM SYSTEM********* */
 	public String parseFMStatsString(String statsstr, Objet obj, int add, boolean negatif)
 	{
-		String stats = "";
+		StringBuilder stats = new StringBuilder();
 		boolean isFirst = true;
 		for(SpellEffect SE : obj.Effects)
 		{
 			if(!isFirst)
-				stats+=",";
+				stats.append(",");
 			
 			String[] infos = SE.getArgs().split(";");
 			try
 			{
-				stats += Integer.toHexString(SE.getEffectID())+"#"+infos[0]+"#"+infos[1]+"#0#"+infos[5];
+				stats.append(Integer.toHexString(SE.getEffectID())).append("#").append(infos[0]).append("#").append(infos[1]).append("#0#").append(infos[5]);
 			}catch(Exception e)
 			{
 				e.printStackTrace();
@@ -450,7 +453,7 @@ public class Objet {
 		
 		for(Entry<Integer,Integer> entry : obj.Stats.getMap().entrySet())
 		{
-			if(!isFirst)stats+=",";
+			if(!isFirst)stats.append(",");
 			if(Integer.toHexString(entry.getKey()).compareTo(statsstr) == 0)
 			{
 				int newstats = 0;
@@ -463,39 +466,39 @@ public class Objet {
 					newstats = entry.getValue()+add;
 				}
 				String jet = "0d0+"+newstats;
-				stats += Integer.toHexString(entry.getKey())+"#"+Integer.toHexString(entry.getValue()+add)+"#0#0#"+jet;
+				stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(entry.getValue())).append(add).append("#0#0#").append(jet);
 			}
 			else
 			{
 				String jet = "0d0+"+entry.getValue();
-				stats += Integer.toHexString(entry.getKey())+"#"+Integer.toHexString(entry.getValue())+"#0#0#"+jet;
+				stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(entry.getValue())).append("#0#0#").append(jet);
 			}
 			isFirst = false;
 		}
 		
 		for(Entry<Integer,String> entry : obj.txtStats.entrySet())
 		{
-			if(!isFirst)stats+=",";
-			stats +=  Integer.toHexString(entry.getKey())+"#0#0#0#"+entry.getValue();
+			if(!isFirst)stats.append(",");
+			stats.append(Integer.toHexString(entry.getKey())).append("#0#0#0#").append(entry.getValue());
 			isFirst = false;
 		}
 		
-		return stats;
+		return stats.toString();
 	}
 	
 	public String parseFMEchecStatsString(Objet obj, double poid)
 	{
-		String stats = "";
+		StringBuilder stats = new StringBuilder();
 		boolean isFirst = true;
 		for(SpellEffect SE : obj.Effects)
 		{
 			if(!isFirst)
-				stats+=",";
+				stats.append(",");
 			
 			String[] infos = SE.getArgs().split(";");
 			try
 			{
-				stats += Integer.toHexString(SE.getEffectID())+"#"+infos[0]+"#"+infos[1]+"#0#"+infos[5];
+				stats.append(Integer.toHexString(SE.getEffectID())).append("#").append(infos[0]).append("#").append(infos[1]).append("#0#").append(infos[5]);
 			}catch(Exception e)
 			{
 				e.printStackTrace();
@@ -535,18 +538,18 @@ public class Objet {
 				}
 				if(newstats < 1) continue;
 				String jet = "0d0+"+newstats;
-				if(!isFirst)stats+=",";
-				stats += Integer.toHexString(entry.getKey())+"#"+Integer.toHexString(newstats)+"#0#0#"+jet;
+				if(!isFirst)stats.append(",");
+				stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(newstats)).append("#0#0#").append(jet);
 				isFirst = false;
 		}
 		
 		for(Entry<Integer,String> entry : obj.txtStats.entrySet())
 		{
-			if(!isFirst)stats+=",";
-			stats +=  Integer.toHexString(entry.getKey())+"#0#0#0#"+entry.getValue();
+			if(!isFirst)stats.append(",");
+			stats.append(Integer.toHexString(entry.getKey())).append("#0#0#0#").append(entry.getValue());
 			isFirst = false;
 		}
-		return stats;
+		return stats.toString();
 	}
 	
 	public Stats generateNewStatsFromTemplate(String statsTemplate,boolean useMax)

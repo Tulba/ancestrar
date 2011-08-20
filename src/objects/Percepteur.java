@@ -12,7 +12,6 @@ import common.World;
 
 public class Percepteur
 {
-	private static Map<Integer,Percepteur> 	_perco	= new TreeMap<Integer,Percepteur>();
 	private int _guid;
 	private short _MapID;
 	private int _cellID;
@@ -114,46 +113,37 @@ public class Percepteur
 	
 	public static String parseGM(Carte map)
 	{
-		String sock = "GM|";
+		StringBuilder sock = new StringBuilder();
+		sock.append("GM|");
 		boolean isFirst = true;
-		for(Entry<Integer, Percepteur> perco :  _perco.entrySet())
+		for(Entry<Integer, Percepteur> perco :  World.getPercos().entrySet())
 		{
 			if(perco.getValue()._inFight > 0) continue;//On affiche pas le perco si il est en combat
 			if(perco.getValue()._MapID == map.get_id())
 			{
-				if(!isFirst) sock += "|";
-				sock += "+";
-				sock += perco.getValue()._cellID+";";
-				sock += perco.getValue()._orientation+";";
-				sock += "0"+";";
-				sock += perco.getValue()._guid+";";
-				sock += (perco.getValue()._N1+","+perco.getValue()._N2+";");
-				sock += "-6"+";";
-				sock += "6000^100;";
+				if(!isFirst) sock.append("|");
+				sock.append("+");
+				sock.append(perco.getValue()._cellID).append(";");
+				sock.append(perco.getValue()._orientation).append(";");
+				sock.append("0").append(";");
+				sock.append(perco.getValue()._guid).append(";");
+				sock.append(perco.getValue()._N1).append(",").append(perco.getValue()._N2).append(";");
+				sock.append("-6").append(";");
+				sock.append("6000^100;");
 				Guild G = World.getGuild(perco.getValue()._GuildID);
-				sock += G.get_lvl()+";";
-				sock += G.get_name()+";"+G.get_emblem();
+				sock.append(G.get_lvl()).append(";");
+				sock.append(G.get_name()).append(";"+G.get_emblem());
 				isFirst = false;
 			}else
 			{
 				continue;
 			}
 		}
-		return sock;
+		return sock.toString();
 	}
 	
 	public int get_guildID() {
 		return _GuildID;
-	}
-	
-	public static void addPerco(Percepteur perco)
-	{
-		_perco.put(perco._guid, perco);
-	}
-	
-	public static Percepteur GetPerco(int percoGuid)
-	{
-		return _perco.get(percoGuid);
 	}
 	
 	public void DelPerco(int percoGuid)
@@ -163,13 +153,7 @@ public class Percepteur
 			//On supprime les objets non ramasser/drop
 			World.removeItem(obj.guid);
 		}
-		_perco.remove(percoGuid);
-	}
-
-	public Map<Integer, Percepteur> get_PercobyID(int id) 
-	{
-		_perco.get(id);
-		return _perco;
+		World.getPercos().remove(percoGuid);
 	}
 	
 	public int get_inFight()
@@ -219,39 +203,40 @@ public class Percepteur
 	
 	public static String parsetoGuild(int GuildID)
 	{
-		String packet ="+";
+		StringBuilder packet = new StringBuilder();
+		packet.append("+");
 		boolean isFirst = true;
-		for(Entry<Integer, Percepteur> perco : _perco.entrySet())
+		for(Entry<Integer, Percepteur> perco : World.getPercos().entrySet())
 		{
 			 if(perco.getValue().get_guildID() == GuildID)
     		 {
 				 	Carte map = World.getCarte((short)perco.getValue().get_mapID());
 				 	
-	    			if(!isFirst) packet += "|";
-	    			packet += perco.getValue().getGuid()+";"+perco.getValue().get_N1()+","+perco.getValue().get_N2()+";";
+	    			if(!isFirst) packet.append("|");
+	    			packet.append(perco.getValue().getGuid()).append(";").append(perco.getValue().get_N1()).append(",").append(perco.getValue().get_N2()).append(";");
 	    			
-	    			packet += Integer.toString(map.get_id(), 36)+","+map.getX()+","+map.getY()+";";
-	    			packet += perco.getValue().get_inFight()+";";
+	    			packet.append(Integer.toString(map.get_id(), 36)).append(",").append(map.getX()).append(",").append(map.getY()).append(";");
+	    			packet.append(perco.getValue().get_inFight()).append(";");
 	    			if(perco.getValue().get_inFight() == 1)
 	    			{
 	    				if(map.getFight(perco.getValue().get_inFightID()) == null)
 	    				{
-	    					packet += "45000;";//TimerActuel
+	    					packet.append("45000;");//TimerActuel
 	    				}else
 	    				{
-	    					packet += perco.getValue().get_turnTimer()+";";//TimerActuel
+	    					packet.append(perco.getValue().get_turnTimer()).append(";");//TimerActuel
 	    				}
-	    				packet += "45000;";//TimerInit
-	    				packet += "7;";//Nombre de place maximum FIXME : En fonction de la map
-	    				packet += "?,?,";//?
+	    				packet.append("45000;");//TimerInit
+	    				packet.append("7;");//Nombre de place maximum FIXME : En fonction de la map
+	    				packet.append("?,?,");//?
 	    			}else
 	    			{
-	    				packet += "0;";
-	    				packet += "45000;";
-	    				packet += "7;";
-	    				packet += "?,?,";
+	    				packet.append("0;");
+	    				packet.append("45000;");
+	    				packet.append("7;");
+	    				packet.append("?,?,");
 	    			}
-	    			packet += "1,2,3,4,5";
+	    			packet.append("1,2,3,4,5");
 	    			
 	    			//	?,?,callername,startdate(Base 10),lastHarvesterName,lastHarvestDate(Base 10),nextHarvestDate(Base 10)
 	    			isFirst = false;
@@ -262,13 +247,13 @@ public class Percepteur
    	 	}
 
 		if(packet.length() == 1) packet = null;
-		return packet;
+		return packet.toString();
 		
 	}
 	
 	public static int GetPercoGuildID(int _id) {
 		
-		for(Entry<Integer, Percepteur> perco : _perco.entrySet())
+		for(Entry<Integer, Percepteur> perco :  World.getPercos().entrySet())
 		{
 			if(perco.getValue().get_mapID() == _id)
 			{
@@ -285,11 +270,11 @@ public class Percepteur
 	
 	public static Percepteur GetPercoByMapID(short _id) {
 		
-		for(Entry<Integer, Percepteur> perco : _perco.entrySet())
+		for(Entry<Integer, Percepteur> perco :  World.getPercos().entrySet())
 		{
 			if(perco.getValue().get_mapID() == _id)
 			{
-				return _perco.get(perco.getValue().getGuid());
+				return  World.getPercos().get(perco.getValue().getGuid());
 			}
 		}
 		return null;
@@ -297,7 +282,7 @@ public class Percepteur
 	
 	public static int CountPercoGuild(int GuildID) {
 		int i = 0;
-		for(Entry<Integer, Percepteur> perco : _perco.entrySet())
+		for(Entry<Integer, Percepteur> perco :  World.getPercos().entrySet())
 		{
 			if(perco.getValue().get_guildID() == GuildID)
 			{
@@ -309,7 +294,7 @@ public class Percepteur
 	
 	public static void parseAttaque(Personnage perso, int guildID)
 	{
-		for(Entry<Integer, Percepteur> perco : _perco.entrySet()) 
+		for(Entry<Integer, Percepteur> perco :  World.getPercos().entrySet()) 
 		{
 			if(perco.getValue()._inFight > 0 && perco.getValue()._GuildID == guildID)
 			{
@@ -320,7 +305,7 @@ public class Percepteur
 	
 	public static void parseDefense(Personnage perso, int guildID)
 	{
-		for(Entry<Integer, Percepteur> perco : _perco.entrySet()) 
+		for(Entry<Integer, Percepteur> perco :  World.getPercos().entrySet()) 
 		{
 			if(perco.getValue()._inFight > 0 && perco.getValue()._GuildID == guildID)
 			{
@@ -330,9 +315,9 @@ public class Percepteur
 	}
 	
 	public static String parseAttaqueToGuild(int guid, short mapid, int fightid)
-	{	
-		String str = "+";
-		str += guid;
+	{
+		StringBuilder str = new StringBuilder();
+		str.append("+").append(guid);
 			
 		for(Entry<Integer, Fight> F : World.getCarte(mapid).get_fights().entrySet())
 		{
@@ -342,21 +327,21 @@ public class Percepteur
 				{
 					for(Fighter f : F.getValue().getFighters(1))//Attaque
 					{
-						str += "|";
-						str += Integer.toString(f.getPersonnage().get_GUID(), 36)+";";
-						str += f.getPersonnage().get_name()+";";
-						str += f.getPersonnage().get_lvl()+";";
-						str += "0;";
+						str.append("|");
+						str.append(Integer.toString(f.getPersonnage().get_GUID(), 36)).append(";");
+						str.append(f.getPersonnage().get_name()).append(";");
+						str.append(f.getPersonnage().get_lvl()).append(";");
+						str.append("0;");
 					}
 				}
 		}
-		return str;
+		return str.toString();
 	}
 	
 	public static String parseDefenseToGuild(int guid, short mapid, int fightid)
-	{	
-		String str = "+";
-		str += guid;
+	{
+		StringBuilder str = new StringBuilder();
+		str.append("+").append(guid);
 			
 		for(Entry<Integer, Fight> F : World.getCarte(mapid).get_fights().entrySet())
 		{
@@ -367,30 +352,33 @@ public class Percepteur
 					for(Fighter f : F.getValue().getFighters(2))//Defense
 					{
 						if(f.getPersonnage() == null) continue;//On sort le percepteur
-						str += "|";
-						str += Integer.toString(f.getPersonnage().get_GUID(), 36)+";";
-						str += f.getPersonnage().get_name()+";";
-						str += f.getPersonnage().get_gfxID()+";";
-						str += f.getPersonnage().get_lvl()+";";
-						str += Integer.toString(f.getPersonnage().get_color1(), 36)+";";
-						str += Integer.toString(f.getPersonnage().get_color2(), 36)+";";
-						str += Integer.toString(f.getPersonnage().get_color3(), 36)+";";
-						str += "0;";
+						str.append("|");
+						str.append(Integer.toString(f.getPersonnage().get_GUID(), 36)).append(";");
+						str.append(f.getPersonnage().get_name()).append(";");
+						str.append(f.getPersonnage().get_gfxID()).append(";");
+						str.append(f.getPersonnage().get_lvl()).append(";");
+						str.append(Integer.toString(f.getPersonnage().get_color1(), 36)).append(";");
+						str.append(Integer.toString(f.getPersonnage().get_color2(), 36)).append(";");
+						str.append(Integer.toString(f.getPersonnage().get_color3(), 36)).append(";");
+						str.append("0;");
 					}
 				}
 		}
-		return str;
+		return str.toString();
 	}
 	
 	public String getItemPercepteurList()
 	{
-		String items = "";
-		for(Objet obj : _objets.values())
+		StringBuilder items = new StringBuilder();
+		if(!_objets.isEmpty())
 		{
-			items+= "O"+obj.parseItem()+";";
+			for(Objet obj : _objets.values())
+			{
+				items.append("O").append(obj.parseItem()).append(";");
+			}
 		}
-		if(_kamas != 0) items += "G"+_kamas;
-		return items;
+		if(_kamas != 0) items.append("G").append(_kamas);
+		return items.toString();
 	}
 	
 	public String parseItemPercepteur()
@@ -521,5 +509,24 @@ public class Percepteur
 	public boolean get_Exchange()
 	{
 		return _inExchange;
+	}
+	
+	public static void removePercepteur(int GuildID)
+	{
+		for(Entry<Integer, Percepteur> perco : World.getPercos().entrySet())
+		{
+			if(perco.getValue().get_guildID() == GuildID)
+			{
+				World.getPercos().remove(perco.getKey());
+				for(Personnage p : World.getCarte((short) perco.getValue().get_mapID()).getPersos())
+				{
+					SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(p.get_curCarte(), perco.getValue().getGuid());//Suppression visuelle
+				}
+				SQLManager.DELETE_PERCO(perco.getKey());//Supprime les percepteurs
+			}else
+			{
+				continue;
+			}
+		}
 	}
 }

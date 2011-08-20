@@ -355,25 +355,25 @@ public class Guild {
 	}
 	public String parseMembersToGM()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
 		for(GuildMember GM : _members.values())
 		{
 			String online = "0";
 			if(GM.getPerso() != null)if(GM.getPerso().isOnline())online = "1";
-			if(str.length() != 0)str += "|";
-			str += GM.getGuid()+";";
-			str += GM.getName()+";";
-			str += GM.getLvl()+";";
-			str += GM.getGfx()+";";
-			str += GM.getRank()+";";
-			str += GM.getXpGave()+";";
-			str += GM.getPXpGive()+";";
-			str += GM.getRights()+";";
-			str += online+";";
-			str += GM.getAlign()+";";
-			str += GM.getHoursFromLastCo();
+			if(str.length() != 0)str.append("|");
+			str.append(GM.getGuid()).append(";");
+			str.append(GM.getName()).append(";");
+			str.append(GM.getLvl()).append(";");
+			str.append(GM.getGfx()).append(";");
+			str.append(GM.getRank()).append(";");
+			str.append(GM.getXpGave()).append(";");
+			str.append(GM.getPXpGive()).append(";");
+			str.append(GM.getRights()).append(";");
+			str.append(online).append(";");
+			str.append(GM.getAlign()).append(";");
+			str.append(GM.getHoursFromLastCo());
 		}
-		return str;
+		return str.toString();
 	}
 	public ArrayList<Personnage> getMembers()
 	{
@@ -387,35 +387,12 @@ public class Guild {
 	}
 	public void removeMember(Personnage perso)
 	{
-		/*if(_members.get(guid).getRank() == 1 && _members.size() > 1)	//Si c'est le meneur et qu'il y a d'autre personne dans la guilde
-		{
-			GuildMember newMeneur = null;
-			for(GuildMember curGm : _members.values())
-			{
-				if(curGm.getGuid() == guid)continue;
-				
-				if(newMeneur == null)
-				{
-					newMeneur = curGm;
-					continue;
-				}
-				if(curGm.getRank() == 2)	//Si bras droit
-				{
-					newMeneur = curGm;
-					break;
-				}
-				if(curGm.getXpGave() > newMeneur.getXpGave())
-					newMeneur = curGm;
-			}
-			if(newMeneur != null)
-				newMeneur.setRank(1);
-		}*/
-		House h = House.get_HouseByPerso(perso);
+		House h = House.get_HouseByPerso(perso);//On prend ça maison
 		if(h != null)
 		{
 			if(House.HouseOnGuild(_id) > 0)
 			{
-				SQLManager.HOUSE_GUILD(h, 0, 0);
+				SQLManager.HOUSE_GUILD(h, 0, 0);//On retire de la guilde
 			}
 		}
 		_members.remove(perso.get_GUID());
@@ -466,37 +443,41 @@ public class Guild {
 	
 	public String compileSpell()
 	{
-		String toReturn = "";
+		if(Spells.isEmpty())return "";
+		
+		StringBuilder toReturn = new StringBuilder();
 		boolean isFirst = true;
 		
 		for(Entry<Integer, SortStats> curSpell : Spells.entrySet())
 		{
 			if(!isFirst)
-				toReturn += "|";
+				toReturn.append("|");
 			
-			toReturn += curSpell.getKey() + ";" + ((curSpell.getValue() == null)?0:curSpell.getValue().getLevel());
+			toReturn.append(curSpell.getKey()).append(";").append(((curSpell.getValue() == null)?0:curSpell.getValue().getLevel()));
 			
 			isFirst = false;
 		}
 		
-		return toReturn;
+		return toReturn.toString();
 	}
 	public String compileStats()
 	{
-		String toReturn = "";
+		if(stats.isEmpty())return "";
+
+		StringBuilder toReturn = new StringBuilder();
 		boolean isFirst = true;
 		
 		for(Entry<Integer, Integer> curStats : stats.entrySet())
 		{
 			if(!isFirst)
-				toReturn += "|";
+				toReturn.append("|");
 			
-			toReturn += curStats.getKey() + ";" + curStats.getValue();
+			toReturn.append(curStats.getKey()).append(";").append(curStats.getValue());
 			
 			isFirst = false;
 		}
 		
-		return toReturn;
+		return toReturn.toString();
 	}
 	
 	public void upgrade_Stats(int statsid, int add)
@@ -521,7 +502,14 @@ public class Guild {
 	public String parsePercotoGuild()
 	{
 		//Percomax|0|100*level|level|perco_add_pods|perco_prospection|perco_sagesse|perco_max|perco_boost|1000+10*level|perco_spells
-		String packet = get_nbrPerco()+"|"+Percepteur.CountPercoGuild(get_id())+"|"+100*get_lvl()+"|"+get_lvl()+"|"+get_Stats(158)+"|"+get_Stats(176)+"|"+get_Stats(124)+"|"+get_nbrPerco()+"|"+get_Capital()+"|"+(1000+(10*get_lvl()))+"|"+compileSpell();
-		return packet;
+		StringBuilder packet = new StringBuilder();
+		
+		packet.append(get_nbrPerco()).append("|");
+		packet.append(Percepteur.CountPercoGuild(get_id())).append("|");
+		packet.append(100*get_lvl()).append("|").append(get_lvl()).append("|");
+		packet.append(get_Stats(158)).append("|").append(get_Stats(176)).append("|");
+		packet.append(get_Stats(124)).append("|").append(get_nbrPerco()).append("|");
+		packet.append(get_Capital()).append("|").append((1000+(10*get_lvl()))).append("|").append(compileSpell());
+		return packet.toString();
 	}
 }
