@@ -1995,6 +1995,8 @@ public class GameThread implements Runnable
 		        	SocketManager.GAME_SEND_Im_PACKET(_perso, "123");
 		        	return;
 		        }
+		        int orientation = Formulas.getRandomValue(1, 3);
+		        _perso.set_orientation(orientation);
 		        Carte map = _perso.get_curCarte();
 		        _perso.set_showSeller(true);
 		        World.addSeller(_perso);
@@ -2712,12 +2714,11 @@ public class GameThread implements Runnable
                     SQLManager.SAVE_NEW_ITEM(clone);
                     _perso.addObjet(clone, true);
                 }
-               
-	            SQLManager.SAVE_PERSONNAGE(seller, true);
 	            //remove kamas
 	            _perso.addKamas(-price * qua);
 	            //add seller kamas
 	            seller.addKamas(price * qua);
+	            SQLManager.SAVE_PERSONNAGE(seller, true);
 	            //send packets
 	            SocketManager.GAME_SEND_STATS_PACKET(_perso);
 	            SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(seller, _perso);
