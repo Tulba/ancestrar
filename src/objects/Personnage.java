@@ -132,6 +132,7 @@ public class Personnage {
 	public Personnage _Follows = null;
 	//Fantome
 	public boolean _isGhosts = false;
+	private int _Speed = 0;
 	//Coffre
 	private Trunk _curTrunk;
 	//Maison
@@ -1295,7 +1296,7 @@ public class Personnage {
 				str.append(this._guildMember.getGuild().get_name()).append(";").append(this._guildMember.getGuild().get_emblem()).append(";");
 			}
 			else str.append(";;");
-			str.append("0;");//TODO: Restriction
+			str.append(get_Speed()).append(";");//Restriction
 			str.append((_onMount&&_mount!=null?_mount.get_color():"")).append(";");
 			str.append(";");
 		}
@@ -1315,7 +1316,7 @@ public class Personnage {
 		str.append((_color1==-1?"-1":Integer.toHexString(_color1))).append(";");
 		str.append((_color2==-1?"-1":Integer.toHexString(_color2))).append(";");
 		str.append((_color3==-1?"-1":Integer.toHexString(_color3))).append(";");
-    	str.append(";");//acessories
+    	str.append(getGMStuffString()).append(";");//acessories
     	str.append((_guildMember != null ? _guildMember.getGuild().get_name() : "")).append(";");//guildName
     	str.append((_guildMember != null ? _guildMember.getGuild().get_emblem() : "")).append(";");//emblem
     	str.append("0;");//offlineType
@@ -2095,7 +2096,7 @@ public class Personnage {
 		
 		//Verification de la carte
 		//Verifier la validité du mountpark
-		if(_curCarte.getMountPark() != null && _curCarte.getMountPark().get_guild().get_id() != -1)
+		if(_curCarte.getMountPark() != null && _curCarte.getMountPark().get_owner() > 0 && _curCarte.getMountPark().get_guild().get_id() != -1)
 		{
 			if(World.getGuild(_curCarte.getMountPark().get_guild().get_id()) == null)//Ne devrait pas arriver
 			{
@@ -3415,6 +3416,7 @@ public class Personnage {
 		set_gfxID(8004);
 		set_canAggro(false);
 		set_away(true);
+		set_Speed(-40);
 		teleport((short)8534, 297);
 		//Le teleporter aux zone de mort la plus proche
 		/*for(Carte map : ) FIXME
@@ -3636,5 +3638,13 @@ public class Personnage {
 	public void addStoreItem(int guid, int price)
 	{
 		_storeItems.put(guid, price);
+	}
+
+	public void set_Speed(int _Speed) {
+		this._Speed = _Speed;
+	}
+
+	public int get_Speed() {
+		return _Speed;
 	}
 }

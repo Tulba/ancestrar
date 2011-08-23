@@ -2820,7 +2820,7 @@ public class GameThread implements Runnable
 			}
 		}
 		//Si perco
-		if(_perso.get_isOnPercepteurID() > 0)
+		if(_perso.get_isOnPercepteurID() != 0)
 		{
 			Percepteur perco = World.getPerco(_perso.get_isOnPercepteurID());
 			if(perco == null) return;

@@ -1589,7 +1589,7 @@ public class World {
 		
 		for(Entry<Short, Carte.MountPark> mp : MountPark.entrySet())
 		{
-			if(mp.getValue().get_guild().get_id() == GuildID)
+			if(mp.getValue().get_guild() != null && mp.getValue().get_guild().get_id() == GuildID)
 			{
 				packet.append("|").append(mp.getValue().get_map().get_id()).append(";").append(mp.getValue().get_size()).append(";").append(mp.getValue().getObjectNumb());// Nombre d'objets pour le dernier
 			}else
