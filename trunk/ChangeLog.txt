@@ -1,3 +1,12 @@
+[23/08/2011]
+- SQLManager : Correction d'un bug lors de la création d'un personnage (THX nami-doc).
+- World : Correction de la fonction parseMPtoGuild (Enclo-Guilde).
+- Percepteur : Correction de la fonction parsetoGuild (Perco-Guilde).
+- Personnage : Correction des accessoires dans le mode marchand (THX garbol2011).
+
+[21/08/2011]
+- Personnage : Correction de la vitesse de déplacement lorsque l'on est un fantôme (THX Defura).
+
 [20/08/2011]
 - GameThread : Correction de quelques problème liés au mode marchand.
 

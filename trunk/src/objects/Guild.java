@@ -501,7 +501,7 @@ public class Guild {
 	
 	public String parsePercotoGuild()
 	{
-		//Percomax|0|100*level|level|perco_add_pods|perco_prospection|perco_sagesse|perco_max|perco_boost|1000+10*level|perco_spells
+		//Percomax|NbPerco|100*level|level|perco_add_pods|perco_prospection|perco_sagesse|perco_max|perco_boost|1000+10*level|perco_spells
 		StringBuilder packet = new StringBuilder();
 		
 		packet.append(get_nbrPerco()).append("|");

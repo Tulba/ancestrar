@@ -204,14 +204,13 @@ public class Percepteur
 	public static String parsetoGuild(int GuildID)
 	{
 		StringBuilder packet = new StringBuilder();
-		packet.append("+");
 		boolean isFirst = true;
 		for(Entry<Integer, Percepteur> perco : World.getPercos().entrySet())
 		{
 			 if(perco.getValue().get_guildID() == GuildID)
     		 {
 				 	Carte map = World.getCarte((short)perco.getValue().get_mapID());
-				 	
+				 	if(isFirst) packet.append("+");
 	    			if(!isFirst) packet.append("|");
 	    			packet.append(perco.getValue().getGuid()).append(";").append(perco.getValue().get_N1()).append(",").append(perco.getValue().get_N2()).append(";");
 	    			
@@ -245,10 +244,8 @@ public class Percepteur
     			 continue;
     		 }
    	 	}
-
-		if(packet.length() == 1) packet = null;
+		if(packet.length() == 0) packet = new StringBuilder("null");
 		return packet.toString();
-		
 	}
 	
 	public static int GetPercoGuildID(int _id) {
