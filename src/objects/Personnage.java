@@ -1875,7 +1875,7 @@ public class Personnage {
 
 	public void levelUp(boolean send,boolean addXp)
 	{
-		if(_lvl == 200)return;
+		if(_lvl == World.getExpLevelSize())return;
 		_lvl++;
 		_capital+=5;
 		_spellPts++;
@@ -1902,7 +1902,7 @@ public class Personnage {
 	{
 		_curExp += winxp;
 		int exLevel = _lvl;
-		while(_curExp >= World.getPersoXpMax(_lvl) && _lvl<200)
+		while(_curExp >= World.getPersoXpMax(_lvl) && _lvl<World.getExpLevelSize())
 			levelUp(true,false);
 		if(_isOnline)
 		{
@@ -2643,8 +2643,14 @@ public class Personnage {
 			SocketManager.GAME_SEND_OBJET_MOVE_PACKET(this, obj);
 		}
 		//on envoie les packets
+		if(get_fight() != null && get_fight().get_state() == 2)
+		{
+			SocketManager.GAME_SEND_ALTER_FIGHTER_MOUNT(get_fight(), get_fight().getFighterByPerso(this), get_GUID(), get_fight().getTeamID(get_GUID()), get_fight().getOtherTeamID(get_GUID()));
+		}else
+		{
+			SocketManager.GAME_SEND_ALTER_GM_PACKET(_curCarte,this);
+		}
 		SocketManager.GAME_SEND_Re_PACKET(this, "+", _mount);
-		SocketManager.GAME_SEND_ALTER_GM_PACKET(_curCarte,this);
 		SocketManager.GAME_SEND_Rr_PACKET(this,_onMount?"+":"-");
 		SocketManager.GAME_SEND_STATS_PACKET(this);
 	}
@@ -3412,6 +3418,7 @@ public class Personnage {
 	*/
 	public void set_Ghosts()
 	{
+		if(isOnMount()) toogleOnMount();
 		_isGhosts = true;
 		set_gfxID(8004);
 		set_canAggro(false);
@@ -3433,6 +3440,7 @@ public class Personnage {
 		set_gfxID(Integer.parseInt(get_classe()+""+get_sexe()));
 		set_canAggro(true);
 		set_away(false);
+		set_Speed(0);
 		SocketManager.GAME_SEND_STATS_PACKET(this);
 		SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(get_curCarte(), get_GUID());
 		SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(get_curCarte(), this);

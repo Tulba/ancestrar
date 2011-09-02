@@ -567,7 +567,7 @@ public class IA {
 			}
 		}
 		
-		private static void apply_typePerco(Fighter F, Fight fight) //IA propre La Folle
+		private static void apply_typePerco(Fighter F, Fight fight)
 		{
 			while(!stop && F.canPlay())
 			{
@@ -871,7 +871,7 @@ public class IA {
 						if( PDVPER < PDVPERmin && PDVPER < 95)
 						{
 							int infl = 0;
-							for(Entry<Integer, SortStats> ss : World.getGuild(F.getPerco().GetPercoGuildID()).getSpells().entrySet())
+							for(Entry<Integer, SortStats> ss : World.getGuild(f.getPerco().GetPercoGuildID()).getSpells().entrySet())
 							{
 								if(ss.getValue() == null) continue;
 								if(infl < calculInfluenceHeal(ss.getValue()) && calculInfluenceHeal(ss.getValue()) != 0 && fight.CanCastSpell(f, ss.getValue(), F.get_fightCell(), -1))//Si le sort est plus interessant

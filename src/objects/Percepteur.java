@@ -186,7 +186,7 @@ public class Percepteur
 		return _inFightID;
 	}
 	
-	public int get_mapID()
+	public short get_mapID()
 	{
 		return _MapID;
 	}
@@ -293,9 +293,9 @@ public class Percepteur
 	{
 		for(Entry<Integer, Percepteur> perco :  World.getPercos().entrySet()) 
 		{
-			if(perco.getValue()._inFight > 0 && perco.getValue()._GuildID == guildID)
+			if(perco.getValue().get_inFight() > 0 && perco.getValue().get_guildID() == guildID)
 			{
-				SocketManager.GAME_SEND_gITp_PACKET(perso, parseAttaqueToGuild(perco.getValue()._guid, perco.getValue()._MapID, perco.getValue()._inFightID));
+				SocketManager.GAME_SEND_gITp_PACKET(perso, parseAttaqueToGuild(perco.getValue().getGuid(), perco.getValue().get_mapID(), perco.getValue().get_inFightID()));
 			}
 		}
 	}
@@ -304,9 +304,9 @@ public class Percepteur
 	{
 		for(Entry<Integer, Percepteur> perco :  World.getPercos().entrySet()) 
 		{
-			if(perco.getValue()._inFight > 0 && perco.getValue()._GuildID == guildID)
+			if(perco.getValue().get_inFight() > 0 && perco.getValue().get_guildID() == guildID)
 			{
-				SocketManager.GAME_SEND_gITP_PACKET(perso, parseDefenseToGuild(perco.getValue()._guid, perco.getValue()._MapID, perco.getValue()._inFightID));
+				SocketManager.GAME_SEND_gITP_PACKET(perso, parseDefenseToGuild(perco.getValue().getGuid(), perco.getValue().get_mapID(), perco.getValue().get_inFightID()));
 			}
 		}
 	}
@@ -481,16 +481,16 @@ public class Percepteur
 	
 	public String get_LogItems()
 	{
-		String str = "";
+		StringBuilder str = new StringBuilder();
 		boolean isFirst = true;
-		if(_LogObjets == null) return str;
+		if(_LogObjets.isEmpty()) return "";
 		for(Objet obj : _LogObjets.values())
 		{
-			if(!isFirst) str += ";";
-			str += obj.getGuid()+","+obj.getQuantity();
+			if(!isFirst) str.append(";");
+			 str.append(obj.getTemplate().getID()).append(",").append(obj.getQuantity());
 			isFirst = false;
 		}
-		return str;
+		return str.toString();
 	}
 	
 	public void addObjet(Objet newObj)

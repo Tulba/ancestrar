@@ -375,7 +375,9 @@ public class Constants
 		//Cordomage
 		{163},{164},
 		//Joyaumage
-		{169},{168}
+		{169},{168},
+		//Bricoleur
+		{171},{182}
 	};
 	
 	//Buff déclenché en cas de frappe

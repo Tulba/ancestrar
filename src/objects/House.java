@@ -407,28 +407,19 @@ public class House
 	{
 		boolean isFirst = true;
 		StringBuilder packet = new StringBuilder();
-		packet.append("+");
 		for(Entry<Integer, House> house : World.getHouses().entrySet())
 		{
 			if(house.getValue().get_guild_id() == P.get_guild().get_id() && house.getValue().get_guild_rights() > 0)
 			{
-				if(isFirst)
-				{
-					packet.append(house.getKey()).append(";");
-					packet.append(World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()).append(";");
-					packet.append(World.getCarte((short)house.getValue().get_mapid()).getX()).append(",").append(World.getCarte((short)house.getValue().get_mapid()).getY()).append(";");
-					packet.append("0;");//TODO : Compétences ...
-					packet.append(house.getValue().get_guild_rights());	
-					isFirst = false;
-				}else
-				{
-					packet.append("|");
-					packet.append(house.getKey()).append(";");
-					packet.append(World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()).append(";");
-					packet.append(World.getCarte((short)house.getValue().get_mapid()).getX()).append(",").append(World.getCarte((short)house.getValue().get_mapid()).getY()).append(";");
-					packet.append("0;");//TODO : Compétences ...
-					packet.append(house.getValue().get_guild_rights());	
-				}
+				if(isFirst) packet.append("+");
+				if(!isFirst) packet.append("|");
+				
+				packet.append(house.getKey()).append(";");
+				packet.append(World.getPersonnage(house.getValue().get_owner_id()).get_compte().get_pseudo()).append(";");
+				packet.append(World.getCarte((short)house.getValue().get_mapid()).getX()).append(",").append(World.getCarte((short)house.getValue().get_mapid()).getY()).append(";");
+				packet.append("0;");//TODO : Compétences ...
+				packet.append(house.getValue().get_guild_rights());	
+				isFirst = false;
 			}
 		}
 			return packet.toString();

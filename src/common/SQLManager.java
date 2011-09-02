@@ -2312,13 +2312,13 @@ public class SQLManager {
 					switch (action)
 					{
 						case 1:	//Monter d'un level
-							if(perso.get_lvl()==200)continue;
+							if(perso.get_lvl()==World.getExpLevelSize())continue;
 							for(int n = nombre;n>1;n--)perso.levelUp(false,true);
 							perso.levelUp(true,true);
 							sortie+= nombre+" Niveau(x)";
 							break;
 						case 2:	//Ajouter X point d'experience
-							if(perso.get_lvl()==200)continue;
+							if(perso.get_lvl()==World.getExpLevelSize())continue;
 							perso.addXp(nombre);
 							sortie+=nombre+" Xp";
 							break;

@@ -1055,7 +1055,7 @@ public class Commands {
 			{
 				count = Integer.parseInt(infos[1]);
 				if(count < 1)	count = 1;
-				if(count > 200)	count = 200;
+				if(count > World.getExpLevelSize())	count = World.getExpLevelSize();
 				Personnage perso = _perso;
 				if(infos.length == 3)//Si le nom du perso est spécifié
 				{
@@ -1309,7 +1309,7 @@ public class Commands {
 			}
 			P.get_compte().setBanned(true);
 			SQLManager.UPDATE_ACCOUNT_DATA(P.get_compte());
-			if(P.get_compte().getGameThread() == null)P.get_compte().getGameThread().kick();
+			if(P.get_compte().getGameThread() != null)P.get_compte().getGameThread().kick();
 			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Vous avez banni "+P.get_name());
 			return;
 		}else
