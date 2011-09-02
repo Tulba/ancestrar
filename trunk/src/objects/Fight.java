@@ -165,9 +165,11 @@ public class Fight
 		private int _id = 0;
 		private boolean _canPlay = false;
 		private Fight _fight;
-		private int _type = 0; // 1 Personnage, 2 : Mob
+		private int _type = 0; // 1 : Personnage, 2 : Mob, 5 : Perco
 		private MobGrade _mob = null;
 		private Personnage _perso = null;
+		private Percepteur _Perco = null;
+		private Personnage _double = null;
 		private int _team = -2;
 		private Case _cell;
 		private ArrayList<SpellEffect> _fightBuffs = new ArrayList<SpellEffect>();
@@ -183,8 +185,6 @@ public class Fight
 		private Map<Integer,Integer> _state = new TreeMap<Integer,Integer>();
 		private Fighter _isHolding;
 		private Fighter _holdedBy;
-		private Percepteur _Perco = null;
-		private Personnage _double = null;
 		private ArrayList<LaunchedSort> _launchedSort = new ArrayList<LaunchedSort>();
 		private Fighter _oldCible = null;
 		
@@ -228,6 +228,7 @@ public class Fight
 			_fight = f;
 			_type = 5;
 			_Perco = Perco;
+			System.out.println("Perco:"+Perco);
 			_id = -1;
 			_PDVMAX = (World.getGuild(Perco.get_guildID()).get_lvl()*100);
 			_PDV = (World.getGuild(Perco.get_guildID()).get_lvl()*100);
@@ -389,10 +390,10 @@ public class Fight
 			return stats;
 		}
 		
-		public String getGmPacket()
+		public String getGmPacket(char c)
 		{
 			StringBuilder str = new StringBuilder();
-			str.append("GM|+");
+			str.append("GM|").append(c);
 			str.append(_cell.getID()).append(";");
 			_orientation = 1;
 			str.append(_orientation).append(";");
@@ -785,7 +786,7 @@ public class Fight
 			if(_perso != null)
 			{
 				int max = _perso.get_lvl()+1;
-				if(max>200)max = 200;
+				if(max>World.getExpLevelSize())max = World.getExpLevelSize();
 				return World.getExpLevel(_perso.get_lvl()).perso+str+_perso.get_curExp()+str+World.getExpLevel(max).perso;		
 			}
 			return "0"+str+"0"+str+"0";
@@ -1191,12 +1192,12 @@ public class Fight
 	private List<Glyphe> _glyphs = new ArrayList<Glyphe>();
 	private List<Piege> _traps = new ArrayList<Piege>();
 	private MobGroup _mobGroup;
+	private Percepteur _perco;
 	
 	private ArrayList<Fighter> _captureur = new ArrayList<Fighter>(8);	//Création d'une liste de longueur 8. Les combats contiennent un max de 8 Attaquant
 	private boolean isCapturable = false;
 	private int captWinner = -1;
 	private PierreAme pierrePleine;
-	private Percepteur _Perco;
 	
 	//TIMER décompte toutes les secondes
 	private Timer TurnTimer (final int timer, final Percepteur perco)
@@ -1391,12 +1392,12 @@ public class Fight
 		_map = map.getMapCopy();
 		_mapOld = map;
 		_init0 = new Fighter(this,perso);
-		_Perco = perco;
+		_perco = perco;
 		
 		_team0.put(perso.get_GUID(), _init0);
 
-		Fighter mob = new Fighter(this,perco);
-		_team1.put(-1, mob);
+		Fighter percoF = new Fighter(this,perco);
+		_team1.put(-1, percoF);
 
 		SocketManager.GAME_SEND_FIGHT_GJK_PACKET_TO_FIGHT(this,1,2,0,1,0,45000,_type);
 		
@@ -1623,7 +1624,7 @@ public class Fight
 		if(_state >= Constants.FIGHT_STATE_ACTIVE)return;
 		if(_type == Constants.FIGHT_TYPE_PVT)
 		{
-			_Perco.set_inFight((byte)2);
+			_perco.set_inFight((byte)2);
 			//On actualise la guilde+Message d'attaque FIXME
 			for(Personnage z : World.getGuild(_guildID).getMembers())
 			{
@@ -1887,9 +1888,10 @@ public class Fight
 		Fighter curMax = null;
 		boolean team1_ready = false;
 		boolean team2_ready = false;
+		byte actTeam = -1;
 		do
 		{
-			if(!team1_ready)
+			if((actTeam == -1 || actTeam == 0 || team2_ready) && !team1_ready) 
 			{
 				team1_ready = true;
 				for(Entry<Integer,Fighter> entry : _team0.entrySet())
@@ -1902,16 +1904,8 @@ public class Fight
 						curMax = entry.getValue();
 					}
 				}
-			}
-			if(!team1_ready)
-			{
-				if(curMax == null)return;
-				_ordreJeu.add(curMax);
-				curMaxIni = 0;
-				curMax = null;
-			}
-			
-			if(!team2_ready)
+			}		
+			if((actTeam == -1 || actTeam == 1 || team1_ready) && !team2_ready) 
 			{
 				team2_ready = true;
 				for(Entry<Integer,Fighter> entry : _team1.entrySet())
@@ -1925,14 +1919,14 @@ public class Fight
 					}
 				}
 			}
-			if(!team2_ready)
-			{
 				if(curMax == null)return;
 				_ordreJeu.add(curMax);
+				if(curMax.getTeam() == 0) 
+					actTeam = 1; 
+				else 
+					actTeam = 0; 
 				curMaxIni = 0;
 				curMax = null;
-			}
-			
 		}while(_ordreJeu.size() != getFighters(3).size());
 	}
 
@@ -2069,7 +2063,7 @@ public class Fight
 		SocketManager.GAME_SEND_ADD_IN_TEAM_PACKET_TO_MAP(perso.get_curCarte(),(current_Join.getTeam()==0?_init0:_init1).getGUID(), current_Join);
 		SocketManager.GAME_SEND_FIGHT_PLAYER_JOIN(this,7,current_Join);
 		SocketManager.GAME_SEND_MAP_FIGHT_GMS_PACKETS(this,_map,perso);
-		if(this._Perco != null)
+		if(_perco != null)
 		{
 			for(Personnage z : World.getGuild(_guildID).getMembers())
 			{
@@ -3127,7 +3121,7 @@ public class Fight
 				{
 					_mapOld.RemoveNPC(F._Perco.getGuid());
 					SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(_mapOld, F._Perco.getGuid());
-					_Perco.DelPerco(F._Perco.getGuid());
+					_perco.DelPerco(F._Perco.getGuid());
 					SQLManager.DELETE_PERCO(F._Perco.getGuid());
 					//On actualise la guilde+Message d'attaque FIXME
 					for(Personnage z : World.getGuild(_guildID).getMembers())
@@ -3745,9 +3739,9 @@ public class Fight
 											SocketManager.GAME_SEND_MESSAGE(z, "Votre percepteur remporte la victioire.", Ancestra.CONFIG_MOTD_COLOR);
 										}
 									}
-									_Perco.set_inFight((byte)0);
-									_Perco.set_inFightID((byte)-1);
-									for(Personnage z : World.getCarte((short)_Perco.get_mapID()).getPersos())
+									_perco.set_inFight((byte)0);
+									_perco.set_inFightID((byte)-1);
+									for(Personnage z : World.getCarte((short)_perco.get_mapID()).getPersos())
 									{
 										if(z == null) continue;
 										SocketManager.GAME_SEND_MAP_PERCO_GMS_PACKETS(z.get_compte().getGameThread().get_out(), z.get_curCarte());
@@ -3914,7 +3908,7 @@ public class Fight
 				infos.append("0,");
 				infos.append(_team0.size()).append(";");
 				//Team2
-				infos.append("1,");//FIXME: valeur pour Monstres ? :o
+				infos.append("1,");
 				infos.append(_team1.get(_team1.keySet().toArray()[0]).getMob().getTemplate().getAlign()).append(",");
 				infos.append(_team1.size()).append(";");
 			break;
@@ -3923,7 +3917,7 @@ public class Fight
 				infos.append("0,");
 				infos.append(_team0.size()).append(";");
 				//Team2
-				infos.append("4,");//FIXME: valeur pour Percepteur
+				infos.append("4,");
 				infos.append("0,");
 				infos.append(_team1.size()).append(";");
 			break;
@@ -4130,7 +4124,7 @@ public class Fight
 					}
 				}else if(fight.getValue()._type == Constants.FIGHT_TYPE_PVT)
 				{
-					SocketManager.GAME_SEND_GAME_ADDFLAG_PACKET_TO_PLAYER(P, fight.getValue()._init0.getPersonnage().get_curCarte(),5,fight.getValue()._init0.getGUID(),fight.getValue()._Perco.getGuid(),(fight.getValue()._init0.getPersonnage().get_curCell().getID()+1),"0;-1",fight.getValue()._Perco.get_cellID(),"3;-1");
+					SocketManager.GAME_SEND_GAME_ADDFLAG_PACKET_TO_PLAYER(P, fight.getValue()._init0.getPersonnage().get_curCarte(),5,fight.getValue()._init0.getGUID(),fight.getValue()._perco.getGuid(),(fight.getValue()._init0.getPersonnage().get_curCell().getID()+1),"0;-1",fight.getValue()._perco.get_cellID(),"3;-1");
 					for(Entry<Integer, Fighter> F : fight.getValue()._team0.entrySet())
 					{
 						if(Ancestra.CONFIG_DEBUG) System.out.println("PVT1: "+F.getValue().getPersonnage().get_name());
@@ -4139,7 +4133,7 @@ public class Fight
 					for(Entry<Integer, Fighter> F : fight.getValue()._team1.entrySet())
 					{
 						if(Ancestra.CONFIG_DEBUG) System.out.println("PVT2: "+F.getValue());
-						SocketManager.GAME_SEND_ADD_IN_TEAM_PACKET_TO_PLAYER(P, fight.getValue()._map,fight.getValue()._Perco.getGuid(), F.getValue());
+						SocketManager.GAME_SEND_ADD_IN_TEAM_PACKET_TO_PLAYER(P, fight.getValue()._map,fight.getValue()._perco.getGuid(), F.getValue());
 					}
 				}
 			}

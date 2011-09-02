@@ -1,3 +1,22 @@
+[02/09/2011]
+- Constants : Correction de métier bricoleur.
+
+[31/08/2011]
+- Personnage/SocketManager : Correction de l'affichage lorsque l'on équipe une dragodinde au début d'un combat.
+- Fight : Correction de la formule InitOrdreJeu() (THX Tenkai).
+
+[26/08/2011]
+- Commands : Correction de la commande BAN (Expulsion du joueur).
+
+[25/08/2011]
+- GameThread : Correction récolte percepteur.
+- Percepteur : Correction du message lors de la récolte du percepteur.
+- Personnage : Correction de la fonction set_Alive() (THX Conceptor).
+
+[24/08/2011]
+- GameThread : Correction du nom des percepteurs (THX Mynymoys).
+- Commands/SQLManager/World/Fight/Personnage : ExpLevels Max. et Min. directement obtenu depuis la BDD (THX Tpxp).
+
 [23/08/2011]
 - SQLManager : Correction d'un bug lors de la création d'un personnage (THX nami-doc).
 - World : Correction de la fonction parseMPtoGuild (Enclo-Guilde).

@@ -848,7 +848,7 @@ public class SpellEffect
 			fight.get_map().getCase(cellID).addFighter(F);
 			F.set_fightCell(fight.get_map().getCase(cellID));
 			fight.addFighterInTeam(F,caster.getTeam());
-			String gm = F.getGmPacket().substring(3);
+			String gm = F.getGmPacket('+').substring(3);
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 181, caster.getGUID() + "", gm);
 			
 		}
@@ -1623,7 +1623,7 @@ public class SpellEffect
 			F.set_fightCell(fight.get_map().getCase(cell));
 			fight.get_ordreJeu().add((fight.get_ordreJeu().indexOf(caster)+1),F);
 			fight.addFighterInTeam(F,caster.getTeam());
-			String gm = F.getGmPacket().substring(3);
+			String gm = F.getGmPacket('+').substring(3);
 			String gtl = fight.getGTL();
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 180, caster.getGUID() + "", gm);
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 999, caster.getGUID()+"", gtl);
@@ -1668,7 +1668,7 @@ public class SpellEffect
 			F.set_fightCell(fight.get_map().getCase(cell));
 			fight.get_ordreJeu().add((fight.get_ordreJeu().indexOf(caster)+1),F);
 			fight.addFighterInTeam(F,caster.getTeam());
-			String gm = F.getGmPacket().substring(3);
+			String gm = F.getGmPacket('+').substring(3);
 			String gtl = fight.getGTL();
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 181, caster.getGUID() + "", gm);
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 999, caster.getGUID()+"", gtl);
@@ -3741,7 +3741,7 @@ public class SpellEffect
 			int percent = (100-value)*target.getPDVMAX()/100;
 			target.removePDV(percent);
 					
-			String gm = target.getGmPacket().substring(3);
+			String gm = target.getGmPacket('+').substring(3);
 			String gtl = fight.getGTL();
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 181, target.getGUID() + "", gm);
 			SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 999, target.getGUID()+"", gtl);

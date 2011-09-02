@@ -526,6 +526,27 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fighter ID "+f.get_id()+": Send>>"+packet);
 	}
+	
+	public static void GAME_SEND_ALTER_FIGHTER_MOUNT(Fight fight, Fighter fighter, int guid, int team, int otherteam)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("GM|-").append(guid).append((char)0x00).append(fighter.getGmPacket('~'));
+		for(Fighter F : fight.getFighters(team))
+		{
+			if(F.getPersonnage() == null || F.getPersonnage().get_compte().getGameThread() == null || !F.getPersonnage().isOnline())continue;
+			send(F.getPersonnage().get_compte().getGameThread().get_out(),packet.toString());
+		}
+		if(otherteam > -1)
+		{
+			for(Fighter F : fight.getFighters(otherteam))
+			{
+				if(F.getPersonnage() == null || F.getPersonnage().get_compte().getGameThread() == null || !F.getPersonnage().isOnline())continue;
+				send(F.getPersonnage().get_compte().getGameThread().get_out(),packet.toString());
+			}
+		}
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Fight ID "+fight.get_id()+": Send>>"+packet);
+	}
 
 	public static void GAME_SEND_ADD_PLAYER_TO_MAP(Carte map, Personnage perso)
 	{
@@ -1213,7 +1234,7 @@ public class SocketManager {
 	
 	public static void GAME_SEND_FIGHT_PLAYER_JOIN(Fight fight,int teams, Fighter _fighter)
 	{
-		String packet = _fighter.getGmPacket();
+		String packet = _fighter.getGmPacket('+');
 		
 		for(Fighter f : fight.getFighters(teams))
 		{

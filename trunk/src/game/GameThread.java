@@ -597,9 +597,8 @@ public class GameThread implements Runnable
 			return;
 		}
 		if(Percepteur.CountPercoGuild(_perso.get_guild().get_id()) >= _perso.get_guild().get_nbrPerco()) return;//Limite de percepteur
-		//FIXME : Don't Works
-		short random1 = (short) (Formulas.getRandomValue(1, 128));
-		short random2 = (short) (Formulas.getRandomValue(1, 226));
+		short random1 = (short) (Formulas.getRandomValue(1, 39));
+		short random2 = (short) (Formulas.getRandomValue(1, 71));
 		//Ajout du Perco.
 		int id = SQLManager.GetNewIDPercepteur();
 		Percepteur perco = new Percepteur(id, _perso.get_curCarte().get_id(), _perso.get_curCell().getID(), (byte)3, _perso.get_guild().get_id(), random1, random2, "", 0, 0);
@@ -2290,7 +2289,7 @@ public class GameThread implements Runnable
 			return;
 		}
 		//Percepteur
-		if(_perso.get_isOnPercepteurID() > 0)
+		if(_perso.get_isOnPercepteurID() != 0)
 		{
 			Percepteur perco = World.getPerco(_perso.get_isOnPercepteurID());
 			if(perco == null || perco.get_inFight() > 0)return;

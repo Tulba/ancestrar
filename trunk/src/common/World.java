@@ -785,6 +785,11 @@ public class World {
 		return NPCReponses.get(guid);
 	}
 	
+	public static int getExpLevelSize()
+	{
+		return ExpLevels.size();
+	}
+	
 	public static void addExpLevel(int lvl,ExpLevel exp)
 	{
 		ExpLevels.put(lvl, exp);
@@ -904,14 +909,14 @@ public class World {
 	
 	public static long getPersoXpMin(int _lvl)
 	{
-		if(_lvl > 200) 	_lvl = 200;
+		if(_lvl > getExpLevelSize()) 	_lvl = getExpLevelSize();
 		if(_lvl < 1) 	_lvl = 1;
 		return ExpLevels.get(_lvl).perso;
 	}
 	
 	public static long getPersoXpMax(int _lvl)
 	{
-		if(_lvl >= 200) 	_lvl = 199;
+		if(_lvl >= getExpLevelSize()) 	_lvl = (getExpLevelSize()-1);
 		if(_lvl <= 1)	 	_lvl = 1;
 		return ExpLevels.get(_lvl+1).perso;
 	}
@@ -1262,7 +1267,7 @@ public class World {
 	}
 	public static long getGuildXpMax(int _lvl)
 	{
-		if(_lvl >= 200) 	_lvl = 200-1;
+		if(_lvl >= 200) 	_lvl = 199;
 		if(_lvl <= 1)	 	_lvl = 1;
 		return ExpLevels.get(_lvl+1).guilde;
 	}

@@ -74,7 +74,7 @@ public class GameServer implements Runnable{
 						if (perso.getLastPacketTime() + Ancestra.CONFIG_MAX_IDLE_TIME < System.currentTimeMillis())
 						{
 							
-							if(perso.isOnline())
+							if(perso != null && perso.get_compte().getGameThread() != null && perso.isOnline())
 							{
 								GameServer.addToLog("Kick pour inactiviter de : "+perso.get_name());
 								SocketManager.REALM_SEND_MESSAGE(perso.get_compte().getGameThread().get_out(),"01|"); 

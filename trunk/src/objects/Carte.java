@@ -1530,7 +1530,7 @@ public class Carte {
 		{
 			for(Entry<Integer,Fighter> f : cell.getValue().getFighters().entrySet())
 			{
-				packet.append(f.getValue().getGmPacket()).append('\u0000');
+				packet.append(f.getValue().getGmPacket('+')).append('\u0000');
 			}
 		}
 		return packet.toString();

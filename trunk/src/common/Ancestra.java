@@ -104,6 +104,7 @@ public class Ancestra {
 		{
 			System.out.println("Connexion invalide");
 			Ancestra.closeServers();
+			System.exit(0);
 		}
 		System.out.println("Creation du Monde :");
 		long startTime = System.currentTimeMillis();
