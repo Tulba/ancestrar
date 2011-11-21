@@ -1,1 +1,0 @@
-ALTER TABLE `percepteurs` ADD `objets` TEXT NOT NULL AFTER `N2`;

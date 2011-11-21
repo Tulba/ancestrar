@@ -1,1 +1,0 @@
-DROP TABLE IF EXISTS `ancestra_other`.`temp_mapobjects;

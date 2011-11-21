@@ -1,2 +1,0 @@
-DELETE FROM `ancestra_static`.`use_item_actions` WHERE `use_item_actions`.`template` = 2542 AND `use_item_actions`.`type` = 5 AND `use_item_actions`.`args` = '2542,-1' LIMIT 1;
-INSERT INTO `ancestra_static`.`use_item_actions` (`template`, `type`, `args`) VALUES ('9035', '26', '');

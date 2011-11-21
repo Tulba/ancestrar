@@ -1,1 +1,0 @@
-ALTER TABLE `accounts` ADD `vip` INT( 1 ) NOT NULL DEFAULT '0' AFTER `level` 
