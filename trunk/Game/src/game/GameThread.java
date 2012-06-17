@@ -3267,13 +3267,6 @@ public class GameThread implements Runnable
 		command.consoleCommand(packet);
 	}
 
-	public void closeSocket()
-	{
-		try {
-			this._s.close();
-		} catch (IOException e) {}
-	}
-
 	private void Basic_chatMessage(String packet)
 	{
 		String msg = "";

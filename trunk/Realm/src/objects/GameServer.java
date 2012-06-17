@@ -15,6 +15,8 @@ public class GameServer
 	private String KEY;
 	private ComThread exchangeThread = null;
 	private int BlockLevel = 0;
+	private int PlayerLimit = 0;
+	private int NumPlayer = 0;
 	
 	public GameServer(int ID, String IP, int Port, int State, String HostDB, String DBName, String DBUser, String DBPassword, String KEY)
 	{
@@ -99,5 +101,25 @@ public class GameServer
 	public int getBlockLevel()
 	{
 		return this.BlockLevel;
+	}
+	
+	public void set_PlayerLimit(int num)
+	{
+		PlayerLimit = num;
+	}
+	
+	public int get_PlayerLimit()
+	{
+		return PlayerLimit;
+	}
+	
+	public void set_NumPlayer(int num)
+	{
+		NumPlayer = num;
+	}
+	
+	public int get_NumPlayer()
+	{
+		return NumPlayer;
 	}
 }

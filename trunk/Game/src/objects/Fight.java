@@ -228,7 +228,6 @@ public class Fight
 			_fight = f;
 			_type = 5;
 			_Perco = Perco;
-			System.out.println("Perco:"+Perco);
 			_id = -1;
 			_PDVMAX = (World.getGuild(Perco.get_guildID()).get_lvl()*100);
 			_PDV = (World.getGuild(Perco.get_guildID()).get_lvl()*100);
@@ -1382,7 +1381,7 @@ public class Fight
 	}
 
 	public Fight(int id, Carte map, Personnage perso, Percepteur perco) 
-	{	
+	{
 		set_guildID(perco.get_guildID());
 		perco.set_inFight((byte)1);
 		perco.set_inFightID((byte)id);
@@ -1467,19 +1466,6 @@ public class Fight
 
 		SocketManager.GAME_SEND_MAP_FIGHT_GMS_PACKETS_TO_FIGHT(this,7,_map);
 		set_state(Constants.FIGHT_STATE_PLACE);
-		
-		//On actualise la guilde+Message d'attaque FIXME
-		for(Personnage z : World.getGuild(_guildID).getMembers())
-		{
-			if(z == null) continue;
-			if(z.isOnline())
-			{
-				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
-				Percepteur.parseAttaque(z, _guildID);
-				Percepteur.parseDefense(z, _guildID);
-				SocketManager.GAME_SEND_MESSAGE(z, "Un de vos percepteurs a ete attaque.", Ancestra.CONFIG_MOTD_COLOR);
-			}
-		}
 	}
 	
 	public Carte get_map() {
@@ -2589,16 +2575,12 @@ public class Fight
         	TEAM1.addAll(_team1.values());
         	TEAM2.addAll(_team0.values());
         }
-        //Calculs des niveaux de groupes
-        int TEAM1lvl = 0;
-        int TEAM2lvl = 0;
         //Traque
         Personnage curp = null; 
         for(Fighter F : TEAM1)
         {
         	if(F.isInvocation())continue;
         	if(TEAM1.size() == 1) curp = F.getPersonnage();
-        	TEAM1lvl += F.get_lvl();
         }
         for(Fighter F : TEAM2)
         {
@@ -2609,7 +2591,6 @@ public class Fight
         		curp.get_traque().set_traqued(null); 
         		curp.get_traque().set_time(-2); 
         	} 
-        	TEAM2lvl += F.get_lvl();
         }
         //fin
         /* DEBUG

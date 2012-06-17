@@ -24,17 +24,18 @@ public class ComServer implements Runnable {
     			_in = new BufferedReader(new InputStreamReader(_s.getInputStream()));
     			_out = new PrintWriter(_s.getOutputStream());
     		} catch (Exception e) {
-        		System.out.println("ERREUR : Serveur d'echange inlancable");
+        		System.out.println("\nComServer : Connection au Realm impossible");
         		System.out.println(e.getMessage());
-        		Ancestra.closeServers();
-    			System.exit(0);
-    		}   
+        		Ancestra.com_Running = false;
+        		Ancestra.try_ComServer();
+    		}
         }
         
         public void run() {
         	try{
         		String packet ="";
         		char[] charCur = new char[1];
+        		Ancestra.com_Running = true;
         		try{
         			_out.print("GA"+Ancestra.AUTH_KEY+(char)0x00);
         			_out.flush();
@@ -48,6 +49,7 @@ public class ComServer implements Runnable {
 					}catch (Exception e1)
 					{
 						System.out.println("ComServer : Erreur d'envoi du GA : "+e1.getMessage());
+						Ancestra.com_Running = false;
 						Ancestra.closeServers();
 					}
         		}
@@ -66,9 +68,10 @@ public class ComServer implements Runnable {
         		}
         	}catch(IOException e)
         	{
-        		System.out.println("ERREUR : Serveur d'echange inlancable");
+        		System.out.println("\nComServer : Serveur d'echange inlancable");
         		System.out.println(e.getMessage());
-        		Ancestra.closeServers();
+        		Ancestra.com_Running = false;
+        		Ancestra.try_ComServer();
         	}
         }
         
@@ -139,7 +142,8 @@ public class ComServer implements Runnable {
 	        			if (acc != null)
 	        			{
 	        				System.out.println("Compte existant, on le kick");
-	        				acc.getGameThread().kick();
+	        				if(acc.getGameThread() != null)
+	        					acc.getGameThread().kick();
 	        			}
 	        			System.out.println("Verification connexion GameThread Termine");
 	        		break;

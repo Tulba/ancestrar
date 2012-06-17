@@ -315,22 +315,15 @@ public class Percepteur
 	{
 		StringBuilder str = new StringBuilder();
 		str.append("+").append(guid);
-			
-		for(Entry<Integer, Fight> F : World.getCarte(mapid).get_fights().entrySet())
+		
+		Fight F = World.getCarte(mapid).getFight(fightid);
+		for(Fighter f : F.getFighters(1))//Attaque
 		{
-			//Je boucle les combats de la map bien qu'inutile :/
-			//Mais cela éviter le bug F.getValue().getFighters(1) == null
-				if(F.getValue().get_id() == fightid)
-				{
-					for(Fighter f : F.getValue().getFighters(1))//Attaque
-					{
-						str.append("|");
-						str.append(Integer.toString(f.getPersonnage().get_GUID(), 36)).append(";");
-						str.append(f.getPersonnage().get_name()).append(";");
-						str.append(f.getPersonnage().get_lvl()).append(";");
-						str.append("0;");
-					}
-				}
+			str.append("|");
+			str.append(Integer.toString(f.getPersonnage().get_GUID(), 36)).append(";");
+			str.append(f.getPersonnage().get_name()).append(";");
+			str.append(f.getPersonnage().get_lvl()).append(";");
+			str.append("0;");
 		}
 		return str.toString();
 	}
@@ -339,27 +332,20 @@ public class Percepteur
 	{
 		StringBuilder str = new StringBuilder();
 		str.append("+").append(guid);
-			
-		for(Entry<Integer, Fight> F : World.getCarte(mapid).get_fights().entrySet())
+		
+		Fight F = World.getCarte(mapid).getFight(fightid);
+		for(Fighter f : F.getFighters(2))//Defense
 		{
-			//Je boucle les combats de la map bien qu'inutile :/
-			//Mais cela éviter le bug F.getValue().getFighters(2) == null
-				if(F.getValue().get_id() == fightid)
-				{
-					for(Fighter f : F.getValue().getFighters(2))//Defense
-					{
-						if(f.getPersonnage() == null) continue;//On sort le percepteur
-						str.append("|");
-						str.append(Integer.toString(f.getPersonnage().get_GUID(), 36)).append(";");
-						str.append(f.getPersonnage().get_name()).append(";");
-						str.append(f.getPersonnage().get_gfxID()).append(";");
-						str.append(f.getPersonnage().get_lvl()).append(";");
-						str.append(Integer.toString(f.getPersonnage().get_color1(), 36)).append(";");
-						str.append(Integer.toString(f.getPersonnage().get_color2(), 36)).append(";");
-						str.append(Integer.toString(f.getPersonnage().get_color3(), 36)).append(";");
-						str.append("0;");
-					}
-				}
+			if(f.getPersonnage() == null) continue;//On sort le percepteur
+			str.append("|");
+			str.append(Integer.toString(f.getPersonnage().get_GUID(), 36)).append(";");
+			str.append(f.getPersonnage().get_name()).append(";");
+			str.append(f.getPersonnage().get_gfxID()).append(";");
+			str.append(f.getPersonnage().get_lvl()).append(";");
+			str.append(Integer.toString(f.getPersonnage().get_color1(), 36)).append(";");
+			str.append(Integer.toString(f.getPersonnage().get_color2(), 36)).append(";");
+			str.append(Integer.toString(f.getPersonnage().get_color3(), 36)).append(";");
+			str.append("0;");
 		}
 		return str.toString();
 	}

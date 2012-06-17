@@ -15,7 +15,8 @@ public class SocketManager
 		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
 		{
 			packet = CryptManager.toUtf(packet);
-			SendManager.send(out, packet);
+			out.print((packet)+(char)0x00);
+			out.flush();
 		}
 	}
 	

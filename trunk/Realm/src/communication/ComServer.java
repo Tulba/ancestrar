@@ -21,6 +21,7 @@ public class ComServer implements Runnable {
 		}catch(IOException e)
 		{
 			System.out.println("ComServer : "+e.getMessage());
+			Ancestra.addToComLog("ComServer : "+e.getMessage());
 			Ancestra.addToErrorLog("ComServer : "+e.getMessage());
 			Ancestra.closeServers();
 		}
@@ -28,14 +29,19 @@ public class ComServer implements Runnable {
 	
 	public void run() 
 	{
-		while(Ancestra.isRunning)// bloque sur _SS.accept()
+		while(Ancestra.isRunning)
 		{
 			try
 			{
 				new ComThread(_SS.accept());
 			}catch(IOException e)
 			{
+				try {
+					if(!_SS.isClosed()) _SS.close();
+					} catch (IOException e1) {}
 				System.out.println("ComServerRun : "+e.getMessage());
+				Ancestra.addToComLog("ComServerRun : "+e.getMessage());
+				Ancestra.addToErrorLog("ComServerRun : "+e.getMessage());
 			}
 		}
 	}
@@ -48,6 +54,8 @@ public class ComServer implements Runnable {
 		}catch(Exception e)
 		{
 			System.out.println("ComServerKickAll : "+e.getMessage());
+			Ancestra.addToComLog("ComServerKickAll : "+e.getMessage());
+			Ancestra.addToErrorLog("ComServerKickAll : "+e.getMessage());
 		}
 	}
 	

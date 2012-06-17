@@ -76,7 +76,7 @@ public class Commands {
 		
 		if(_compte.get_gmLvl() < 1)
 		{
-			_compte.getGameThread().closeSocket();
+			_compte.getGameThread().kick();
 			return;
 		}
 		
@@ -114,7 +114,7 @@ public class Commands {
 	{
 		if(_compte.get_gmLvl() < 1)
 		{
-			_compte.getGameThread().closeSocket();
+			_compte.getGameThread().kick();
 			return;
 		}
 		if(command.equalsIgnoreCase("INFOS"))
@@ -563,7 +563,7 @@ public class Commands {
 	{
 		if(_compte.get_gmLvl() < 2)
 		{
-			_compte.getGameThread().closeSocket();
+			_compte.getGameThread().kick();
 			return;
 		}
 		
@@ -1234,7 +1234,7 @@ public class Commands {
 	{
 		if(_compte.get_gmLvl() < 3)
 		{
-			_compte.getGameThread().closeSocket();
+			_compte.getGameThread().kick();
 			return;
 		}
 		
@@ -1701,7 +1701,7 @@ public class Commands {
 	{
 		if(_compte.get_gmLvl() < 4)
 		{
-			_compte.getGameThread().closeSocket();
+			_compte.getGameThread().kick();
 			return;
 		}
 		
@@ -1779,7 +1779,7 @@ public class Commands {
 				for(Personnage z : World.getOnlinePersos()) 
 				{
 					if(z.get_compte().get_gmLvl() < GmAccess)
-						z.get_compte().getGameThread().closeSocket();
+						z.get_compte().getGameThread().kick();
 				}
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Les joueurs de GmLevel inferieur a "+GmAccess+" ont ete kicks.");
 			}

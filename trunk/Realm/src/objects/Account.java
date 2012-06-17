@@ -1,8 +1,5 @@
 package objects;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 import common.*;
 import realm.RealmThread;
 
@@ -23,7 +20,6 @@ public class Account {
 	private String _lastConnectionDate = "";
 	
 	private RealmThread _realmThread = null;
-	private Map<Integer, Integer> _persos = new TreeMap<Integer, Integer>();
 	
 	public Account(int aGUID,String aName,String aPass, String aPseudo,String aQuestion,String aReponse,int aGmLvl, int subscriber, boolean aBanned, String aLastIp, String aLastConnectionDate)
 	{
@@ -38,38 +34,6 @@ public class Account {
 		this._banned				= aBanned;
 		this._lastIP				= aLastIp;
 		this._lastConnectionDate 	= aLastConnectionDate;
-	}
-	
-	public void addPersonnage(int guid)
-	{
-		if (_persos.get(guid) == null)
-			_persos.put(guid, 1);
-		else
-		{
-			int g = _persos.get(guid);
-			_persos.remove(guid);
-			_persos.put(guid, g++);
-		}
-	}
-	
-	public int getNumberPersosOnThisServer(int guid)
-	{
-		if (_persos.get(guid) == null)
-			return 0;
-		return _persos.get(guid);
-	}
-	
-	public String parseToStringNumber()
-	{
-		StringBuilder toreturn = new StringBuilder();
-		for (GameServer G : Realm.GameServers.values())
-		{
-			if (_persos.get(G.getID()) == null)
-				continue;
-			toreturn.append(G.getID()).append(",").append(_persos.get(G.getID())).append(";");
-		}
-		toreturn.substring(toreturn.length()-1, toreturn.length());
-		return toreturn.toString();
 	}
 	
 	public void setCurIP(String ip)

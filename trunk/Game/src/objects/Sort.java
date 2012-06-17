@@ -189,7 +189,6 @@ public class Sort {
 			GameServer.addToLog("Nombre d'effets: "+effets.size());
 			int jetChance = Formulas.getRandomValue(0, 99);
 			int curMin = 0;
-			int num = 0;
 			for(SpellEffect SE : effets)
 			{
 				if(SE.getChance() != 0 && SE.getChance() != 100)//Si pas 100% lancement
@@ -204,8 +203,6 @@ public class Sort {
 				
 				ArrayList<Fighter> cibles = SpellEffect.getTargets(SE,fight,cells);
 				SE.applyToFight(fight, perso, cell,cibles);
-
-				num++;
 			}
 		}
 		

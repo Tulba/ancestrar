@@ -45,9 +45,10 @@ public class RealmThread implements Runnable {
 		{
 			try
 			{
-				if (!_s.isClosed())_s.close();
-			}catch(IOException e1){}
-		}finally
+				if(!_s.isClosed()) _s.close();
+			}catch (IOException e1) {}
+		}
+		finally
 		{
 			if(_compte != null)
 			{
@@ -74,8 +75,12 @@ public class RealmThread implements Runnable {
 					packet += charCur[0];
 				}else if(!packet.isEmpty())
 				{
-					Ancestra.addToRealmSockLog("Realm: Recv << "+packet);
-					if(Ancestra.REALM_DEBUG) System.out.println("Realm: Recv << "+packet);
+					Ancestra.addToRealmLog("Realm: Recv << "+packet);
+					if(Ancestra.REALM_DEBUG)
+					{
+						System.out.println("Realm: Recv << "+packet);
+						Ancestra.addToRealmLog("Realm: Recv << "+packet);
+					}
 					_packetNum++;
 					parsePacket(packet);
 					packet = "";
@@ -118,32 +123,44 @@ public class RealmThread implements Runnable {
 	{
 		try
 		{
-			Ancestra.addToRealmSockLog("Client was kicked by the server.");
+			Ancestra.realmServer.delClient(this);
+			Ancestra.addToRealmLog("Client was kicked by the server.");
 			System.out.println("Client was kicked by the server.");
 			_in.close();
 			_out.close();
-			if (!_s.isClosed())_s.close();
-			if (_compte != null)
+			if(_compte != null)
 			{
+				_compte.setRealmThread(null);
 				Realm.deleteAccount(_compte);
 			}
+			if(!_s.isClosed())_s.close();
+			_t.interrupt();
 		}catch(IOException e)
 		{
 			System.out.println("RealmThreadKick : "+e.getMessage());
+			Ancestra.addToRealmLog("RealmThreadKick : "+e.getMessage());
 			Ancestra.addToErrorLog("RealmThreadKick : "+e.getMessage());
 		}
+	}
+	
+	public void closeSocket()
+	{
+		try {
+			this._s.close();
+		} catch (IOException e) {}
 	}
 	
 	public void refresh()
 	{
 		try
 		{
-			Ancestra.addToRealmSockLog("RealmThread : Refreshing server list.");
+			Ancestra.addToRealmLog("RealmThread : Refreshing server list.");
 			SocketManager.refresh(_out);
 			System.out.println("RealmThread : Refreshing server list.");
 		}catch(Exception e)
 		{
 			System.out.println("RealmThreadRefresh : "+e.getMessage());
+			Ancestra.addToRealmLog("RealmThreadRefresh : "+e.getMessage());
 			Ancestra.addToErrorLog("RealmThreadRefresh : "+e.getMessage());
 		}
 	}
@@ -249,8 +266,23 @@ public class RealmThread implements Runnable {
 				SocketManager.SEND_PERSO_LIST(_out, _compte.get_subscriber(), _compte.get_GUID());
 			}else
 			if(packet.substring(0, 2).equals("AX"))
-			{	
+			{
 				int number = Integer.parseInt(packet.substring(2,3));
+				Realm.GameServers.get(number).getThread().sendGetOnline();
+				
+				try
+				{
+					Thread.sleep(2000);
+				}catch(Exception e){}
+				
+				int ActualP = Realm.GameServers.get(number).get_NumPlayer();
+				int MaxP = Realm.GameServers.get(number).get_PlayerLimit();
+				
+				if(ActualP >= MaxP)
+				{
+					SocketManager.SEND_TOO_MANY_PLAYER_ERROR(_out);
+					return;
+				}
 				System.out.println("RealmThreadOUT : Connexion to the server with the following ip:" +ip2);
 				Ancestra.addToRealmLog("RealmThreadOUT : Connexion to the server with the following ip:" +ip2);
 				SocketManager.SEND_GAME_SERVER_IP(_out, _compte.get_GUID(), number);
