@@ -1753,9 +1753,20 @@ public class Carte {
 		int id = 1;
 		if(!_fights.isEmpty())
 			id = ((Integer)(_fights.keySet().toArray()[_fights.size()-1]))+1;
-
 		_fights.put(id, new Fight(id,this,perso,perco));
 		SocketManager.GAME_SEND_MAP_FIGHT_COUNT_TO_MAP(this);
+		//On actualise la guilde+Message d'attaque FIXME
+		for(Personnage z : World.getGuild(_fights.get(id).get_guildID()).getMembers())
+		{
+			if(z == null) continue;
+			if(z.isOnline())
+			{
+				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
+				Percepteur.parseAttaque(z, _fights.get(id).get_guildID());
+				Percepteur.parseDefense(z, _fights.get(id).get_guildID());
+				SocketManager.GAME_SEND_MESSAGE(z, "Un de vos percepteurs a ete attaque.", Ancestra.CONFIG_MOTD_COLOR);
+			}
+		}
 	}
 
 	public Carte getMapCopy()

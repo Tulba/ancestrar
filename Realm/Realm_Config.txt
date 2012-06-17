@@ -19,6 +19,3 @@ REALM_DB_COMMIT = 3000
 
 # DEBUG (DEBUG = See on console)
 REALM_DEBUG = true
-
-# Timer SendManager
-REALM_TIME_DATA = 200

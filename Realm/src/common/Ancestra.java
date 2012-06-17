@@ -16,7 +16,7 @@ import realm.RealmServer;
 public class Ancestra
 {
 	private static final String CONFIG = "Realm_Config.txt";
-	public static String REALM_VERSION = "0.1";
+	public static String REALM_VERSION = "0.2";
 	public static int REALM_PORT = -1;
 	public static int REALM_COM_PORT = -1;
 	public static String REALM_DB_HOST = null;
@@ -31,14 +31,11 @@ public class Ancestra
 	public static boolean isRunning = false;
 	/** LOGS **/
 	public static BufferedWriter Log_Realm;
-	public static BufferedWriter Log_RealmSock;
 	public static BufferedWriter Log_Com;
 	public static BufferedWriter Log_Errors;
 	/** THREADS **/
 	public static RealmServer realmServer;
 	public static ComServer comServer;
-	/** SendManager **/
-	public static int REALM_TIME_DATA = 200;
 	
 	
 	public static void main(String[] args) 
@@ -67,7 +64,6 @@ public class Ancestra
 		{
 			System.out.println("Connexion echouee!");
 			Ancestra.addToErrorLog("SQL : Connexion failed");
-			Ancestra.closeServers();
 			System.exit(0);
 		}
 		Realm.loadRealm();
@@ -77,13 +73,10 @@ public class Ancestra
 		System.out.print("Creation du ComServer sur le port "+Ancestra.REALM_COM_PORT);
 		comServer = new ComServer();
 		System.out.println(" : ComServer OK!");
-		System.out.print("Creation du FlushTimer");
-		SendManager.FlushTimer().start();
-		System.out.println(" : FlushTimer OK!");
 		
 		System.out.println("\n\nEn attente de connexions\n\n");
 		addToRealmLog("Realm start : En attente de connexions");
-		addToRealmSockLog("Realm start : En attente de connexions");
+		addToComLog("Com start : En attente de connexions");
 	}
 	
 	private static void loadConfiguration() 
@@ -146,11 +139,6 @@ public class Ancestra
 			{
 				Ancestra.REALM_COM_PORT = Integer.parseInt(value);
 			}
-			else
-			if(param.equalsIgnoreCase("REALM_TIME_DATA"))
-			{
-				Ancestra.REALM_TIME_DATA = Integer.parseInt(value);
-			}
 			}
 			if (REALM_DB_NAME == null || REALM_DB_HOST == null || REALM_DB_PASSWORD == null || REALM_DB_USER == null || REALM_PORT == -1 || REALM_COM_PORT == -1) 
 			{
@@ -180,14 +168,13 @@ public class Ancestra
 				new File("Com_logs").mkdir();
 			}
 			Log_Realm = new BufferedWriter(new FileWriter("Realm_logs/"+date+".txt", true));
-			Log_RealmSock = new BufferedWriter(new FileWriter("Realm_logs/"+date+"_packets.txt", true));
 			Log_Com = new BufferedWriter(new FileWriter("Com_logs/"+date+".txt", true));
 			Log_Errors = new BufferedWriter(new FileWriter("Error_logs/"+date+".txt", true));
 		}catch(IOException e)
 		{
 			System.out.println("La creation des logs a echouee !");
 			System.out.println(e.getMessage());
-			System.exit(1);
+			System.exit(0);
 		}
 	}
 	
@@ -219,21 +206,7 @@ public class Ancestra
 		}
 	}
 	
-	public synchronized static void addToRealmSockLog(String str) 
-	{
-		try
-		{
-			String date = Calendar.HOUR_OF_DAY+":"+Calendar.MINUTE+":"+Calendar.SECOND;
-			Ancestra.Log_RealmSock.write(date+": "+str);
-			Ancestra.Log_RealmSock.newLine();
-			Ancestra.Log_RealmSock.flush();
-		}catch(Exception e)
-		{
-			System.out.println("L'ecriture des logs a echouee !");
-		}
-	}
-	
-	public synchronized static void addToComLog(String str) 
+	public synchronized static void addToComLog(String str)
 	{
 		try
 		{
@@ -252,18 +225,18 @@ public class Ancestra
 		if (isRunning) 
 		{
 			addToRealmLog("Realm close : kick des connexions");
-			addToRealmSockLog("Realm close : kick des connexions");
 			isRunning = false;
 			try
 			{
-				realmServer.kickAll();
+				if(realmServer != null) realmServer.kickAll();
 			}catch(Exception e)
-			{ 
+			{
 				System.out.println(e.getMessage());
 			}
+			addToComLog("Com close : kick des connexions");
 			try
 			{
-				comServer.kickAll();
+				if(comServer != null) comServer.kickAll();
 			}catch(Exception e)		
 			{ 
 				System.out.println(e.getMessage());

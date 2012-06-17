@@ -78,13 +78,15 @@ public class Ancestra {
 	//Inactivité
 	public static int CONFIG_MAX_IDLE_TIME = 1800000;//En millisecondes
 	//HDV
-	public static ArrayList<Integer> NOTINHDV = new ArrayList<Integer>();
+	public static ArrayList<Integer> NOTINHDV = new ArrayList<Integer>();//FIXME : FULLHDV command TODO
 	//UseCompactDATA
 	public static boolean CONFIG_SOCKET_USE_COMPACT_DATA = false;
 	public static int CONFIG_SOCKET_TIME_COMPACT_DATA = 200;
 	/** ComServer **/
 	public static ComServer comServer;
 	public static int COM_PORT = -1;
+	public static int com_Try = 0;
+	public static boolean com_Running = false;
 	/** Logs **/
 	public static BufferedWriter Log_GameSock;
 	public static BufferedWriter Log_Game;
@@ -115,7 +117,6 @@ public class Ancestra {
 		else
 		{
 			System.out.println("Connexion echouee!");
-			Ancestra.closeServers();
 			System.exit(0);
 		}
 		System.out.println("\n");
@@ -408,7 +409,14 @@ public class Ancestra {
 		if(isRunning)
 		{
 			isRunning = false;
-			Ancestra.gameServer.kickAll();
+			try
+			{
+				gameServer.kickAll();
+			}catch(Exception e)
+			{
+				System.out.println(e.getMessage());
+			}
+			
 			World.saveAll(null);
 			SQLManager.closeCons();
 		}
@@ -446,5 +454,23 @@ public class Ancestra {
 		mess.append("\nThanks Diabu.");
 		mess.append("\nhttp://sourceforge.net/projects/ancestrar/\n\n");
 		return mess.toString();
+	}
+	
+	public static void try_ComServer()
+	{
+		if(com_Try == 0)
+		{
+			try {
+				System.out.print("Creation d'une nouvelle connexion avec le Realm (ComServer) ... ");
+				com_Try = 1;
+				while(Ancestra.com_Running == false)
+				{
+					comServer = new ComServer();
+					Thread.sleep(10000);
+				}
+				System.out.println("ComServer de nouveau operationnel !");
+				com_Try = 0;
+			} catch (InterruptedException e) {}
+		}
 	}
 }

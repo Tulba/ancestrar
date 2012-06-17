@@ -78,7 +78,7 @@ public class GameServer implements Runnable{
 							{
 								GameServer.addToLog("Kick pour inactiviter de : "+perso.get_name());
 								SocketManager.REALM_SEND_MESSAGE(perso.get_compte().getGameThread().get_out(),"01|"); 
-								perso.get_compte().getGameThread().closeSocket();
+								perso.get_compte().getGameThread().kick();
 							}
 						}
 						
@@ -155,14 +155,13 @@ public class GameServer implements Runnable{
 		try {
 			_SS.close();
 		} catch (IOException e) {}
-		//Copie
 		ArrayList<GameThread> c = new ArrayList<GameThread>();
 		c.addAll(_clients);
 		for(GameThread GT : c)
 		{
 			try
 			{
-				GT.closeSocket();
+				GT.kick();
 			}catch(Exception e){};	
 		}
 	}
@@ -200,7 +199,7 @@ public class GameServer implements Runnable{
 		_clients.remove(gameThread);
 		if(_clients.size() > _maxPlayer)_maxPlayer = _clients.size();
 	}
-
+	
 	public synchronized Compte getWaitingCompte(int guid)
 	{
 		for (int i = 0; i < _waitings.size(); i++)

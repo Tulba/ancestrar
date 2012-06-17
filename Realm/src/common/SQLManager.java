@@ -34,20 +34,27 @@ public class SQLManager
 		return RS;
 	}
 	
-	
 	public synchronized static ResultSet executeQueryG(String query, GameServer G) throws SQLException
 	{
 		if (!Ancestra.isInit)
 			return null;
-
-		Connection DB = DriverManager.getConnection("jdbc:mysql://" + G.getHost() + "/" + G.getName(),G.getUser(),G.getPassword());
-		DB.setAutoCommit(false);
-		if (!DB.isValid(1000))
+		try
+		{
+			Connection DB = DriverManager.getConnection("jdbc:mysql://" + G.getHost() + "/" + G.getName(),G.getUser(),G.getPassword());
+			DB.setAutoCommit(false);
+			if (!DB.isValid(1000))
+				return null;
+			Statement stat = DB.createStatement();
+			ResultSet RS = stat.executeQuery(query);
+			stat.setQueryTimeout(300);
+			return RS;
+		}catch(SQLException e)
+		{
+			System.out.println("SQL : "+e.getMessage());
+			Ancestra.addToErrorLog("SQL : "+e.getMessage());
+			e.printStackTrace();
 			return null;
-		Statement stat = DB.createStatement();
-		ResultSet RS = stat.executeQuery(query);
-		stat.setQueryTimeout(300);
-		return RS;
+		}
 	}
 	
 	public synchronized static PreparedStatement newTransact(String baseQuery,Connection dbCon) throws SQLException
@@ -167,47 +174,6 @@ public class SQLManager
 		}
 	}
 	
-	public static int GET_NUMBER_IPS(String ip)
-	{
-		int a = 0;
-		try
-		{
-			ResultSet RS = executeQuery("SELECT * FROM accounts WHERE `curIP`='" + ip + "';", Ancestra.REALM_DB_NAME);
-			while (RS.next())
-			{
-				a++;
-			}
-			closeResultSet(RS);
-		}catch(SQLException e)
-		{
-			System.out.println("SQL : "+e.getMessage());
-			Ancestra.addToErrorLog("SQL : "+e.getMessage());
-		}
-		return a;
-	}
-	
-	public static boolean GET_IP_IS_CONNECTED(String ip)
-	{
-		boolean isOk = false;
-		try
-		{
-			ResultSet RS = executeQuery("SELECT curIP FROM accounts WHERE curIP = '"+ip+"';", Ancestra.REALM_DB_NAME);
-			while (RS.next())
-			{
-				if (RS.getString("curIP").compareTo(ip) == 0)//Is online
-				{
-					isOk = true;
-				}
-			}
-			closeResultSet(RS);
-		}catch(SQLException e)
-		{
-			System.out.println("SQL : "+e.getMessage());
-			Ancestra.addToErrorLog("SQL : "+e.getMessage());
-		}
-		return isOk;
-	}
-	
 	public static void SET_CUR_IP(String ip, int guid)
 	{
 		String bquery = "UPDATE accounts SET `curIP`=? WHERE `guid`=? ;";
@@ -247,11 +213,9 @@ public class SQLManager
 		GameServer G = Realm.GameServers.get(ID);
 		try
 		{
-			ResultSet RS = SQLManager.executeQueryG("SELECT * from personnages WHERE account=" + guid + ";", G);
-			while(RS.next())
-			{
-				a++;
-			}
+			ResultSet RS = SQLManager.executeQueryG("SELECT COUNT(*) from personnages WHERE account=" + guid + ";", G);
+			RS.next();
+			a = RS.getInt(1);
 			closeResultSet(RS);
 		}catch(SQLException e)
 		{
@@ -357,7 +321,8 @@ public class SQLManager
 			closePreparedStatement(p);
 		}catch(SQLException e)
 		{
-			Ancestra.addToErrorLog("SQL ERROR: "+e.getMessage());
+			System.out.println("SQL : "+e.getMessage());
+			Ancestra.addToErrorLog("SQL : "+e.getMessage());
 			e.printStackTrace();
 		}
 	}

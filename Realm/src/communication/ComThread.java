@@ -21,6 +21,7 @@ public class ComThread implements Runnable {
 	private PrintWriter _out;
 	private Socket _s;
 	private GameServer _server = null;
+	
 
 	public ComThread(Socket sock) 
 	{
@@ -36,12 +37,121 @@ public class ComThread implements Runnable {
 		{
 			try
 			{
-				if (!_s.isClosed())
-					_s.close();
-			}catch(IOException e1){}
+				if(!_s.isClosed()) _s.close();
+			}catch (IOException e1) {}
+		}
+		finally
+		{
+			if (_server != null)
+			{
+				_server.setState(0);
+				Ancestra.addToComLog("ComThread : Server revoked.");
+				System.out.println("ComThread : Server revoked.");
+			for (Account acc : Realm.getAccountsMap().values())
+			{
+				if(acc.getRealmThread() == null) continue;
+				acc.getRealmThread().refresh();
+			}
+				_server.setThread(null);
+			}
+		}
+	}
+
+	public void run() 
+	{
+		try
+		{
+			String packet = "";
+			char charCur[] = new char[1];
+			
+			while(_in.read(charCur, 0, 1)!=-1 && Ancestra.isRunning)
+	    	{
+				if (charCur[0] != '\u0000' && charCur[0] != '\n' && charCur[0] != '\r')
+		    	{
+	    			packet += charCur[0];
+		    	}else if(!packet.isEmpty())
+		    	{
+		    		if(Ancestra.REALM_DEBUG)
+		    		{
+		    			System.out.println("ComThread: Recv << "+packet);
+		    			Ancestra.addToComLog("ComThread: Recv << "+packet);
+		    		}
+		    		parsePacket(packet);
+		    		packet = "";
+		    	}
+	    	}
+		}catch(IOException e)
+		{
+			try
+			{
+			_in.close();
+			_out.close();
+			if (_server != null)
+			{
+				_server.setState(0);
+				Ancestra.addToComLog("ComThread : Server revoked.");
+				System.out.println("ComThread : Server revoked.");
+			for (Account acc : Realm.getAccountsMap().values())
+			{
+				if(acc.getRealmThread() == null) continue;
+				acc.getRealmThread().refresh();
+			}
+				_server.setThread(null);
+			}
+			if(!_s.isClosed())_s.close();
+			_t.interrupt();
+		}catch(IOException e1){}
 		}finally
 		{
-			
+			try
+			{
+			_in.close();
+			_out.close();
+			if (_server != null)
+			{
+				_server.setState(0);
+				Ancestra.addToComLog("ComThread : Server revoked.");
+				System.out.println("ComThread : Server revoked.");
+			for (Account acc : Realm.getAccountsMap().values())
+			{
+				if(acc.getRealmThread() == null) continue;
+				acc.getRealmThread().refresh();
+			}
+				_server.setThread(null);
+			}
+			if(!_s.isClosed())_s.close();
+			_t.interrupt();
+			}catch(IOException e1){}
+		}
+	}
+	
+	public void kick()
+	{
+		try
+		{
+			Ancestra.addToComLog("ComThread : The GameServer has broken the connection.");
+			System.out.println("ComThread : The GameServer has broken the connection.");
+			if (_server != null)
+			{
+				_server.setState(0);
+				Ancestra.addToComLog("ComThread : Server revoked.");
+				System.out.println("ComThread : Server revoked.");
+			for (Account acc : Realm.getAccountsMap().values())
+			{
+				if(acc.getRealmThread() == null) continue;
+				acc.getRealmThread().refresh();
+			}
+				_server.setThread(null);
+			}
+			_in.close();
+			_out.close();
+			if (!_s.isClosed()) _s.close();
+			_t.interrupt();
+		}catch(IOException e)
+		{
+			System.out.println("ComThreadKick : "+e.getMessage());
+			Ancestra.addToErrorLog("ComThreadKick : "+e.getMessage());
+			Ancestra.addToComLog("ComThreadKick : "+e.getMessage());
 		}
 	}
 	
@@ -49,6 +159,8 @@ public class ComThread implements Runnable {
 	{
 		System.out.println("ComThread: Send>>LO"+guid);
 		System.out.println("ComThread : Envoi du paquet de LoginOut ...");
+		Ancestra.addToComLog("ComThread: Send>>LO"+guid);
+		Ancestra.addToComLog("ComThread : Envoi du paquet de LoginOut ...");
 		try
 		{
 			_out.print("LO"+guid+(char)0x00);//LogOut
@@ -56,7 +168,9 @@ public class ComThread implements Runnable {
 			System.out.println("ComThread : Envoi OK.");
 		}catch(Exception e)
 		{
-			System.out.println("ComThread : Erreur d'envoi.");
+			System.out.println("ComThreadSendDeco : "+e.getMessage());
+			Ancestra.addToErrorLog("ComThreadSendDeco : "+e.getMessage());
+			Ancestra.addToComLog("ComThreadSendDeco : "+e.getMessage());
 		}
 	}
 	
@@ -64,6 +178,8 @@ public class ComThread implements Runnable {
 	{
 		System.out.println("ComThread: Send>>AW"+str);
 		System.out.println("ComThread : Envoi du paquet d'ajout de compte.");
+		Ancestra.addToComLog("ComThread: Send>>AW"+str);
+		Ancestra.addToComLog("ComThread : Envoi du paquet d'ajout de compte.");
 		try
 		{
 			_out.print("AW"+str+(char)0x00);//AddWaiting
@@ -71,7 +187,28 @@ public class ComThread implements Runnable {
 			System.out.println("ComThread : Envoi OK.");
 		}catch(Exception e)
 		{
-			System.out.println("ComThread : Erreur d'envoi.");
+			System.out.println("ComThreadSendAddWaiting : "+e.getMessage());
+			Ancestra.addToErrorLog("ComThreadSendAddWaiting : "+e.getMessage());
+			Ancestra.addToComLog("ComThreadSendAddWaiting : "+e.getMessage());
+		}
+	}
+	
+	public void sendGetOnline()
+	{
+		System.out.println("ComThread: Send>>GO");
+		System.out.println("ComThread : Envoi du paquet GetOnline ...");
+		Ancestra.addToComLog("ComThread: Send>>GO");
+		Ancestra.addToComLog("ComThread : Envoi du paquet GetOnline ...");
+		try
+		{
+			_out.print("GO"+(char)0x00);//GetOnline
+			_out.flush();
+			System.out.println("ComThread : Envoi OK.");
+		}catch(Exception e)
+		{
+			System.out.println("ComThreadSendGetOnline : "+e.getMessage());
+			Ancestra.addToComLog("ComThreadSendGetOnline : "+e.getMessage());
+			Ancestra.addToErrorLog("ComThreadSendGetOnline : "+e.getMessage());
 		}
 	}
 	
@@ -79,7 +216,7 @@ public class ComThread implements Runnable {
 	{
 		switch (packet.charAt(0))
 		{
-		case 'G'://Game
+		case 'G'://Game && Get
 			switch (packet.charAt(1))
 			{
 			case 'A'://Add
@@ -103,6 +240,16 @@ public class ComThread implements Runnable {
 				Ancestra.addToComLog("ComThread : Serveur OK!");
 				System.out.println("ComThread : Serveur OK!");
 			break;
+			case 'O'://Online
+				if (_server == null)
+				{
+					kick();
+					return;
+				}
+				String[] str = packet.substring(2).split(";");
+				_server.set_PlayerLimit(Integer.parseInt(str[0]));
+				_server.set_NumPlayer(Integer.parseInt(str[1]));
+			break;
 			}
 		break;
 		case 'S'://Server
@@ -115,14 +262,17 @@ public class ComThread implements Runnable {
 			{
 			case 'O'://Open
 				Ancestra.addToComLog("ComThread : Packet SO recu, changement d'etat : 1.");
+				System.out.println("ComThread : Packet SO recu, changement d'etat : 1.");
 				_server.setState(1);
 			break;
 			case 'S'://Save
 				Ancestra.addToComLog("ComThread : Packet SS recu, changement d'etat : 2.");
+				System.out.println("ComThread : Packet SS recu, changement d'etat : 2.");
 				_server.setState(2);
 			break;
 			case 'D'://Disconnected
 				Ancestra.addToComLog("ComThread : Packet SD recu, changement d'etat : 0.");
+				System.out.println("ComThread : Packet SD recu, changement d'etat : 1.");
 				_server.setState(0);
 			break;
 			}
@@ -137,10 +287,12 @@ public class ComThread implements Runnable {
 			{
 			case 'G'://GMLEVEL BLOCK, arg : int[level]
 				Ancestra.addToComLog("ComThread : Packet RG recu, blocage du serveur au GMlevels < "+Integer.parseInt(packet.substring(2)));
+				System.out.println("ComThread : Packet RG recu, blocage du serveur au GMlevels < "+Integer.parseInt(packet.substring(2)));
 				_server.setBlockLevel(Integer.parseInt(packet.substring(2)));
 			break;
 			case 'A'://ADD BANIP, arg : String[ip]
 				Ancestra.addToComLog("ComThread : Packet RA recu, ban de l'IP : "+packet.substring(2));
+				System.out.println("ComThread : Packet RA recu, ban de l'IP : "+packet.substring(2));
 				SQLManager.ADD_BANIP(packet.substring(2));
 				Realm.BAN_IP += packet.substring(2)+",";
 			break;
@@ -153,76 +305,5 @@ public class ComThread implements Runnable {
 		}
 		
 		
-	}
-	
-	public void run() 
-	{
-		try
-		{
-			String packet = "";
-			char charCur[] = new char[1];
-			
-			while(_in.read(charCur, 0, 1)!=-1 && Ancestra.isRunning)
-	    	{
-				if (charCur[0] != '\u0000' && charCur[0] != '\n' && charCur[0] != '\r')
-		    	{
-	    			packet += charCur[0];
-		    	}else if(!packet.isEmpty())
-		    	{
-		    		if(Ancestra.REALM_DEBUG) System.out.println("ComThread: Recv << "+packet);
-		    		parsePacket(packet);
-		    		packet = "";
-		    	}
-	    	}
-		}catch(IOException e)
-		{
-			try
-			{
-				_in.close();
-				_out.close();
-				
-				if (!_s.isClosed())_s.close();
-				_t.interrupt();
-			}catch(IOException e1){}
-		}finally
-		{
-			try
-			{
-				_in.close();
-				_out.close();
-				kick();
-				if (!_s.isClosed())_s.close();
-				_t.interrupt();
-			}catch(IOException e1){}
-		}
-	}
-	
-	public void kick()
-	{
-		try
-		{
-			Ancestra.addToComLog("ComThread : Server kicked by the Realm.");
-			System.out.println("ComThread : Server kicked by the Realm.");
-			_in.close();
-			_out.close();
-			if (_server != null)
-			{	
-				_server.setState(0);
-				Ancestra.addToComLog("ComThread : Server Kicked.");
-				System.out.println("ComThread : Server Kicked.");
-			for (Account acc : Realm.getAccountsMap().values())
-			{
-				if(acc.getRealmThread() == null) continue;
-				acc.getRealmThread().refresh();
-			}
-				_server.setThread(null);
-			}
-			if (!_s.isClosed())
-				_s.close();
-		}catch(IOException e)
-		{
-			System.out.println("ComThreadKick : "+e.getMessage());
-			Ancestra.addToComLog("ComThreadKick : "+e.getMessage());
-		}
 	}
 }
