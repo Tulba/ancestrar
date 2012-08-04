@@ -327,7 +327,6 @@ public class House
 			{
 				SocketManager.GAME_SEND_MESSAGE(Seller.get_curPerso(), "Une maison vous appartenant à été vendue "+h.get_sale()+" kamas.", Ancestra.CONFIG_MOTD_COLOR);
 				SQLManager.SAVE_PERSONNAGE(Seller.get_curPerso(), true);
-				SQLManager.UPDATE_ACCOUNT_DATA(Seller);
 			}
 		}
 		

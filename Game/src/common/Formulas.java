@@ -1,6 +1,5 @@
 package common;
 
-
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
@@ -12,8 +11,7 @@ import objects.Fight.*;
 import objects.Guild.GuildMember;
 
 public class Formulas {
-
-
+	
 	public static int getRandomValue(int i1,int i2)
 	{
 		Random rand = new Random();
@@ -36,6 +34,7 @@ public class Formulas {
 			return num;
 		}catch(NumberFormatException e){return -1;}
 	}
+	
 	public static int getMiddleJet(String jet)//1d5+6
 	{
 		try
@@ -49,6 +48,7 @@ public class Formulas {
 			return num;
 		}catch(NumberFormatException e){return 0;}
 	}
+	
 	public static int getTacleChance(Fighter tacleur, ArrayList<Fighter> tacle)
 	{
 		int agiTR = tacleur.getTotalStats().getEffect(Constants.STATS_ADD_AGIL);
@@ -65,7 +65,7 @@ public class Formulas {
 		return chance;
 	}
 
-	public static int calculFinalHeal(Personnage caster,int jet)
+	public static int calculFinalHeal(Fighter caster, int jet)
 	{
 		int statC = caster.getTotalStats().getEffect(Constants.STATS_ADD_INTE);
 		int soins = caster.getTotalStats().getEffect(Constants.STATS_ADD_SOIN);
@@ -323,6 +323,8 @@ public class Formulas {
 		// Fin Formule pour les MOBs
 		else
 		{
+			//Perte de 10% des PDV MAX par points de degat 10 PDV = 1PDV max en moins
+			if(target.getPersonnage()!= null) target.removePDVMAX((int)Math.floor(num/10));
 			return (int)num;
 		}
 	}
@@ -331,6 +333,7 @@ public class Formulas {
 	{
 		return (int) (10*(Math.abs(map2.getX()-map1.getX())+Math.abs(map2.getY()-map1.getY())-1));
 	}
+	
 	private static int getArmorResist(Fighter target, int statID)
 	{
 		int armor = 0;
@@ -508,30 +511,16 @@ public class Formulas {
 			double rapport = 1+((double)lvlLoosers/(double)lvlWinners);
 			if (rapport <= 1.3)
 				rapport = 1.3;
-			/*
-			if (rapport > 5)
-				rapport = 5;
-			//*/
+			
 			int lvl = G.get_lvl();
 			double rapport2 = 1 + ((double)lvl / (double)lvlWinners);
 
 			xpWin = (long) (groupXP * rapport * bonus * taux *coef * rapport2);
 			
-			/*/ DEBUG XP
-			System.out.println("=========");
-			System.out.println("groupXP: "+groupXP);
-			System.out.println("rapport1: "+rapport);
-			System.out.println("bonus: "+bonus);
-			System.out.println("taux: "+taux);
-			System.out.println("coef: "+coef);
-			System.out.println("rapport2: "+rapport2);
-			System.out.println("xpWin: "+xpWin);
-			System.out.println("=========");
-			//*/
 			return xpWin;	
 	}
 	
-	public static long getXpWinPvm2(Fighter perso, ArrayList<Fighter> winners,ArrayList<Fighter> loosers,long groupXP)
+	public static long getXpWinPvm2(Fighter perso, ArrayList<Fighter> winners,ArrayList<Fighter> loosers,long groupXP, int star)
 	{
 		if(perso.getPersonnage()== null)return 0;
 		if(winners.contains(perso))//Si winner
@@ -578,14 +567,13 @@ public class Formulas {
 			double rapport = 1+((double)lvlLoosers/(double)lvlWinners);
 			if (rapport <= 1.3)
 				rapport = 1.3;
-			/*
-			if (rapport > 5)
-				rapport = 5;
-			//*/
+			
 			int lvl = perso.get_lvl();
 			double rapport2 = 1 + ((double)lvl / (double)lvlWinners);
-
-			xpWin = (long) (groupXP * rapport * bonus * taux *coef * rapport2);
+			
+			xpWin = (long) (groupXP * rapport * bonus * taux * coef * rapport2);
+			if(star > 0)
+				xpWin = (long) (xpWin + xpWin*(star/100));
 			
 			/*/ DEBUG XP
 			System.out.println("=========");
@@ -595,54 +583,13 @@ public class Formulas {
 			System.out.println("taux: "+taux);
 			System.out.println("coef: "+coef);
 			System.out.println("rapport2: "+rapport2);
+			System.out.println("star: "+star);
 			System.out.println("xpWin: "+xpWin);
 			System.out.println("=========");
 			//*/
 			return xpWin;	
 		}
 		return 0;
-	}
-	
-	public static long getXpWinPvP(Fighter perso, ArrayList<Fighter> winners, ArrayList<Fighter> looser)
-	{
-		if(perso.getPersonnage()== null)return 0;
-		if(winners.contains(perso.getGUID()))//Si winner
-		{
-			int lvlLoosers = 0;
-			for(Fighter entry : looser)
-				lvlLoosers += entry.get_lvl();
-		
-			int lvlWinners = 0;
-			for(Fighter entry : winners)
-				lvlWinners += entry.get_lvl();
-			int taux = Ancestra.RATE_PVP;
-			float rapport = (float)lvlLoosers/(float)lvlWinners;
-			long xpWin = (long)(
-						(
-							rapport
-						*	getXpNeededAtLevel(perso.getPersonnage().get_lvl())
-						/	100
-						)
-						*	taux
-					);
-			//DEBUG
-			System.out.println("Taux: "+taux);
-			System.out.println("Rapport: "+rapport);
-			System.out.println("XpNeeded: "+getXpNeededAtLevel(perso.getPersonnage().get_lvl()));
-			System.out.println("xpWin: "+xpWin);
-			//*/
-			return xpWin;
-		}
-		return 0;
-	}
-	
-	private static long getXpNeededAtLevel(int lvl)
-	{
-		long xp = (World.getPersoXpMax(lvl) - World.getPersoXpMin(lvl));
-		System.out.println("Xp Max => "+World.getPersoXpMax(lvl));
-		System.out.println("Xp Min => "+World.getPersoXpMin(lvl));
-		
-		return xp;
 	}
 
 	public static long getGuildXpWin(Fighter perso, AtomicReference<Long> xpWin)
@@ -881,5 +828,22 @@ public class Formulas {
 		if(isAgression) returned *= (7/4);
 		if(isPerco) returned *= (3/2);
 		return returned;
+	}
+	
+	public static int getRandomChallenge(Personnage _perso)
+	{
+	   int challenge = 0;
+	   if(_perso.get_lvl() < 6)
+	   { 
+	       return 0; 
+	   }else
+	   { 
+	      challenge++; 
+	   }
+	   if(_perso.get_curCarte().hasEndFightAction(0))
+	   {
+	      challenge++;
+	   }
+	   return challenge;
 	}
 }

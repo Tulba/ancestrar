@@ -34,7 +34,7 @@ MOTD =<b>Bienvenue sur le serveur Beta Ancestra_Remake</b>
 MOTD_COLOR = FF0000
 # Player Limite : -1 = Illimité
 PLAYER_LIMIT = 100
-LOAD_ACTION_DELAY = 600
+LOAD_ACTION_DELAY = 10
 SAVE_TIME = 30
 
 # Configuration de la base de donnée
@@ -66,7 +66,9 @@ ALLOW_MULE_PVP = false
 AURA_SYSTEM = true
 MAX_IDLE_TIME = 30
 NOT_IN_HDV = 4820
+# Abonnement
+USE_SUBSCRIBE = false
 
 # Arenes
 ARENA_MAP = 10134,10132,10131,10133,10137,10135,10136,10138
-ARENA_TIMER = 600000
+ARENA_TIMER = 10

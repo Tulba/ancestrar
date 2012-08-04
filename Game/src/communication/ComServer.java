@@ -109,14 +109,35 @@ public class ComServer implements Runnable {
         		case 'W'://WAITING
         			Compte acc = null;
         			System.out.println("Ajout d'un compte au GameThread ...");
+        			String[] AD = packet.substring(2).split("\\|");
+        			
+        			int guid = -1, gmlvl = -1, subscriberTime = 0;
+        			String name = "", pass = "", nickname = "", question = "", response = "", 
+        					lastIp = "", lastConnectionDate = "", curIp = "", gifts = "";
+        			boolean isBanned = false;
         			try
         			{
-        				String[] AD = packet.substring(2).split("\\|");
-    					acc = new Compte(Integer.parseInt(AD[0]), AD[1], AD[2], AD[3], AD[4], AD[5], Integer.parseInt(AD[6]), Integer.parseInt(AD[7]), (Integer.parseInt(AD[8])!=0?true:false), AD[9], AD[10], AD[11]);
-        			}catch (Exception e) 
+        				guid = Integer.parseInt(AD[0]);
+        				name = AD[1];
+        				pass = AD[2];
+        				nickname = AD[3];
+        				question = AD[4];
+        				response = AD[5];
+        				gmlvl = Integer.parseInt(AD[6]);
+        				subscriberTime = Integer.parseInt(AD[7]);
+        				isBanned = Integer.parseInt(AD[8]) == 0 ? false : true;
+        				lastIp = AD[9];
+        				lastConnectionDate = AD[10];
+        				curIp = AD[11];
+        				gifts = AD.length == 12 ? "" : AD[12];
+        			}catch (NumberFormatException e) 
         			{
-        				System.out.println("Creation du compte echouee :"+e.getMessage());
+        				System.out.println("Création du compte échouée : "+e.getMessage());
+        			}finally 
+        			{
+        				acc = new Compte(guid, name, pass, nickname, question, response, gmlvl, subscriberTime, isBanned, lastIp, lastConnectionDate, curIp, gifts);
         			}
+        			
         			if(acc != null && Ancestra.gameServer.getWaitingCompte(acc.get_GUID()) == null)
         			{
         				System.out.println("Ajout du compte");

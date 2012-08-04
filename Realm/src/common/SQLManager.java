@@ -110,6 +110,7 @@ public class SQLManager
 			
 			if(!othCon.isValid(1000))
 			{
+				Ancestra.addToErrorLog("SQL : Connexion a la BD invalide!");
 				return false;
 			}
 			
@@ -174,14 +175,17 @@ public class SQLManager
 		}
 	}
 	
-	public static void SET_CUR_IP(String ip, int guid)
+	public static void UPDATE_ACCOUNT(String ip, boolean UpdateSub, int Sub, int guid)
 	{
-		String bquery = "UPDATE accounts SET `curIP`=? WHERE `guid`=? ;";
+		String bquery;
+		if(UpdateSub) bquery = "UPDATE accounts SET `curIP`=?, `subscription`=? WHERE `guid`=? ;";
+		else bquery = "UPDATE accounts SET `curIP`=? WHERE `guid`=? ;";
 		try
 		{
 			PreparedStatement p = newTransact(bquery, othCon);
 			p.setString(1, ip);
-			p.setInt(2, guid);
+			if(UpdateSub) p.setInt(2, Sub);
+			p.setInt((UpdateSub?3:2), guid);
 			p.execute();
 			closePreparedStatement(p);
 		}catch(SQLException e)
@@ -244,7 +248,8 @@ public class SQLManager
 					RS.getInt("subscription"),
 					(RS.getInt("banned") == 1),
 					RS.getString("lastIP"),
-					RS.getString("lastConnectionDate")));
+					RS.getString("lastConnectionDate"),
+					RS.getString("giftID")));
 			}
 			
 			closeResultSet(RS);

@@ -39,30 +39,18 @@ public class SocketManager {
 		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
 		{
 			packet = CryptManager.toUtf(packet);
-			if(Ancestra.CONFIG_SOCKET_USE_COMPACT_DATA)
-			{
-				SendManager.send(out, packet);
-			}else
-			{
-				out.print((packet)+(char)0x00);
-				out.flush();
-			}
+			out.print((packet)+(char)0x00);
+			out.flush();
 		}
 	}
 	
-	public static void send(PrintWriter out, String packet)
+	private static void send(PrintWriter out, String packet)
 	{
 		if(out != null && !packet.equals("") && !packet.equals(""+(char)0x00))
 		{
 			packet = CryptManager.toUtf(packet);
-			if(Ancestra.CONFIG_SOCKET_USE_COMPACT_DATA)
-			{
-				SendManager.send(out, packet);
-			}else
-			{
-				out.print((packet)+(char)0x00);
-				out.flush();
-			}
+			out.print((packet)+(char)0x00);
+			out.flush();
 		}
 	}
 	
@@ -116,11 +104,10 @@ public class SocketManager {
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
 	
-	public static void GAME_SEND_PERSO_LIST(PrintWriter out,
-			Map<Integer, Personnage> persos)
+	public static void GAME_SEND_PERSO_LIST(PrintWriter out, Map<Integer, Personnage> persos, int subscriber)
 	{
 		StringBuilder packet = new StringBuilder();
-		packet.append("ALK31536000000|").append(persos.size());
+		packet.append("ALK").append((subscriber*60)+"000").append("|").append(persos.size());
 		for(Entry<Integer,Personnage > entry : persos.entrySet())
 		{
 			packet.append(entry.getValue().parseALK());
@@ -197,6 +184,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_Rn_PACKET(Personnage out,String name)
 	{
 		String packet = "Rn"+name;
@@ -204,6 +192,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_Re_PACKET(Personnage out,String sign,Dragodinde DD)
 	{
 		String packet = "Re"+sign;
@@ -213,6 +202,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_ASK(PrintWriter out,Personnage perso)
 	{
 		StringBuilder packet = new StringBuilder();
@@ -260,9 +250,9 @@ public class SocketManager {
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
 	
-	public static void GAME_SEND_RESTRICTIONS(PrintWriter out)
+	public static void GAME_SEND_RESTRICTIONS(PrintWriter out, String args)
 	{
-		String packet =  "AR6bk";
+		String packet =  "AR"+args;
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
@@ -275,6 +265,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_OT_PACKET(PrintWriter out, int id)
 	{
 		String packet =  "OT";
@@ -283,6 +274,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_SEE_FRIEND_CONNEXION(PrintWriter out,boolean see)
 	{
 		String packet = "FO"+(see?"+":"-");
@@ -682,6 +674,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_Im_PACKET_TO_ALL(String str)
 	{
 		String packet = "Im"+str; 
@@ -690,6 +683,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_Im_PACKET(Personnage out,String str)
 	{
 		String packet = "Im"+str;
@@ -697,19 +691,23 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_ILS_PACKET(Personnage out,int i)
 	{
 		String packet = "ILS"+i;
 		send(out,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
-	}public static void GAME_SEND_ILF_PACKET(Personnage P,int i)
+	}
+	
+	public static void GAME_SEND_ILF_PACKET(Personnage P,int i)
 	{
 		String packet = "ILF"+i;
 		send(P,packet);
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_Im_PACKET_TO_MAP(Carte map, String id)
 	{
 		String packet = "Im"+id;
@@ -717,6 +715,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_eUK_PACKET_TO_MAP(Carte map, int guid, int emote)
 	{
 		String packet = "eUK"+guid+"|"+emote;
@@ -724,6 +723,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_Im_PACKET_TO_FIGHT(Fight fight,int teams, String id)
 	{
 		String packet = "Im"+id;
@@ -760,6 +760,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_GIC_PACKETS_TO_FIGHT(Fight fight,int teams)
 	{
 		StringBuilder packet = new StringBuilder();
@@ -778,6 +779,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight: Send>>"+packet.toString());
 	}
+	
 	public static void GAME_SEND_GIC_PACKET_TO_FIGHT(Fight fight,int teams,Fighter f)
 	{
 		StringBuilder packet = new StringBuilder();
@@ -792,6 +794,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight: Send>>"+packet.toString());
 	}
+	
 	public static void GAME_SEND_GS_PACKET_TO_FIGHT(Fight fight,int teams)
 	{
 		String packet = "GS";
@@ -805,6 +808,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight : Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_GS_PACKET(Personnage out)
 	{
 		String packet = "GS";
@@ -812,6 +816,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight : Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_GTL_PACKET_TO_FIGHT(Fight fight, int teams)
 	{
 		for(Fighter f : fight.getFighters(teams))
@@ -823,6 +828,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight : Send>>"+fight.getGTL());
 	}
+	
 	public static void GAME_SEND_GTL_PACKET(Personnage out,Fight fight)
 	{
 		String packet = fight.getGTL();
@@ -830,6 +836,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight : Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_GTM_PACKET_TO_FIGHT(Fight fight, int teams)
 	{
 		StringBuilder packet = new StringBuilder();
@@ -869,6 +876,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight : Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_GAMETURNSTART_PACKET(Personnage P,int guid, int time)
 	{
 		String packet = "GTS"+guid+"|"+time;
@@ -876,6 +884,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight : Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_GV_PACKET(Personnage P)
 	{
 		String packet = "GV";
@@ -883,6 +892,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Fight : Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_PONG(PrintWriter out)
 	{
 		String packet = "pong";
@@ -890,6 +900,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_QPONG(PrintWriter out)
 	{
 		String packet = "qpong";
@@ -897,6 +908,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_GAS_PACKET_TO_FIGHT(Fight fight,int teams, int guid)
 	{
 		String packet = "GAS"+guid;
@@ -1171,6 +1183,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Map: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_cMK_PACKET_TO_GUILD(Guild g,String suffix,int guid,String name,String msg)
 	{
 		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
@@ -1182,6 +1195,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Guild: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_cMK_PACKET_TO_ALL(String suffix,int guid,String name,String msg)
 	{
 		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
@@ -1190,6 +1204,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: ALL("+World.getOnlinePersos().size()+"): Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_cMK_PACKET_TO_ALIGN(String suffix,int guid,String name,String msg, Personnage _perso)
 	{
 		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
@@ -1203,6 +1218,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: ALL("+World.getOnlinePersos().size()+"): Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_cMK_PACKET_TO_ADMIN(String suffix,int guid,String name,String msg)
 	{
 		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
@@ -1210,6 +1226,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: ALL("+World.getOnlinePersos().size()+"): Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_cMK_PACKET_TO_FIGHT(Fight fight,int teams,String suffix,int guid,String name,String msg)
 	{
 		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
@@ -1396,8 +1413,8 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
-
-	public static void GAME_SEND_ESK_PACKEt(Personnage out)
+	
+	public static void GAME_SEND_ESK_PACKET(Personnage out)
 	{
 		String packet = "ESK";
 		send(out,packet);
@@ -1647,6 +1664,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_JN_PACKET(Personnage perso, int jobID,	int lvl)
 	{
 		String packet = "JN"+jobID+"|"+lvl;
@@ -1654,6 +1672,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_GDF_PACKET_TO_MAP(Carte map, Case cell)
 	{
 		int cellID = cell.getID();
@@ -1702,16 +1721,26 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
+	
 	public static void GAME_SEND_JO_PACKET(Personnage perso,ArrayList<StatsMetier> SMs)
 	{
 		for(StatsMetier sm : SMs)
 		{
-			String packet = "JO"+sm.getID()+"|"+sm.getOptBinValue()+"|2";//FIXME 2=?
+			String packet = "JO"+sm.getID()+"|"+sm.getOptBinValue()+"|"+sm.get_slotsPublic();
 			send(perso,packet);
 			if(Ancestra.CONFIG_DEBUG)
 				GameServer.addToSockLog("Game: Send>>"+packet);
 		}
 	}
+	
+	public static void GAME_SEND_JO_PACKET(Personnage perso, StatsMetier sm)
+	{
+		String packet = "JO"+sm.getID()+"|"+sm.getOptBinValue()+"|"+sm.get_slotsPublic();
+		send(perso, packet);
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet);
+	}
+	
 	public static void GAME_SEND_JS_PACKET(Personnage perso,ArrayList<StatsMetier> SMs)
 	{
 		String packet = "JS";
@@ -1813,6 +1842,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_FD_PACKET(Personnage perso, String str)
 	{
 		String packet = "FD"+str;
@@ -1820,6 +1850,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
 	public static void GAME_SEND_Rp_PACKET(Personnage perso, MountPark MP)
 	{
 		StringBuilder packet = new StringBuilder();
@@ -1842,6 +1873,7 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
+	
 	public static void GAME_SEND_OS_PACKET(Personnage perso, int pano)
 	{
 		StringBuilder packet = new StringBuilder();
@@ -2059,7 +2091,7 @@ public class SocketManager {
 			GameServer.addToSockLog("Game: Send>>"+packet.toString());
 	}
 	
-	public static void REALM_SEND_MESSAGE(PrintWriter out, String args)
+	public static void MESSAGE_BOX(PrintWriter out, String args)
 	{
 		String packet = "M"+args;
 		send(out,packet);
@@ -2284,6 +2316,17 @@ public class SocketManager {
 			GameServer.addToSockLog("Game: Send>>"+packet); 
 	}
 	
+	public static void GAME_SEND_PERCO_INFOS_PACKET(Personnage perso, Percepteur perco, String car) 
+	{
+		StringBuilder str = new StringBuilder();
+		str.append("gA").append(car).append(perco.get_N1()).append(",").append(perco.get_N2()).append("|");
+		str.append("-1").append("|");
+		str.append(World.getCarte(perco.get_mapID()).getX()).append("|").append(World.getCarte(perco.get_mapID()).getY());
+		send(perso,str.toString()); 
+		if(Ancestra.CONFIG_DEBUG) 
+			GameServer.addToSockLog("Game: Send>>"+str.toString()); 
+	}
+	
 	public static void GAME_SEND_GUILDHOUSE_PACKET(Personnage perso) 
 	{ 
 		String packet = "gUT"; 
@@ -2320,6 +2363,7 @@ public class SocketManager {
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
 	}
+	
 	public static void GAME_SEND_EHm_PACKET(Personnage out, String sign,String str)
 	{
 		String packet = "EHm"+sign + str;
@@ -2328,6 +2372,7 @@ public class SocketManager {
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
 	}
+	
 	public static void GAME_SEND_EHM_PACKET(Personnage out, String sign,String str)
 	{
 		String packet = "EHM"+sign + str;
@@ -2335,16 +2380,18 @@ public class SocketManager {
 		send(out,packet);
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
-	}/* TODO
-	public static void GAME_SEND_EHP_PACKET(Personnage out, int templateID)	//Packet d'envoie du prix moyen du template (En réponse a un packet EHP)
+	}
+	
+	public static void GAME_SEND_EHP_PACKET(Personnage out, int templateID, int price)	//Packet d'envoie du prix moyen du template (En réponse a un packet EHP)
 	{
 		
-		String packet = "EHP"+templateID+"|"+World.getObjTemplate(templateID).getAvgPrice();
+		String packet = "EHP"+templateID+"|"+price;
 		
 		send(out,packet);
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
-	}*/
+	}
+	
 	public static void GAME_SEND_EHL_PACKET(Personnage out, int categ, String templates)//Packet de listage des templates dans une catégorie (En réponse au packet EHT)
 	{
 		String packet = "EHL"+categ+"|"+templates;
@@ -2353,6 +2400,8 @@ public class SocketManager {
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
 	}
+	
+	
 	public static void GAME_SEND_EHl_PACKET(Personnage out, String items)//Packet de listage des objets en vente
 	{
 		String packet = "EHl"+items;
@@ -2370,7 +2419,8 @@ public class SocketManager {
 		send(Homme,packet);
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
-	} 
+	}
+	
 	public static void GAME_SEND_PF(Personnage perso, String str)
 	{
 		String packet = "PF"+str;
@@ -2378,6 +2428,7 @@ public class SocketManager {
 		if (Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>" + packet);
 	} 
+	
     public static void GAME_SEND_MERCHANT_LIST(Personnage P, short mapID) 
     {
     	StringBuilder packet = new StringBuilder();
@@ -2395,4 +2446,137 @@ public class SocketManager {
         if (Ancestra.CONFIG_DEBUG)
         	GameServer.addToSockLog("Game: Send>>" + packet.toString());
     }
+    
+    public static void GAME_SEND_UPDATE_OBJECT_DISPLAY_PACKET(Personnage perso,Objet item)
+    {
+    	StringBuilder packet = new StringBuilder();
+    	packet.append("OCO").append(item.parseItem());
+    	send(perso,packet.toString());
+        if (Ancestra.CONFIG_DEBUG)
+        	GameServer.addToSockLog("Game: Send>>" + packet.toString());
+    }
+    
+    public static void GAME_SEND_WELCOME(Personnage perso)
+    {
+    	StringBuilder packet = new StringBuilder();
+    	packet.append("TB");
+    	send(perso,packet.toString());
+        if (Ancestra.CONFIG_DEBUG)
+        	GameServer.addToSockLog("Game: Send>>" + packet.toString());
+    }
+    
+	public static void GAME_SEND_TAXE(Personnage perso, long price)
+	{ 
+		StringBuilder packet = new StringBuilder();
+    	packet.append("Eq1|1|"+price);
+    	send(perso, packet.toString());
+	}
+	
+	public static void GAME_SEND_INFO_HIGHLIGHT_PACKET(Personnage perso, String args) 
+	{
+	     String packet = "IH"+args;
+	     send(perso, packet);
+	     if (Ancestra.CONFIG_DEBUG)
+	        GameServer.addToSockLog("Game: Send>>" + packet);
+	}
+	
+	public static void GAME_SEND_CHALLENGE_FIGHT(Fight fight, int team, String str)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("Gd").append(str);
+		
+		for(Fighter fighter : fight.getFighters(team))
+		{
+			if(fighter.hasLeft())continue;
+			if(fighter.getPersonnage() == null || ! fighter.getPersonnage().isOnline())continue;
+			send(fighter.getPersonnage(), packet.toString());
+		}
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
+	}
+	
+	public static void GAME_SEND_CHALLENGE_PERSO(Personnage p, String str)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("Gd").append(str);
+		send(p, packet.toString());
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
+	}
+	
+	public static void GAME_SEND_Im_PACKET_TO_CHALLENGE(Fight fight, int challenge, String str)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("Im").append(str);
+		for(Fighter fighter : fight.getFighters(challenge))
+		{
+			if(fighter.hasLeft())continue;
+			if(fighter.getPersonnage() == null || ! fighter.getPersonnage().isOnline())continue;
+			send(fighter.getPersonnage(), packet.toString());
+		}
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet);
+	}
+	
+	public static void GAME_SEND_SUBSCRIBE_MESSAGE(Personnage p, String str)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("BP").append(str);
+		send(p, packet.toString());
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
+	}
+	
+	public static void GAME_SEND_CRAFT_PUBLIC_MODE(Personnage p, char C, String JobID)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("EW").append(C).append(p.get_GUID()).append("|").append(JobID);
+		send(p, packet.toString());
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
+	}
+	
+	public static void GAME_SEND_CRAFT_PUBLIC_MODE(Personnage p)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("EW+");
+		send(p, packet.toString());
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
+	}
+	
+	public static void GAME_SEND_Ej_PACKET(Personnage p, char S, int jobID)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("Ej").append(S).append(jobID);
+		send(p, packet.toString());
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
+	}
+	
+	public static void GAME_SEND_EJ_PACKET(Personnage p, String str)
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("EJ").append(str);
+		send(p, packet.toString());
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
+	}
+	
+	public static void GAME_SEND_ATTRIBUTE_GIFT_SUCCESS(PrintWriter out) 
+	{
+		StringBuilder packet = new StringBuilder();
+		packet.append("AGK");
+		send(out, packet.toString());
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet.toString());
+	}
+
+	public static void GAME_SEND_GIFT(PrintWriter out, String str)
+	{
+		String packet = "Ag1|"+str;
+		send(out, packet);
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Send>>"+packet);
+	}
 }

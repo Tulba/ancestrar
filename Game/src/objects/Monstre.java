@@ -40,7 +40,8 @@ public class Monstre
 		private Map<Integer,MobGrade> _Mobs = new TreeMap<Integer,MobGrade>();
 		private String condition = "";
 		private Timer _condTimer;
-
+		private long creationTime;
+		
 		public MobGroup(int Aid,int Aalign, ArrayList<MobGrade> possibles,Carte Map,int cell,int maxSize)
 		{
 			id = Aid;
@@ -175,8 +176,9 @@ public class Monstre
 			cellID = (cell==-1?Map.getRandomFreeCellID():cell);
 			if(cellID == 0)return;
 			
-			orientation = Formulas.getRandomValue(0, 3)*2;
+			orientation = (Formulas.getRandomValue(0, 3)*2)+1;
 			isFix = false;
+			creationTime = System.currentTimeMillis();
 		}
 		
 		public MobGroup(int Aid, int cID, String groupData)
@@ -207,6 +209,7 @@ public class Monstre
 				}catch(Exception e){continue;};
 			}
 			orientation = (Formulas.getRandomValue(0, 3)*2)+1;
+			creationTime = System.currentTimeMillis();
 		}
 
 		public int getID()
@@ -283,10 +286,21 @@ public class Monstre
 				
 				isFirst = false;
 			}
-			toreturn.append("+").append(cellID).append(";").append(orientation).append(";0;").append(id).append(";").append(mobIDs).append(";-3;").append(mobGFX).append(";").append(mobLevels).append(";").append(colors);
+			toreturn.append("+").append(cellID).append(";").append(orientation).append(";");
+			toreturn.append(getStarBonus());
+			toreturn.append(";").append(id).append(";").append(mobIDs).append(";-3;").append(mobGFX).append(";").append(mobLevels).append(";").append(colors);
 			return toreturn.toString();
 		}
 
+		public int getStarBonus()
+		{
+		   long actual_time = System.currentTimeMillis();
+		   int percent = 0;
+		   percent = (int) Math.floor(((actual_time-creationTime)/3600000));
+		   if(percent > 200) percent = 200;
+		   return percent;
+		}
+		
 		public Map<Integer, MobGrade> getMobs() {
 			return _Mobs;
 		}

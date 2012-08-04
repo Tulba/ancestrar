@@ -58,6 +58,11 @@ public class World {
 	private static Map<Integer, Bank> Banks = new TreeMap<Integer, Bank>();
 	private static Map<Integer, FriendList> Friends = new TreeMap<Integer, FriendList>();
 	private static Map<Integer, EnemyList> Enemys = new TreeMap<Integer, EnemyList>();
+	private static Map<Integer,Pets> Pets = new TreeMap<Integer,Pets>();
+	private static Map<Integer,PetsEntry> PetsEntry = new TreeMap<Integer,PetsEntry>();
+	private static StringBuilder Challenges = new StringBuilder();
+	private static Map<Integer,Collection<Integer>> CraftBook	= new TreeMap<Integer,Collection<Integer>>();
+	private static Map<Integer, Gift> Gifts = new HashMap<Integer, Gift>();
 	
 	private static int saveTry = 1;
 	
@@ -233,36 +238,44 @@ public class World {
 		private Area _area;
 		private int _alignement;
 		private String _name;
+		private boolean _subscribeNeed;
 		private ArrayList<Carte> _maps = new ArrayList<Carte>();
 		
-		public SubArea(int id, int areaID, int alignement,String name)
+		public SubArea(int id, int areaID, int alignement,String name, boolean subscribe)
 		{
 			_id = id;
 			_name = name;
 			_area =  World.getArea(areaID);
 			_alignement = alignement;
+			_subscribeNeed = subscribe;
 		}
-		
 		public String get_name()
 		{
 			return _name;
 		}
-		public int get_id() {
+		public int get_id()
+		{
 			return _id;
 		}
-		public Area get_area() {
+		public Area get_area()
+		{
 			return _area;
 		}
-		public int get_alignement() {
+		public int get_alignement()
+		{
 			return _alignement;
 		}
-		public ArrayList<Carte> getMaps() {
+		public ArrayList<Carte> getMaps()
+		{
 			return _maps;
 		}
-
 		public void addMap(Carte carte)
 		{
 			_maps.add(carte);
+		}
+		public boolean get_subscribe()
+		{
+			return _subscribeNeed;
 		}
 		
 	}
@@ -686,7 +699,7 @@ public class World {
 		System.out.println(nbr+" actions ont ete charges");
 		System.out.print("Chargement des npcs: ");
 		nbr = SQLManager.LOAD_NPCS();
-		System.out.println(nbr+" npcs ont ete chargees");
+		System.out.println(nbr+" npcs ont ete charges");
 		System.out.print("Chargement des actions des objets: ");
 		nbr = SQLManager.LOAD_ITEM_ACTIONS();
 		System.out.println(nbr+" actions ont ete chargees");
@@ -695,7 +708,25 @@ public class World {
 		System.out.println(nbr+" drops ont ete charges");
 		System.out.print("Chargement des Animations: ");
 		SQLManager.LOAD_ANIMATIONS();
-		System.out.println(Animations.size() + " animations ont ete chargees");
+		System.out.println(Animations.size() + " animations ont ete charges");
+		System.out.print("Chargement des zaaps: ");
+		nbr = SQLManager.LOAD_ZAAPS();
+		System.out.println(nbr+" zaaps charges");
+		System.out.print("Chargement des zaapis: ");
+		nbr = SQLManager.LOAD_ZAAPIS();
+		System.out.println(nbr+" zaapis charges");
+		System.out.print("Chargement des hdvs: ");
+		nbr = SQLManager.LOAD_HDVS();
+		System.out.println(nbr+" hdvs charges");
+		System.out.print("Chargement des pets: ");
+		nbr = SQLManager.LOAD_PETS();
+		System.out.println(nbr+" pets charges");
+		System.out.print("Chargement des challenges: ");
+		nbr = SQLManager.LOAD_CHALLENGES();
+		System.out.println(nbr+" challenges charges");
+		System.out.println("Chargement des cadeaux: ");
+		nbr = SQLManager.LOAD_GIFTS();
+		System.out.println(nbr+" cadeaux charges");
 		
 		System.out.println("====>Donnees dynamique<====");
 		System.out.print("Chargement des items: ");
@@ -724,22 +755,16 @@ public class World {
 		System.out.println(nbr+" maisons chargees");
 		System.out.print("Chargement des coffres: ");
 		nbr = SQLManager.LOAD_TRUNK();
-		System.out.println(nbr+" coffres chargees");
-		System.out.print("Chargement des zaaps: ");
-		nbr = SQLManager.LOAD_ZAAPS();
-		System.out.println(nbr+" zaaps chargees");
-		System.out.print("Chargement des zaapis: ");
-		nbr = SQLManager.LOAD_ZAAPIS();
-		System.out.println(nbr+" zaapis chargees");
+		System.out.println(nbr+" coffres charges");
 		System.out.print("Chargement des donnees de comptes: ");
 		SQLManager.LOAD_ACCOUNTS_DATA();
-		System.out.println(nbr+" comptes chargees");
-		System.out.print("Chargement des hdvs: ");
-		nbr = SQLManager.LOAD_HDVS();
-		System.out.println(nbr+" hdvs chargees");
+		System.out.println(nbr+" comptes charges");
 		System.out.print("Chargement des ventes hdvs: ");
 		nbr = SQLManager.LOAD_HDVS_ITEMS();
 		System.out.println(nbr+" ventes hdvs chargees");
+		System.out.print("Chargement des pets: ");
+		nbr = SQLManager.LOAD_PETS_ENTRY();
+		System.out.println(nbr+" pets charges");
 		
 		nextObjetID = SQLManager.getNextObjetID();
 	}
@@ -898,7 +923,8 @@ public class World {
 			}
 		}
 		perso.remove();//Supression BDD Perso, items, monture.
-		World.unloadPerso(perso.get_GUID());//UnLoad du perso+item
+		World.unloadPerso(perso.get_GUID());//UnLoad du des item
+		World.Persos.remove(perso.get_GUID());
 	}
 
 	public static String getSousZoneStateString()
@@ -940,6 +966,11 @@ public class World {
 	public static ObjTemplate getObjTemplate(int id)
 	{
 		return ObjTemplates.get(id);
+	}
+	
+	public static Collection<ObjTemplate> getObjTemplates()
+	{
+		return ObjTemplates.values();
 	}
 	
 	public synchronized static int getNewItemGuid()
@@ -987,6 +1018,11 @@ public class World {
 
 	public static void removeItem(int guid)
 	{
+		if(Objets.get(guid).getTemplate().getType() == 18)
+		{
+			SQLManager.REMOVE_PETS_DATA(guid);
+			PetsEntry.remove(guid);
+		}
 		Objets.remove(guid);
 		SQLManager.DELETE_ITEM(guid);
 	}
@@ -1095,6 +1131,15 @@ public class World {
 					Thread.sleep(100);//0.1 sec. pour 1 enclo
 					SQLManager.UPDATE_MOUNTPARK(mp);
 				}
+			}
+			
+			Thread.sleep(2000);
+			
+			GameServer.addToLog("Sauvegarde des pets...");
+			for(PetsEntry pets : PetsEntry.values())
+			{
+				Thread.sleep(100);//0.1 sec. pour 1 familier
+				SQLManager.UPDATE_PETS_DATA(pets);
 			}
 			
 			Thread.sleep(2000);
@@ -1280,6 +1325,7 @@ public class World {
 		if(_lvl <= 1)	 	_lvl = 1;
 		return ExpLevels.get(_lvl+1).guilde;
 	}
+	
 	public static void ReassignAccountToChar(Compte C)
 	{
 		C.get_persos().clear();
@@ -1292,6 +1338,7 @@ public class World {
 			}
 		}
 	}
+	
 	public static int getZaapCellIdByMapId(short i)
 	{
 		for(Entry<Integer, Integer> zaap : Constants.ZAAPS.entrySet())
@@ -1337,7 +1384,7 @@ public class World {
 		for(Compte c : Comptes.values())if(c.get_curIP().compareTo(ip) == 0)return true;
 		return false;
 	}
-
+	
 	public static void unloadPerso(int g)
 	{
 		Personnage toRem = Persos.get(g);
@@ -1407,6 +1454,18 @@ public class World {
 			if(item.get_qua() == 100) str.append(";").append(";").append(item.get_price());
 		}
 		return str.toString();
+	}
+	
+	public static int get_averagePrice(int Tid)
+	{
+		int averagePrice = 0;
+		for(Entry<Integer, HdvEntry> Obj : HdvsTemplates.get(Tid).entrySet())
+		{
+			if(Obj.getValue().get_qua() == 1) averagePrice += Obj.getValue().get_price();
+			if(Obj.getValue().get_qua() == 10) averagePrice += Math.ceil(Obj.getValue().get_price()/10);
+			if(Obj.getValue().get_qua() == 100) averagePrice += Math.ceil(Obj.getValue().get_price()/100);
+		}
+		return (int) Math.ceil(averagePrice/HdvsTemplates.get(Tid).size());
 	}
 	
 	public static String get_HdvsTemplate(int TypeID, int HdvID)
@@ -1688,5 +1747,224 @@ public class World {
 	public static Collection<Compte> getComptes()
 	{
 		return Comptes.values();
+	}
+	
+	public static void addPets(Pets pets)
+	{
+		Pets.put(pets.get_Tid(), pets);
+	}
+	
+	public static Pets get_Pets(int Tid)
+	{
+		return Pets.get(Tid);
+	}
+	
+	public static Map<Integer, objects.Pets> get_Pets()
+	{
+		return Pets;
+	}
+	
+	public static void addPetsEntry(PetsEntry pets)
+	{
+		PetsEntry.put(pets.get_ObjectID(), pets);
+	}
+	
+	public static PetsEntry get_PetsEntry(int guid)
+	{
+		return PetsEntry.get(guid);
+	}
+	
+	public static Percepteur getPercepteur(int guid)
+    {
+        return getPercos().get(guid);
+    }
+	
+	public static void addChallenge(String chal)
+	{	
+		//FormaType : ChalID,gainXP,gainDrop,gainParMob,Conditions;
+		if(!Challenges.toString().isEmpty())
+			Challenges.append(";");
+		Challenges.append(chal);
+	}
+	
+	public static String getChallengeFromConditions(boolean sevEnn, boolean sevAll, boolean bothSex, boolean EvenEnn, boolean MoreEnn, boolean hasCaw, boolean hasChaf, boolean hasRoul, boolean hasArak, boolean isBoss)
+	{
+		//sevEnn : Nécessite plusieurs ennemis
+		//secAll : Nécessite plusieurs alliés
+		//bothSex : Nécessite les deux sexe
+		//EvenEnn : True : Nb ennemis pair, False : impaire
+		//MoreEnn : Plus d'ennemis que d'allié
+		//hasCaw : Possède le sort cawotte
+		//hasChaf : Possède le sort chafer
+		//hasRoul : Possède le sort roulette
+		//hasArak : Possède le sort arakne
+		String noBossChals = ";2;5;9;17;19;24;38;47;50;";//Liste des challenge impossibles contre un boss
+		StringBuilder toReturn = new StringBuilder();
+		boolean isFirst = true, isGood = false;
+		int cond = 0;
+		for(String chal : Challenges.toString().split(";"))
+		{
+			if(!isFirst && isGood)
+				toReturn.append(";");
+			isGood = true;
+			cond = Integer.parseInt(chal.split(",")[4]);
+			//Necessite plusieurs ennemis
+			if(((cond & 1) == 1) && !sevEnn)
+				isGood = false;
+			//Necessite plusieurs allies
+			if((((cond>>1) & 1) == 1) && !sevAll)
+				isGood = false;
+			//Necessite les deux sexes
+			if((((cond>>2) & 1) == 1) && !bothSex)
+				isGood = false;
+			//Necessite un nombre pair d'ennemis
+			if((((cond>>3) & 1) == 1) && !EvenEnn)
+				isGood = false;
+			//Necessite plus d'ennemis que d'allies
+			if((((cond>>4) & 1) == 1) && !MoreEnn)
+				isGood = false;
+			//Jardinier
+			if(!hasCaw && (Integer.parseInt(chal.split(",")[0]) == 7))
+				isGood = false;
+			//Fossoyeur
+			if(!hasChaf && (Integer.parseInt(chal.split(",")[0]) == 12))
+				isGood = false;
+			//Casino Royal
+			if(!hasRoul && (Integer.parseInt(chal.split(",")[0]) == 14))
+				isGood = false;
+			//Araknophile
+			if(!hasArak && (Integer.parseInt(chal.split(",")[0]) == 15))
+				isGood = false;
+			//Contre un boss de donjon
+			if(isBoss && noBossChals.contains(";"+chal.split(",")[0]+";"))
+				isGood = false;
+			if(isGood)
+				toReturn.append(chal);
+			isFirst = false;
+		}
+		return toReturn.toString();
+	}
+	
+	public static ArrayList<String> getRandomChallenge(int nombreChal, String challenges)
+	{
+		String MovingChals = ";1;2;8;36;37;39;40;";// Challenges de dï¿½placements incompatibles
+		boolean hasMovingChal = false;
+		String TargetChals = ";3;4;10;25;31;32;34;35;38;42;";// ceux qui ciblent
+		boolean hasTargetChal = false;
+		String SpellChals = ";5;6;9;11;19;20;24;41;";// ceux qui obligent ï¿½ caster spï¿½cialement
+		boolean hasSpellChal = false;
+		String KillerChals = ";28;29;30;44;45;46;48;";// ceux qui disent qui doit tuer
+		boolean hasKillerChal = false;
+		String HealChals = ";18;43;";// ceux qui empï¿½chent de soigner
+		boolean hasHealChal = false;
+		
+		int compteur = 0, i = 0;
+		ArrayList<String> toReturn = new ArrayList<String>();
+		String chal = new String();
+		while(compteur < 100 && toReturn.size() < nombreChal)
+		{
+			compteur++;
+			i = Formulas.getRandomValue(1, challenges.split(";").length);
+			chal = challenges.split(";")[i-1];// challenge au hasard dans la liste
+			
+			if(!toReturn.contains(chal))// si le challenge n'y etait pas encore
+			{
+				if(MovingChals.contains(";"+chal.split(",")[0]+";"))// s'il appartient a une liste 
+					if(!hasMovingChal)// et qu'aucun de la liste n'a ete choisi deja
+					{
+						hasMovingChal = true;
+						toReturn.add(chal);
+						continue;
+					}else continue;
+				if(TargetChals.contains(";"+chal.split(",")[0]+";")) 
+					if(!hasTargetChal)
+					{
+						hasTargetChal = true;
+						toReturn.add(chal);
+						continue;
+					}else continue;
+				if(SpellChals.contains(";"+chal.split(",")[0]+";")) 
+					if(!hasSpellChal)
+					{
+						hasSpellChal = true;
+						toReturn.add(chal);
+						continue;
+					}else continue;
+				if(KillerChals.contains(";"+chal.split(",")[0]+";"))
+					if(!hasKillerChal)
+					{
+						hasKillerChal = true;
+						toReturn.add(chal);
+						continue;
+					}else continue;
+				if(HealChals.contains(";"+chal.split(",")[0]+";"))
+					if(!hasHealChal)
+					{
+						hasHealChal = true;
+						toReturn.add(chal);
+						continue;
+					}else continue;
+				toReturn.add(chal);	
+			}
+			compteur++;
+		}
+		return toReturn;
+	}
+	
+	public static void addCrafterOnBook(int guid, int jobID)
+	{
+		if(CraftBook.get(jobID) == null)
+		{
+			ArrayList<Integer> Guid = new ArrayList<Integer>();
+			Guid.add(guid);
+			CraftBook.put(jobID, Guid);
+		}else
+		{
+			ArrayList<Integer> Guid = new ArrayList<Integer>();
+			Guid.addAll(CraftBook.get(jobID));
+			Guid.add(guid);
+			CraftBook.remove(jobID);
+			CraftBook.put(jobID, Guid);
+		}
+	}
+	
+	public static Collection<Integer> getCrafterOnBook(int jobID)
+	{
+		return CraftBook.get(jobID);
+	}
+	
+	public static void removeCrafterOnBook(int guid, int jobID)
+	{
+		CraftBook.get(jobID).remove(guid);
+	}
+	
+	public static void removeCrafterOnBook(int guid)
+	{
+		for(Entry<Integer, Collection<Integer>> ID : CraftBook.entrySet())
+		{
+			for(Integer ID2 : ID.getValue())
+			{
+				if(ID2 == guid && ID.getValue().size() > 1) CraftBook.get(ID.getKey()).remove(guid);
+				else if(ID2 == guid && ID.getValue().size() <= 1) CraftBook.get(ID.getKey()).clear();
+			}
+		}
+	}
+	
+	public static void MoveMobsOnMaps()
+	{
+		for(Carte map : Cartes.values())
+		{
+			map.onMap_MonstersDisplacement();
+		}
+	}
+	
+	public static Gift getGift(int giftId)
+	{
+		return Gifts.get(giftId);
+	}
+
+	public static void addGift(Gift gift)
+	{
+		Gifts.put(gift.getId(), gift);
 	}
 }

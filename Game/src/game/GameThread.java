@@ -173,6 +173,9 @@ public class GameThread implements Runnable
 			case 'i':
 				parse_enemyPacket(packet);
 			break;
+			case 'J':
+				parse_JobPacket(packet);
+			break;
 			case 'K':
 				parseHouseKodePacket(packet);
 			break;
@@ -190,6 +193,30 @@ public class GameThread implements Runnable
 			break;
 			case 'W':
 				parseWaypointPacket(packet);
+			break;
+		}
+	}
+	
+	private void parse_JobPacket(String packet)
+	{
+		switch (packet.charAt(1))
+		{
+			case 'O'://Option
+				String[] infos = packet.substring(2).split("\\|");
+				int posJob = 0;
+				int Options = 0;
+				int slots = 0;
+				try
+				{
+					posJob = Integer.parseInt(infos[0]);
+					Options = Integer.parseInt(infos[1]);
+					slots = Integer.parseInt(infos[2]);
+				}catch(Exception e){ return; };
+				StatsMetier job = _perso.getMetiers().get(posJob);
+				if(job == null) return;
+				job.setOptBinValue(Options);
+				job.set_slotsPublic(slots);
+				SocketManager.GAME_SEND_JO_PACKET(_perso, job);
 			break;
 		}
 	}
@@ -410,6 +437,7 @@ public class GameThread implements Runnable
 		if( id == -1)return;
 		_perso.useZaap(id);
 	}
+	
 	private void parseGuildPacket(String packet)
 	{
 		switch(packet.charAt(1))
@@ -503,49 +531,38 @@ public class GameThread implements Runnable
 	
 	private void guild_perco_join_fight(String packet) 
 	{
+		int TiD = -1;
+		String PercoID = Integer.toString(Integer.parseInt(packet.substring(1)), 36);
+		try
+		{
+			TiD = Integer.parseInt(PercoID);
+		}catch(Exception e){};
+		if(TiD == -1) return;
+		Percepteur perco = World.getPerco(TiD);
+		if(perco == null) return;
 		switch(packet.charAt(0))
 		{
 			case 'J'://Rejoindre
-				String PercoID = Integer.toString(Integer.parseInt(packet.substring(1)), 36);
-				
-				int TiD = -1;
-				try
-				{
-					TiD = Integer.parseInt(PercoID);
-				}catch(Exception e){};
-				
-				Percepteur perco = World.getPerco(TiD);
-				if(perco == null) return;
-				
-				int FightID = -1;
-				try
-				{
-					FightID = perco.get_inFightID();
-				}catch(Exception e){};
-				
-				short MapID = -1;
-				try
-				{
-					MapID = World.getCarte((short)perco.get_mapID()).getFight(FightID).get_map().get_id();
-				}catch(Exception e){};
-				
-				int CellID = -1;
-				try
-				{
-					CellID = perco.get_cellID();
-				}catch(Exception e){};
-				
-				if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("[DEBUG] Percepteur INFORMATIONS : TiD:"+TiD+", FightID:"+FightID+", MapID:"+MapID+", CellID"+CellID);
-				if(TiD == -1 || FightID == -1 || MapID == -1 || CellID == -1) return;
 				if(_perso.get_fight() == null && !_perso.is_away())
 				{
-					if(_perso.get_curCarte().get_id() != MapID)
-					{
-						_perso.teleport(MapID, CellID);
-					}
-					World.getCarte(MapID).getFight(FightID).joinPercepteurFight(_perso,_perso.get_GUID(), TiD);
+					if(perco.getDefenseFight().size() >= World.getCarte(perco.get_mapID()).get_maxTeam1()) return;//Plus de place
+					perco.addDefenseFight(_perso);
 				}
 			break;
+			case 'V'://Leave
+				perco.delDefenseFight(_perso);
+				//SocketManager.GAME_SEND_g_PACKET(_perso, "V");//FIXME : Paquet pour que le clients ne soit plus en "liste"
+			break;
+		}
+		for(Personnage z : World.getGuild(perco.get_guildID()).getMembers())
+		{
+			if(z == null) continue;
+			if(z.isOnline())
+			{	
+				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(perco.get_guildID()));
+				Percepteur.parseAttaque(z, perco.get_guildID());
+				Percepteur.parseDefense(z, perco.get_guildID());
+			}
 		}
 	}
 
@@ -589,7 +606,7 @@ public class GameThread implements Runnable
 			SocketManager.GAME_SEND_Im_PACKET(_perso, "1168;1");
 			return;
 		}
-		if(_perso.get_curCarte().get_placesStr().length() < 5)//La map ne possède pas de "places"
+		if(_perso.get_curCarte().get_maxTeam0() < 3 || _perso.get_curCarte().get_maxTeam1() < 3)//La map ne possède pas de "places"
 		{
 			SocketManager.GAME_SEND_Im_PACKET(_perso, "113");
 			return;
@@ -835,7 +852,6 @@ public class GameThread implements Runnable
 			Guild G = _perso.get_guild();
 			if(_perso.getGuildMember().getRank() == 1 && G.getMembers().size() > 1)	//Si le meneur veut quitter la guilde mais qu'il reste d'autre joueurs
 			{
-				//TODO : Envoyer le message qu'il doit mettre un autre membre meneur (Pas vraiment....)
 				return;
 			}
 			G.removeMember(_perso);
@@ -1133,6 +1149,14 @@ public class GameThread implements Runnable
 				Mount_description(packet);
 			break;
 			
+			case 'f'://Libère la monture
+				if(_perso.getMount() != null && _perso.isOnMount()) _perso.toogleOnMount();
+				SocketManager.GAME_SEND_Re_PACKET(_perso, "-", _perso.getMount());
+				SQLManager.REMOVE_MOUNT(_perso.getMount().get_id());
+				World.removeDragodinde(_perso.getMount().get_id());
+				_perso.setMount(null);
+			break;
+			
 			case 'n'://Change le nom
 				Mount_name(packet.substring(2));
 			break;
@@ -1198,7 +1222,7 @@ public class GameThread implements Runnable
 	
 	private void Mount_ride()
 	{
-		if(_perso.get_lvl()<60 || _perso.getMount() == null || !_perso.getMount().isMountable() || _perso._isGhosts)
+		if(_perso.get_lvl()<60 || _perso.getMount() == null || !_perso.getMount().isMountable() || _perso.get_isDead() > 0)
 		{
 			SocketManager.GAME_SEND_Re_PACKET(_perso,"Er", null);
 			return;
@@ -1555,9 +1579,9 @@ public class GameThread implements Runnable
 	{
 		if(_perso == null)return;
 		if(_perso.getInvitation() == 0)return;
-		_perso.setInvitation(0);
 		SocketManager.GAME_SEND_BN(_out);
 		Personnage t = World.getPersonnage(_perso.getInvitation());
+		_perso.setInvitation(0);
 		if(t == null) return;
 		t.setInvitation(0);
 		SocketManager.GAME_SEND_PR_PACKET(t);
@@ -1696,6 +1720,10 @@ public class GameThread implements Runnable
 			return;
 		}
 		T.applyAction(_perso, Target, guid, cellID);
+		if(T.getType() == Constants.ITEM_TYPE_PAIN || T.getType() == Constants.ITEM_TYPE_VIANDE_COMESTIBLE)
+            SocketManager.GAME_SEND_eUK_PACKET_TO_MAP(_perso.get_curCarte(), _perso.get_GUID(), 17);
+		else if(T.getType() == Constants.ITEM_TYPE_BIERE)
+            SocketManager.GAME_SEND_eUK_PACKET_TO_MAP(_perso.get_curCarte(), _perso.get_GUID(), 18);
 	}
 
 	private synchronized void Object_move(String packet)
@@ -1715,8 +1743,7 @@ public class GameThread implements Runnable
 			}
 			Objet obj = World.getObjet(guid);
 			
-			if(!_perso.hasItemGuid(guid) || obj == null)
-				return;
+			if(!_perso.hasItemGuid(guid) || obj == null) return;
 			
 			if(_perso.get_fight() != null)
 			{
@@ -1725,60 +1752,39 @@ public class GameThread implements Runnable
 					return;
 				}
 			}
-			if(!Constants.isValidPlaceForItem(obj.getTemplate(),pos) && pos != Constants.ITEM_POS_NO_EQUIPED)
-			{
-				return;
-			}
-			if(!obj.getTemplate().getConditions().equalsIgnoreCase("") && !ConditionParser.validConditions(_perso,obj.getTemplate().getConditions()))
-			{
-				SocketManager.GAME_SEND_Im_PACKET(_perso, "119|43");
-				return;
-			}
-			if(obj.getTemplate().getLevel() > _perso.get_lvl())
-			{
-				SocketManager.GAME_SEND_OAEL_PACKET(_out);
-				return;
-			}
-			//On ne peut équiper 2 items de panoplies identiques, ou 2 Dofus identiques
-			if(pos != Constants.ITEM_POS_NO_EQUIPED && (obj.getTemplate().getPanopID() != -1 || obj.getTemplate().getType() == Constants.ITEM_TYPE_DOFUS )&& _perso.hasEquiped(obj.getTemplate().getID()))
-				return;
 			
-			Objet exObj = _perso.getObjetByPos(pos);//Objet a l'ancienne position
-			if(exObj != null)//S'il y avait déja un objet sur cette place on déséquipe
+			if(pos == Constants.ITEM_POS_FAMILIER && _perso.get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)//Non abonné il envoi qqch sur la place familier
 			{
-				Objet obj2;
-				if((obj2 = _perso.getSimilarItem(exObj)) != null)//On le possède deja
+				SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'S');
+				return;
+			}
+			
+			if(pos == Constants.ITEM_POS_FAMILIER && obj.getTemplate().getType() != Constants.ITEM_TYPE_FAMILIER && _perso.getObjetByPos(pos) != null)//Il déplace un objet sur un familier
+			{
+				Objet pets = _perso.getObjetByPos(pos);
+				Pets p = World.get_Pets(pets.getTemplate().getID());
+				if(p == null) return;
+				if(obj.getTemplate().getID() != 2239 && !p.canEat(obj.getTemplate().getID(), obj.getTemplate().getType(), -1))//On verifie qu'il puisse le manger 2239 : Poudre éni
 				{
-					obj2.setQuantity(obj2.getQuantity()+exObj.getQuantity());
-					SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj2);
-					World.removeItem(exObj.getGuid());
-					_perso.removeItem(exObj.getGuid());
-					SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso, exObj.getGuid());
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "153");
+					return;
 				}
-				else//On ne le possède pas
-				{
-					exObj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
-					SocketManager.GAME_SEND_OBJET_MOVE_PACKET(_perso,exObj);
-				}
-				if(_perso.getObjetByPos(Constants.ITEM_POS_ARME) == null)
-					SocketManager.GAME_SEND_OT_PACKET(_out, -1);
 				
-				//Si objet de panoplie
-				if(exObj.getTemplate().getPanopID() > 0)SocketManager.GAME_SEND_OS_PACKET(_perso,exObj.getTemplate().getPanopID());
-			}else//getNumbEquipedItemOfPanoplie(exObj.getTemplate().getPanopID()
-			{
-				Objet obj2;
-				//On a un objet similaire
-				if((obj2 = _perso.getSimilarItem(obj)) != null)
+				int min = 0;
+				int max = 0;
+				try
 				{
-					if(qua > obj.getQuantity()) qua = obj.getQuantity();
-					
-					obj2.setQuantity(obj2.getQuantity()+qua);
-					SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj2);
-					
-					if(obj.getQuantity() - qua > 0)//Si il en reste
+					min = Integer.parseInt(p.get_Gap().split(",")[0]);
+					max = Integer.parseInt(p.get_Gap().split(",")[1]);
+				}catch(Exception e) {}
+				
+				PetsEntry MyPets = World.get_PetsEntry(pets.getGuid());
+				if(MyPets == null) return;
+				if(p.get_Type() == 2 || p.get_Type() == 3 || obj.getTemplate().getID() == 2239)
+				{
+					if(obj.getQuantity() - 1 > 0)//Si il en reste
 					{
-						obj.setQuantity(obj.getQuantity()-qua);
+						obj.setQuantity(obj.getQuantity()-1);
 						SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj);
 					}else//Sinon on supprime
 					{
@@ -1786,63 +1792,163 @@ public class GameThread implements Runnable
 						_perso.removeItem(obj.getGuid());
 						SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso, obj.getGuid());
 					}
+					
+					if(obj.getTemplate().getID() == 2239)
+					{
+						MyPets.RestoreLife(_perso);
+					}else 
+					{
+						MyPets.Eat(_perso, min, max, p.statsIDbyEat(obj.getTemplate().getID(), obj.getTemplate().getType(), -1));
+					}
+					SocketManager.GAME_SEND_UPDATE_OBJECT_DISPLAY_PACKET(_perso, pets);
+					SocketManager.GAME_SEND_Ow_PACKET(_perso);
+					_perso.refreshStats();
+					SocketManager.GAME_SEND_ON_EQUIP_ITEM(_perso.get_curCarte(), _perso);
+					SocketManager.GAME_SEND_STATS_PACKET(_perso);
+					if(_perso.getGroup() != null)
+					{
+						SocketManager.GAME_SEND_PM_MOD_PACKET_TO_GROUP(_perso.getGroup(),_perso);
+					}
 				}
-				else//Pas d'objets similaires
+				return;
+			}
+			else
+			{
+				if(!Constants.isValidPlaceForItem(obj.getTemplate(),pos) && pos != Constants.ITEM_POS_NO_EQUIPED)
 				{
-					obj.setPosition(pos);
-					SocketManager.GAME_SEND_OBJET_MOVE_PACKET(_perso,obj);
-					if(obj.getQuantity() > 1)
+					return;
+				}
+				if(!obj.getTemplate().getConditions().equalsIgnoreCase("") && !ConditionParser.validConditions(_perso,obj.getTemplate().getConditions()))
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "119|43");
+					return;
+				}
+				if(obj.getTemplate().getLevel() > _perso.get_lvl())
+				{
+					SocketManager.GAME_SEND_OAEL_PACKET(_out);
+					return;
+				}
+				//On ne peut équiper 2 items de panoplies identiques, ou 2 Dofus identiques
+				if(pos != Constants.ITEM_POS_NO_EQUIPED && (obj.getTemplate().getPanopID() != -1 || obj.getTemplate().getType() == Constants.ITEM_TYPE_DOFUS )&& _perso.hasEquiped(obj.getTemplate().getID()))
+					return;
+				
+				Objet exObj = _perso.getObjetByPos(pos);//Objet a l'ancienne position
+				if(exObj != null)//S'il y avait déja un objet sur cette place on déséquipe
+				{
+					Objet obj2;
+					if((obj2 = _perso.getSimilarItem(exObj)) != null)//On le possède deja
+					{
+						obj2.setQuantity(obj2.getQuantity()+exObj.getQuantity());
+						SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj2);
+						World.removeItem(exObj.getGuid());
+						_perso.removeItem(exObj.getGuid());
+						SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso, exObj.getGuid());
+					}
+					else//On ne le possède pas
+					{
+						exObj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+						SocketManager.GAME_SEND_OBJET_MOVE_PACKET(_perso,exObj);
+					}
+					if(_perso.getObjetByPos(Constants.ITEM_POS_ARME) == null)
+						SocketManager.GAME_SEND_OT_PACKET(_out, -1);
+					
+					//Si objet de panoplie
+					if(exObj.getTemplate().getPanopID() > 0)SocketManager.GAME_SEND_OS_PACKET(_perso,exObj.getTemplate().getPanopID());
+				}else//getNumbEquipedItemOfPanoplie(exObj.getTemplate().getPanopID()
+				{
+					Objet obj2;
+					//On a un objet similaire
+					if((obj2 = _perso.getSimilarItem(obj)) != null)
 					{
 						if(qua > obj.getQuantity()) qua = obj.getQuantity();
 						
+						obj2.setQuantity(obj2.getQuantity()+qua);
+						SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj2);
+						
 						if(obj.getQuantity() - qua > 0)//Si il en reste
 						{
-							int newItemQua = obj.getQuantity()-qua;
-							Objet newItem = Objet.getCloneObjet(obj,newItemQua);
-							_perso.addObjet(newItem,false);
-							World.addObjet(newItem,true);
-							obj.setQuantity(qua);
+							obj.setQuantity(obj.getQuantity()-qua);
 							SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj);
+						}else//Sinon on supprime
+						{
+							World.removeItem(obj.getGuid());
+							_perso.removeItem(obj.getGuid());
+							SocketManager.GAME_SEND_REMOVE_ITEM_PACKET(_perso, obj.getGuid());
+						}
+					}
+					else//Pas d'objets similaires
+					{
+						obj.setPosition(pos);
+						SocketManager.GAME_SEND_OBJET_MOVE_PACKET(_perso,obj);
+						if(obj.getQuantity() > 1)
+						{
+							if(qua > obj.getQuantity()) qua = obj.getQuantity();
+							
+							if(obj.getQuantity() - qua > 0)//Si il en reste
+							{
+								int newItemQua = obj.getQuantity()-qua;
+								Objet newItem = Objet.getCloneObjet(obj,newItemQua);
+								_perso.addObjet(newItem,false);
+								World.addObjet(newItem,true);
+								obj.setQuantity(qua);
+								SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(_perso, obj);
+							}
 						}
 					}
 				}
-			}
-			SocketManager.GAME_SEND_Ow_PACKET(_perso);
-			_perso.refreshStats();
-			if(_perso.getGroup() != null)
-			{
-				SocketManager.GAME_SEND_PM_MOD_PACKET_TO_GROUP(_perso.getGroup(),_perso);
-			}
-			SocketManager.GAME_SEND_STATS_PACKET(_perso);
-			if( pos == Constants.ITEM_POS_ARME 		||
-				pos == Constants.ITEM_POS_COIFFE 	||
-				pos == Constants.ITEM_POS_FAMILIER 	||
-				pos == Constants.ITEM_POS_CAPE		||
-				pos == Constants.ITEM_POS_BOUCLIER	||
-				pos == Constants.ITEM_POS_NO_EQUIPED)
-				SocketManager.GAME_SEND_ON_EQUIP_ITEM(_perso.get_curCarte(), _perso);
-		
-			//Si familier
-			if(pos == Constants.ITEM_POS_FAMILIER && _perso.isOnMount())_perso.toogleOnMount();
-			//Verif pour les outils de métier
-			if(pos == Constants.ITEM_POS_NO_EQUIPED && _perso.getObjetByPos(Constants.ITEM_POS_ARME) == null)
-				SocketManager.GAME_SEND_OT_PACKET(_out, -1);
-			
-			if(pos == Constants.ITEM_POS_ARME && _perso.getObjetByPos(Constants.ITEM_POS_ARME) != null)
-			{
-				int ID = _perso.getObjetByPos(Constants.ITEM_POS_ARME).getTemplate().getID();
-				for(Entry<Integer,StatsMetier> e : _perso.getMetiers().entrySet())
+				SocketManager.GAME_SEND_Ow_PACKET(_perso);
+				_perso.refreshStats();
+				if(_perso.getGroup() != null)
 				{
-					if(e.getValue().getTemplate().isValidTool(ID))
-						SocketManager.GAME_SEND_OT_PACKET(_out,e.getValue().getTemplate().getId());
+					SocketManager.GAME_SEND_PM_MOD_PACKET_TO_GROUP(_perso.getGroup(),_perso);
 				}
-			}
-			//Si objet de panoplie
-			if(obj.getTemplate().getPanopID() > 0)SocketManager.GAME_SEND_OS_PACKET(_perso,obj.getTemplate().getPanopID());
-			//Si en combat
-			if(_perso.get_fight() != null)
-			{
-				SocketManager.GAME_SEND_ON_EQUIP_ITEM_FIGHT(_perso, _perso.get_fight().getFighterByPerso(_perso), _perso.get_fight());
+				SocketManager.GAME_SEND_STATS_PACKET(_perso);
+				if( pos == Constants.ITEM_POS_ARME 		||
+					pos == Constants.ITEM_POS_COIFFE 	||
+					pos == Constants.ITEM_POS_FAMILIER 	||
+					pos == Constants.ITEM_POS_CAPE		||
+					pos == Constants.ITEM_POS_BOUCLIER	||
+					pos == Constants.ITEM_POS_NO_EQUIPED)
+					SocketManager.GAME_SEND_ON_EQUIP_ITEM(_perso.get_curCarte(), _perso);
+			
+				//Si familier
+				if(pos == Constants.ITEM_POS_FAMILIER && _perso.isOnMount())_perso.toogleOnMount();
+				//Verif pour les outils de métier
+				if(pos == Constants.ITEM_POS_NO_EQUIPED && _perso.getObjetByPos(Constants.ITEM_POS_ARME) == null)
+					SocketManager.GAME_SEND_OT_PACKET(_out, -1);
+				
+				if(pos == Constants.ITEM_POS_ARME && _perso.getObjetByPos(Constants.ITEM_POS_ARME) != null)
+				{
+					int ID = _perso.getObjetByPos(Constants.ITEM_POS_ARME).getTemplate().getID();
+					for(Entry<Integer,StatsMetier> e : _perso.getMetiers().entrySet())
+					{
+						if(e.getValue().getTemplate().isValidTool(ID))
+							SocketManager.GAME_SEND_OT_PACKET(_out,e.getValue().getTemplate().getId());
+					}
+				}
+				//Si objet de panoplie
+				if(obj.getTemplate().getPanopID() > 0)SocketManager.GAME_SEND_OS_PACKET(_perso,obj.getTemplate().getPanopID());
+				//Si en combat
+				if(_perso.get_fight() != null)
+				{
+					SocketManager.GAME_SEND_ON_EQUIP_ITEM_FIGHT(_perso, _perso.get_fight().getFighterByPerso(_perso), _perso.get_fight());
+				}
+				//Activation de l'invitation d'autre joueurs si il change d'item a proximité de la table de craft.
+				if(_perso.get_fight() == null)
+				{
+					String JobID = Constants.isValidPlaceToInviteCraft(_perso, _perso.get_curCell().getID());
+					if(!JobID.isEmpty())
+					{
+						SocketManager.GAME_SEND_CRAFT_PUBLIC_MODE(_perso);
+						SocketManager.GAME_SEND_CRAFT_PUBLIC_MODE(_perso, '+', JobID);
+						_perso.set_isJobActivate(JobID);
+					}else
+					if(!_perso.get_isJobActivate().isEmpty())
+					{
+						SocketManager.GAME_SEND_CRAFT_PUBLIC_MODE(_perso, '-', _perso.get_isJobActivate());
+						_perso.set_isJobActivate("");
+					}
+				}
 			}
 		}catch(Exception e)
 		{
@@ -1940,17 +2046,26 @@ public class GameThread implements Runnable
 		{
 			int npcID = Integer.parseInt(packet.substring(2).split((char)0x0A+"")[0]);
 			NPC npc = _perso.get_curCarte().getNPC(npcID);
-			if( npc == null)return;
-			SocketManager.GAME_SEND_DCK_PACKET(_out,npcID);
-			int qID = npc.get_template().get_initQuestionID();
-			NPC_question quest = World.getNPCQuestion(qID);
-			if(quest == null)
+			Percepteur taxCollector = World.getPercepteur(npcID);
+            if(taxCollector != null && taxCollector.get_mapID() == _perso.get_curCarte().get_id())
+            {
+             SocketManager.GAME_SEND_DCK_PACKET(_out, npcID);
+             SocketManager.GAME_SEND_QUESTION_PACKET(_out, World.getGuild(taxCollector.get_guildID()).parseQuestionTaxCollector());
+             return;
+            }
+			if(npc != null)
 			{
-				SocketManager.GAME_SEND_END_DIALOG_PACKET(_out);
-				return;
+				SocketManager.GAME_SEND_DCK_PACKET(_out,npcID);
+				int qID = npc.get_template().get_initQuestionID();
+				NPC_question quest = World.getNPCQuestion(qID);
+				if(quest == null)
+				{
+					SocketManager.GAME_SEND_END_DIALOG_PACKET(_out);
+					return;
+				}
+				SocketManager.GAME_SEND_QUESTION_PACKET(_out,quest.parseToDQPacket(_perso));
+				_perso.set_isTalkingWith(npcID);
 			}
-			SocketManager.GAME_SEND_QUESTION_PACKET(_out,quest.parseToDQPacket(_perso));
-			_perso.set_isTalkingWith(npcID);
 		}catch(NumberFormatException e){};
 	}
 
@@ -1969,6 +2084,36 @@ public class GameThread implements Runnable
 				Exchange_HDV(packet);
 			break;
 			
+			case 'J':
+				switch (packet.charAt(2))
+				{
+					case 'F':
+						int JobID = 0;
+						try
+						{
+							JobID = Integer.parseInt(packet.substring(3));
+						}catch(Exception e){ return; }
+						String str;
+						if(World.getCrafterOnBook(JobID) != null)
+						{
+							for(Integer ID : World.getCrafterOnBook(JobID))
+							{
+								Personnage artisans = World.getPersonnage(ID);
+								if(artisans == null || !artisans.isOnline() || !artisans.is_onCraftBookCrafter() || artisans.getMetierByID(JobID) == null) return;
+								int inWorkshop = 0;//FIXME
+								str = "+"+JobID+";"+ID+";"+artisans.get_name()+";"+artisans.getMetierByID(JobID).get_lvl()+";"+artisans.get_curCarte().get_id()+";"
+								+inWorkshop+";"+artisans.get_classe()+";"+artisans.get_sexe()+";"+artisans.get_color1()+","+artisans.get_color2()+","+artisans.get_color3()+";"
+								+artisans.getGMStuffString()+";"+artisans.getMetierByID(JobID).getOptBinValue()+","+artisans.getMetierByID(JobID).get_slotsPublic();
+								SocketManager.GAME_SEND_EJ_PACKET(_perso, str);
+							}
+						}else
+						{
+							SocketManager.GAME_SEND_EJ_PACKET(_perso, "");
+						}
+					break;
+				}
+			break;
+			
 			case 'K'://Ok
 				Exchange_isOK();
 			break;
@@ -1980,8 +2125,42 @@ public class GameThread implements Runnable
 				Exchange_onMoveItem(packet);
 			break;
 			
-			case 'q'://Mode marchand
-				if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away())return;
+			case 'q'://Mode marchand (TAXE)
+				if(_perso.get_isDead() > 0 || _perso.get_isTradingWith() > 0 || _perso.get_fight() != null ||
+				_perso.is_away() || _perso.get_isCraftingWith() != 0 || _perso.get_curExchange() != null ||
+				_perso.getCurJobAction() != null || _perso.getInMountPark() != null || _perso.isInBank() ||
+				_perso.get_isOnPercepteurID() != 0 || _perso.getInTrunk() != null)return;
+		        if (_perso.get_curCarte().getStoreCount() == 5)
+		        {
+		        	SocketManager.GAME_SEND_Im_PACKET(_perso, "125;5");
+		        	return;
+		        }
+		        if (_perso.parseStoreItemsList().isEmpty())
+		        {
+		        	SocketManager.GAME_SEND_Im_PACKET(_perso, "123");
+		        	return;
+		        }
+		        
+		        int buyIt = (int) Math.ceil(_perso.storeBuy()/1000);
+		        SocketManager.GAME_SEND_TAXE(_perso, buyIt);
+			break;
+			case 'Q'://Mode marchand
+				if(_perso.get_isDead() > 0 || _perso.get_isTradingWith() > 0 || _perso.get_fight() != null ||
+				_perso.is_away() || _perso.get_isCraftingWith() != 0 || _perso.get_curExchange() != null ||
+				_perso.getCurJobAction() != null || _perso.getInMountPark() != null || _perso.isInBank() ||
+				_perso.get_isOnPercepteurID() != 0 || _perso.getInTrunk() != null)return;
+				if(_perso.get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)
+				{
+					SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'S');
+					return;
+				}
+				
+				int buyIt_End = (int) Math.ceil(_perso.storeBuy()/1000);
+				if(_perso.get_kamas() < buyIt_End)
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "176");
+					return;
+				}
 		        if (_perso.get_curCarte().getStoreCount() == 5)
 		        {
 		        	SocketManager.GAME_SEND_Im_PACKET(_perso, "125;5");
@@ -1996,6 +2175,7 @@ public class GameThread implements Runnable
 		        _perso.set_orientation(orientation);
 		        Carte map = _perso.get_curCarte();
 		        _perso.set_showSeller(true);
+		        _perso.set_kamas(_perso.get_kamas()-buyIt_End);
 		        World.addSeller(_perso);
 		        kick();
 		        for(Personnage z : map.getPersos())
@@ -2007,7 +2187,6 @@ public class GameThread implements Runnable
 			case 'r'://Rides => Monture
 				Exchange_mountPark(packet);
 			break;
-			
 			case 'R'://liste d'achat NPC
 				Exchange_start(packet);
 			break;
@@ -2018,12 +2197,32 @@ public class GameThread implements Runnable
 			case 'V'://Fin de l'échange
 				Exchange_finish_buy();
 			break;
+			
+			case 'W'://Activation de la solicitation métier (invité a craft un autre joueur)
+				Job_Public_Activation(packet);
+			break;
+		}
+	}
+	
+	private void Job_Public_Activation(String packet)
+	{
+		switch (packet.charAt(2))
+		{
+			case '+':
+				//TODO
+			break;
+			case '-':
+				//TODO
+			break;
 		}
 	}
 	
 	private void Exchange_HDV(String packet)
 	{
-		if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away())return;
+		if(_perso.get_isDead() > 0 || _perso.get_isTradingWith() > 0 || _perso.get_fight() != null ||
+		_perso.is_away() || _perso.get_isCraftingWith() != 0 || _perso.get_curExchange() != null ||
+		_perso.getCurJobAction() != null || _perso.getInMountPark() != null || _perso.isInBank() ||
+		_perso.get_isOnPercepteurID() != 0 || _perso.getInTrunk() != null) return;
 		switch(packet.charAt(2))
 		{
 			case 'B': //Confirmation d'achat
@@ -2047,7 +2246,7 @@ public class GameThread implements Runnable
 					price = Integer.parseInt(info[2]);
 					
 					HdvEntry toBuy = World.get_HdvEntry(obj.getTemplate().getID(), ObjetID);
-					
+					if(toBuy == null) return;
 					if(toBuy.get_qua() != qua) return;
 					if(_perso.get_kamas() < price) return;
 					
@@ -2058,7 +2257,11 @@ public class GameThread implements Runnable
 						World.GetBank(toBuy.get_ownerGuid()).addBankKamas(toBuy.get_price());//Ajoute l'argent au vendeur
 					}
 					SocketManager.GAME_SEND_STATS_PACKET(_perso);//Met a jour les kamas de l'acheteur
-					_perso.addObjet(toBuy.get_obj(), true);//Ajoute l'objet au nouveau propriétaire
+					boolean stack = _perso.addObjet(toBuy.get_obj(), true);//Ajoute l'objet au nouveau propriétaire
+					if(stack && toBuy.get_ownerGuid() == -1)//Si il n'en a pas de commun, on le sauvegarde en tant que nouveau objet
+					{
+						SQLManager.SAVE_NEW_ITEM(toBuy.get_obj());
+					}
 					
 					World.removeHdvItem(toBuy.get_ownerGuid(), curHdv.get_mapID(), toBuy);
 					
@@ -2070,6 +2273,7 @@ public class GameThread implements Runnable
 					
 					SocketManager.GAME_SEND_EHl_PACKET(_perso,World.parse_EHl(toBuy.get_obj().getTemplate().getID()));
 					SocketManager.GAME_SEND_Im_PACKET(_perso,"068");
+					SocketManager.GAME_SEND_Ow_PACKET(_perso);
 				}catch(Exception e)
 				{
 					SocketManager.GAME_SEND_Im_PACKET(_perso,"172");
@@ -2089,10 +2293,16 @@ public class GameThread implements Runnable
 					return;
 				}
 			break;
-			case 'P'://Demande des prix moyen TODO
+			case 'P'://Demande des prix moyen
 				//Args : TemplateID
-				//templateID = Integer.parseInt(packet.substring(3));
-				//SocketManager.GAME_SEND_EHP_PACKET(_perso,templateID);
+				try
+				{
+					templateID = Integer.parseInt(packet.substring(3));
+					SocketManager.GAME_SEND_EHP_PACKET(_perso,templateID, World.get_averagePrice(templateID));
+				}catch(Exception e)
+				{
+					return;
+				}
 			break;			
 			case 'T'://Demande des template de la catégorie
 				//Args : CategID
@@ -2115,7 +2325,7 @@ public class GameThread implements Runnable
 		if(_perso.getInMountPark() != null)
 		{
 			MountPark MP = _perso.getInMountPark();
-			if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null)return;
+			if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away() || _perso.get_isCraftingWith() != 0)return;
 			char c = packet.charAt(2);
 			packet = packet.substring(3);
 			int guid = -1;
@@ -2181,8 +2391,8 @@ public class GameThread implements Runnable
 					obj1.clearStats();
 					//on ajoute la possibilité de voir la dinde
 					obj1.getStats().addOneStat(995, DD1.get_id());
-					obj1.addTxtStat(996, _perso.get_name());
-					obj1.addTxtStat(997, DD1.get_nom());
+					obj1.getTxtStat().put(996, _perso.get_name());
+					obj1.getTxtStat().put(997, DD1.get_nom());
 					
 					//On ajoute l'objet au joueur
 					World.addObjet(obj1, true);
@@ -2690,16 +2900,28 @@ public class GameThread implements Runnable
 
 	private void Exchange_accept()
 	{
-		if(_perso.get_isTradingWith() == 0)return;
-		Personnage target = World.getPersonnage(_perso.get_isTradingWith());
-		if(target == null)return;
-		SocketManager.GAME_SEND_EXCHANGE_CONFIRM_OK(_out,1);
-		SocketManager.GAME_SEND_EXCHANGE_CONFIRM_OK(target.get_compte().getGameThread().get_out(),1);
-		World.Exchange echg = new World.Exchange(target,_perso);
-		_perso.setCurExchange(echg);
-		_perso.set_isTradingWith(target.get_GUID());
-		target.setCurExchange(echg);
-		target.set_isTradingWith(_perso.get_GUID());
+		if(_perso.get_isCraftingWith() != 0 && _perso.get_isCraftingWithskID() != 0)
+		{
+			Personnage artisan = World.getPersonnage(_perso.get_isCraftingWith());
+			if(artisan == null || artisan.get_GUID() != _perso.get_isCraftingWith())return;
+			int jobID = Constants.getJobIDbySkillID(artisan.get_isCraftingWithskID());
+			if(jobID == 0) return;
+			//TODO : Si réparer : deux cases
+			SocketManager.GAME_SEND_ECK_PACKET(artisan, 12, Constants.getTotalCaseByJobLevel(artisan.getMetierByID(jobID).get_lvl())+";"+artisan.get_isCraftingWithskID());
+			SocketManager.GAME_SEND_ECK_PACKET(_perso, 13, Constants.getTotalCaseByJobLevel(artisan.getMetierByID(jobID).get_lvl())+";"+artisan.get_isCraftingWithskID());
+		}
+		if(_perso.get_isTradingWith() != 0)
+		{
+			Personnage target = World.getPersonnage(_perso.get_isTradingWith());
+			if(target == null)return;
+			SocketManager.GAME_SEND_EXCHANGE_CONFIRM_OK(_out,1);
+			SocketManager.GAME_SEND_EXCHANGE_CONFIRM_OK(target.get_compte().getGameThread().get_out(),1);
+			World.Exchange echg = new World.Exchange(target,_perso);
+			_perso.setCurExchange(echg);
+			_perso.set_isTradingWith(target.get_GUID());
+			target.setCurExchange(echg);
+			target.set_isTradingWith(_perso.get_GUID());
+		}
 	}
 
 	private void Exchange_onSellItem(String packet)
@@ -2837,7 +3059,9 @@ public class GameThread implements Runnable
 		   _perso.getInMountPark() == null &&
 		   !_perso.isInBank() &&
 		   _perso.get_isOnPercepteurID() == 0 &&
-		   _perso.getInTrunk() == null)
+		   _perso.getInTrunk() == null && 
+		   !_perso.is_onCraftBook() &&
+		   _perso.get_isCraftingWith() == 0)
 			return;
 		
 		//Si échange avec un personnage
@@ -2893,6 +3117,17 @@ public class GameThread implements Runnable
 			perco.DelPerco(perco.getGuid());
 			SQLManager.DELETE_PERCO(perco.getGuid());
 			_perso.set_isOnPercepteurID(0);
+			_perso._DialogTimer.stop();
+		}
+		//Si craft avec client
+		if(_perso.get_isCraftingWith() != 0)
+		{
+			Personnage target = World.getPersonnage(_perso.get_isCraftingWith());
+			if(target == null || target.get_isCraftingWith() != _perso.get_GUID()) return;
+			SocketManager.GAME_SEND_EV_PACKET(target.get_compte().getGameThread().get_out());
+			target.set_isCraftingWith(0);
+			target.set_isCraftingWithskID(0);
+			target.set_away(false);
 		}
 		
 		SQLManager.SAVE_PERSONNAGE(_perso,true);
@@ -2901,64 +3136,18 @@ public class GameThread implements Runnable
 		_perso.set_away(false);
 		_perso.setInBank(false);
 		_perso.setInTrunk(null);
+		_perso.set_onCraftBook(false);
+		_perso.set_isCraftingWith(0);
+		_perso.set_isCraftingWithskID(0);
 	}
 
 	private void Exchange_start(String packet)
 	{
-		if(packet.substring(2,4).equals("11"))//Ouverture HDV achat
-		{
-			if(_perso.get_isTradingWith() < 0)//Si déjà ouvert
-				SocketManager.GAME_SEND_EV_PACKET(_out);
-			
-			if(_perso.getDeshonor() >= 5) 
-			{
-				SocketManager.GAME_SEND_Im_PACKET(_perso, "183");
-				return;
-			}
-			
-			Hdv toOpen = World.getHdv(_perso.get_curCarte().get_id());
-			
-			if(toOpen == null) return;
-			
-			String info = "1,10,100;"+
-						toOpen.get_Categories()+
-						";"+toOpen.get_SellTaxe()+
-						";"+toOpen.get_LvlMax()+
-						";"+toOpen.get_AccountItem()+
-						";-1;"+
-						toOpen.get_SellTime();
-			SocketManager.GAME_SEND_ECK_PACKET(_perso,11,info);
-			_perso.set_isTradingWith(0 - _perso.get_curCarte().get_id());	//Récupère l'ID de la map et rend cette valeur négative
-			return;
-		}
-		else if(packet.substring(2,4).equals("10"))//Ouverture HDV vente
-		{
-			if(_perso.get_isTradingWith() < 0)//Si déjà ouvert
-				SocketManager.GAME_SEND_EV_PACKET(_out);
-			
-			if(_perso.getDeshonor() >= 5) 
-			{
-				SocketManager.GAME_SEND_Im_PACKET(_perso, "183");
-				return;
-			}
-			
-			Hdv toOpen = World.getHdv(_perso.get_curCarte().get_id());
-			
-			if(toOpen == null) return;
-			
-			String info = "1,10,100;"+
-						toOpen.get_Categories()+
-						";"+toOpen.get_SellTaxe()+
-						";"+toOpen.get_LvlMax()+
-						";"+toOpen.get_AccountItem()+
-						";-1;"+
-						toOpen.get_SellTime();
-			SocketManager.GAME_SEND_ECK_PACKET(_perso,10,info);
-			_perso.set_isTradingWith(0 - _perso.get_curCarte().get_id());//Récupère l'ID de la map et rend cette valeur négative
-			
-			SocketManager.GAME_SEND_HDVITEM_SELLING(_perso);
-			return;
-		}
+		if(_perso.get_isDead() > 0 || _perso.get_curExchange() != null || _perso.getCurJobAction() != null || 
+				_perso.getInMountPark() != null && _perso.isInBank() || _perso.get_isOnPercepteurID() != 0 || 
+				_perso.getInTrunk() != null || _perso.is_away() || _perso.get_fight() != null ||
+				_perso.get_isCraftingWith() != 0) return;
+		
 		switch(packet.charAt(2))
 		{
 			case '0'://Si NPC
@@ -2973,30 +3162,135 @@ public class GameThread implements Runnable
 				}catch(NumberFormatException e){};
 			break;
 			case '1'://Si joueur
-				try
+				switch(packet.charAt(3))
 				{
-				int guidTarget = Integer.parseInt(packet.substring(4));
-				Personnage target = World.getPersonnage(guidTarget);
-				if(target == null )
-				{
-					SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'E');
-					return;
+					case '0':
+						if(_perso.get_isTradingWith() < 0)//Si déjà ouvert
+							SocketManager.GAME_SEND_EV_PACKET(_out);
+						
+						if(_perso.getDeshonor() >= 5) 
+						{
+							SocketManager.GAME_SEND_Im_PACKET(_perso, "183");
+							return;
+						}
+						
+						if(_perso.get_curCarte().getSubArea().get_subscribe() && _perso.get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)
+						{
+							SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'S');
+							return;
+						}
+						
+						Hdv toOpen = World.getHdv(_perso.get_curCarte().get_id());
+						
+						if(toOpen == null) return;
+						
+						String info = "1,10,100;"+
+									toOpen.get_Categories()+
+									";"+toOpen.get_SellTaxe()+
+									";"+toOpen.get_LvlMax()+
+									";"+toOpen.get_AccountItem()+
+									";-1;"+
+									toOpen.get_SellTime();
+						SocketManager.GAME_SEND_ECK_PACKET(_perso,10,info);
+						_perso.set_isTradingWith(0 - _perso.get_curCarte().get_id());//Récupère l'ID de la map et rend cette valeur négative
+						
+						SocketManager.GAME_SEND_HDVITEM_SELLING(_perso);
+					break;
+					case '1':
+						if(_perso.get_isTradingWith() < 0)//Si déjà ouvert
+							SocketManager.GAME_SEND_EV_PACKET(_out);
+						
+						if(_perso.getDeshonor() >= 5) 
+						{
+							SocketManager.GAME_SEND_Im_PACKET(_perso, "183");
+							return;
+						}
+						
+						if(_perso.get_curCarte().getSubArea().get_subscribe() && _perso.get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)
+						{
+							SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'S');
+							return;
+						}
+						
+						Hdv toOpen2 = World.getHdv(_perso.get_curCarte().get_id());
+						
+						if(toOpen2 == null) return;
+						
+						String info2 = "1,10,100;"+
+									toOpen2.get_Categories()+
+									";"+toOpen2.get_SellTaxe()+
+									";"+toOpen2.get_LvlMax()+
+									";"+toOpen2.get_AccountItem()+
+									";-1;"+
+									toOpen2.get_SellTime();
+						SocketManager.GAME_SEND_ECK_PACKET(_perso,11,info2);
+						_perso.set_isTradingWith(0 - _perso.get_curCarte().get_id());	//Récupère l'ID de la map et rend cette valeur négative
+					break;
+					case '2':
+						int SkID = 0;
+						int TargetGuid = 0;
+						try
+						{
+							TargetGuid = Integer.parseInt(packet.substring(2).split("\\|")[1]);
+							SkID = Integer.parseInt(packet.substring(2).split("\\|")[2]);
+						}catch(NumberFormatException e){ return; }
+						
+						Personnage target2 = World.getPersonnage(TargetGuid);
+						
+						if(target2 == null )
+						{
+							SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'E');
+							return;
+						}
+						
+						if(target2.get_curCarte()!= _perso.get_curCarte() || !target2.isOnline())//Si les persos ne sont pas sur la meme map
+						{
+							SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'E');
+							return;
+						}
+						
+						if(target2.is_away())
+						{
+							SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'O');
+							return;
+						}
+						
+						SocketManager.GAME_SEND_EXCHANGE_REQUEST_OK(_out, _perso.get_GUID(), TargetGuid,12);
+						SocketManager.GAME_SEND_EXCHANGE_REQUEST_OK(target2.get_compte().getGameThread().get_out(),_perso.get_GUID(), TargetGuid,13);
+						_perso.set_away(true);
+						_perso.set_isCraftingWith(TargetGuid);
+						_perso.set_isCraftingWithskID(SkID);
+						target2.set_away(true);
+						target2.set_isCraftingWith(_perso.get_GUID());
+						target2.set_isCraftingWithskID(SkID);
+					break;
+					default:
+						try
+						{
+							int guidTarget = Integer.parseInt(packet.substring(4));
+							Personnage target = World.getPersonnage(guidTarget);
+							if(target == null )
+							{
+								SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'E');
+								return;
+							}
+							if(target.get_curCarte()!= _perso.get_curCarte() || !target.isOnline())//Si les persos ne sont pas sur la meme map
+							{
+								SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'E');
+								return;
+							}
+							if(target.is_away() || target.get_isTradingWith() != 0)
+							{
+								SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'O');
+								return;
+							}
+							SocketManager.GAME_SEND_EXCHANGE_REQUEST_OK(_out, _perso.get_GUID(), guidTarget,1);
+							SocketManager.GAME_SEND_EXCHANGE_REQUEST_OK(target.get_compte().getGameThread().get_out(),_perso.get_GUID(), guidTarget,1);
+							_perso.set_isTradingWith(guidTarget);
+							target.set_isTradingWith(_perso.get_GUID());
+						}catch(NumberFormatException e){}
+					break;
 				}
-				if(target.get_curCarte()!= _perso.get_curCarte() || !target.isOnline())//Si les persos ne sont pas sur la meme map
-				{
-					SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'E');
-					return;
-				}
-				if(target.is_away() || _perso.is_away() || target.get_isTradingWith() != 0)
-				{
-					SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'O');
-					return;
-				}
-				SocketManager.GAME_SEND_EXCHANGE_REQUEST_OK(_out, _perso.get_GUID(), guidTarget,1);
-				SocketManager.GAME_SEND_EXCHANGE_REQUEST_OK(target.get_compte().getGameThread().get_out(),_perso.get_GUID(), guidTarget,1);
-				_perso.set_isTradingWith(guidTarget);
-				target.set_isTradingWith(_perso.get_GUID());
-			}catch(NumberFormatException e){}
 			break;
             case '4'://StorePlayer
             	int pID = 0;
@@ -3006,7 +3300,7 @@ public class GameThread implements Runnable
             		pID = Integer.valueOf(packet.split("\\|")[1]);
             		//cellID = Integer.valueOf(packet.split("\\|")[2]);
 				}catch(NumberFormatException e){return;};
-				if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away())return;
+				if(_perso.get_isTradingWith() > 0)return;
 				Personnage seller = World.getPersonnage(pID);
 				if(seller == null) return;
 				_perso.set_isTradingWith(pID);
@@ -3014,7 +3308,7 @@ public class GameThread implements Runnable
 				SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(seller, _perso);
             break;
 			case '6'://StoreItems
-				if(_perso.get_isTradingWith() > 0 || _perso.get_fight() != null || _perso.is_away())return;
+				if(_perso.get_isTradingWith() > 0)return;
                 _perso.set_isTradingWith(_perso.get_GUID());
                 SocketManager.GAME_SEND_ECK_PACKET(_perso, 6, "");
                 SocketManager.GAME_SEND_ITEM_LIST_PACKET_SELLER(_perso, _perso);
@@ -3030,6 +3324,8 @@ public class GameThread implements Runnable
 					SocketManager.GAME_SEND_ITEM_LIST_PACKET_PERCEPTEUR(_out, perco);
 					_perso.set_isTradingWith(perco.getGuid());
 					_perso.set_isOnPercepteurID(perco.getGuid());
+					_perso._DialogTimer = _perso.DialogTimer();
+					_perso._DialogTimer.start();
 				}catch(NumberFormatException e){};
 			break;
 		}
@@ -3222,6 +3518,7 @@ public class GameThread implements Runnable
 			break;
 		}
 	}
+	
 	public void Basic_state(String packet)
 	{
 		switch(packet.charAt(2))
@@ -3352,7 +3649,6 @@ public class GameThread implements Runnable
 				msg = packet.split("\\|",2)[1];
 				SocketManager.GAME_SEND_cMK_PACKET_TO_GROUP(_perso.getGroup(), "$", _perso.get_GUID(), _perso.get_name(), msg);
 			break;
-			
 			case ':'://Canal commerce
 				if(!_perso.get_canaux().contains(packet.charAt(2)+""))return;
 				long l;
@@ -3472,6 +3768,10 @@ public class GameThread implements Runnable
 				if(_perso == null)return;
 				_perso.sendGameCreate();
 			break;
+			case 'F':
+				if(_perso == null)return;
+			    _perso.set_Ghosts();
+			break;
 			case 'f':
 				Game_on_showCase(packet);
 			break;
@@ -3482,6 +3782,7 @@ public class GameThread implements Runnable
 				Game_on_GK_packet(packet);
 			break;
 			case 'P'://PvP Toogle
+				if(_perso == null)return;
 				_perso.toggleWings(packet.charAt(2));
 			break;
 			case 'p':
@@ -3499,7 +3800,6 @@ public class GameThread implements Runnable
 			break;
 		}
 	}
-
 	
 	private void Game_onLeftFight(String packet)
 	{
@@ -3590,7 +3890,7 @@ public class GameThread implements Runnable
 						_perso.set_curCell(nextCell);
 						_perso.set_orientation(CryptManager.getIntByHashedValue(path.charAt(path.length()-3)));
 						_perso.get_curCell().addPerso(_perso);
-						if(!_perso._isGhosts) _perso.set_away(false);
+						if(!(_perso.get_isDead() > 0)) _perso.set_away(false);
 						
 						if(targetCell.getObject() != null)
 						{
@@ -3602,10 +3902,11 @@ public class GameThread implements Runnable
 							//Statues phoenix
 							else if(targetCell.getObject().getID() == 542)
 							{
-								if(_perso._isGhosts) _perso.set_Alive();
+								if(_perso.get_isDead() == 2) _perso.set_Alive();
 							}
 						}
-						_perso.get_curCarte().onPlayerArriveOnCell(_perso,_perso.get_curCell().getID());
+						_perso.get_curCarte().onPlayerArriveOnCell(_perso, _perso.get_curCell().getID(), _perso.is_hasEndFight());
+						_perso.set_hasEndFight(false);
 					}
 					else//En combat
 					{
@@ -3765,21 +4066,33 @@ public class GameThread implements Runnable
 		}
 	}
 	
-	
 	private void game_perco(String packet)
 	{
 		try
 		{
 			if(_perso == null)return;
+			
 			if(_perso.get_fight() != null)return;
 			if(_perso.get_isTalkingWith() != 0 ||
 			   _perso.get_isTradingWith() != 0 ||
 			   _perso.getCurJobAction() != null ||
 			   _perso.get_curExchange() != null ||
-			   _perso.is_away())
-					{
-						return;
-					}
+			   _perso.is_away() ||
+			   _perso.get_isCraftingWith() != 0 ||
+			   _perso.get_isDead() > 0 || 
+			   _perso.getInMountPark() != null ||
+			   _perso.isInBank() ||
+			   _perso.get_isOnPercepteurID() != 0 || 
+			   _perso.getInTrunk() != null ||
+			   _perso.get_fight() != null)
+				{
+					return;
+				}
+			if(_perso.get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)
+			{
+				SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'S');
+				return;
+			}
 			int id = Integer.parseInt(packet.substring(5));
 			Percepteur target = World.getPerco(id);
 			if(target == null || target.get_inFight() > 0) return;
@@ -3808,6 +4121,12 @@ public class GameThread implements Runnable
 			|| _perso.get_curCarte().get_placesStr().equalsIgnoreCase("|")
 			|| !target.canAggro())
 				return;
+			
+			if(_perso.get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)
+			{
+				SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'S');
+				return;
+			}
 			
 			if(target.get_align() == 0) 
 			{
@@ -3892,8 +4211,21 @@ public class GameThread implements Runnable
 					SocketManager.GAME_SEND_GA903_ERROR_PACKET(_out,'o',guid);
 					return;
 				}
-				if(World.getPersonnage(guid) == null)return;
-				World.getPersonnage(guid).get_fight().joinFight(_perso,guid);
+				Personnage FightStarter = World.getPersonnage(guid);
+				if(FightStarter == null)return;
+				if((FightStarter.get_fight().get_type() == Constants.FIGHT_TYPE_AGRESSION || 
+					FightStarter.get_fight().get_type() == Constants.FIGHT_TYPE_CHALLENGE || 
+					FightStarter.get_fight().get_type() == Constants.FIGHT_TYPE_PVT) && _perso.get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)
+				{
+					SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'S');
+					return;
+				}
+				if(FightStarter.get_fight().get_state() > 2)
+				{
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "191");
+					return;
+				}
+				FightStarter.get_fight().joinFight(_perso,guid);
 			}catch(Exception e){return;};
 		}
 	}
@@ -3936,7 +4268,16 @@ public class GameThread implements Runnable
 			if(_perso.is_away() || _perso.get_fight() != null){SocketManager.GAME_SEND_DUEL_Y_AWAY(_out, _perso.get_GUID());return;}
 			Personnage Target = World.getPersonnage(guid);
 			if(Target == null) return;
-			if(Target.is_away() || Target.get_fight() != null || Target.get_curCarte().get_id() != _perso.get_curCarte().get_id()){SocketManager.GAME_SEND_DUEL_E_AWAY(_out, _perso.get_GUID());return;}
+			if(Target.is_away() || Target.get_fight() != null || Target.get_curCarte().get_id() != _perso.get_curCarte().get_id())
+			{
+				SocketManager.GAME_SEND_DUEL_E_AWAY(_out, _perso.get_GUID());
+				return;
+			}
+			if(_perso.get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)
+			{
+				SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_out,'S');
+				return;
+			}
 			_perso.set_duelID(guid);
 			_perso.set_away(true);
 			World.getPersonnage(guid).set_duelID(_perso.get_GUID());
@@ -3950,13 +4291,15 @@ public class GameThread implements Runnable
 		String path = GA._packet.substring(5);
 		if(_perso.get_fight() == null)
 		{
-			if(_perso.getPodUsed() > _perso.getMaxPod())
+			if(_perso.getPodUsed() > _perso.getMaxPod() || _perso.get_isDead() == 1)
 			{
-				SocketManager.GAME_SEND_Im_PACKET(_perso, "112");
+				if(!(_perso.get_isDead() == 1))SocketManager.GAME_SEND_Im_PACKET(_perso, "112");
 				SocketManager.GAME_SEND_GA_PACKET(_out, "", "0", "", "");
+				SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(_perso.get_compte().getGameThread().get_out(), 'o');
 				removeAction(GA);
 				return;
 			}
+			
 			AtomicReference<String> pathRef = new AtomicReference<String>(path);
 			int result = Pathfinding.isValidPath(_perso.get_curCarte(),_perso.get_curCell().getID(),pathRef, null);
 			
@@ -4087,7 +4430,7 @@ public class GameThread implements Runnable
 				if(_compte.createPerso(infos[0], Integer.parseInt(infos[2]), Integer.parseInt(infos[1]), Integer.parseInt(infos[3]),Integer.parseInt(infos[4]), Integer.parseInt(infos[5])))
 				{
 					SocketManager.GAME_SEND_CREATE_OK(_out);
-					SocketManager.GAME_SEND_PERSO_LIST(_out, _compte.get_persos());
+					SocketManager.GAME_SEND_PERSO_LIST(_out, _compte.get_persos(), _compte.get_subscriber());
 				}else
 				{
 					SocketManager.GAME_SEND_CREATE_FAILED(_out);
@@ -4113,7 +4456,8 @@ public class GameThread implements Runnable
 					if(_compte.get_persos().get(GUID).get_lvl() <20 ||(_compte.get_persos().get(GUID).get_lvl() >=20 && reponse.equals(_compte.get_reponse())))
 					{
 						_compte.deletePerso(GUID);
-						SocketManager.GAME_SEND_PERSO_LIST(_out, _compte.get_persos());
+						_compte.sendListGift();
+						SocketManager.GAME_SEND_PERSO_LIST(_out, _compte.get_persos(), _compte.get_subscriber());
 					}
 					else
 						SocketManager.GAME_SEND_DELETE_PERSO_FAILED(_out);
@@ -4126,14 +4470,56 @@ public class GameThread implements Runnable
 				int position = 1;
 				SocketManager.GAME_SEND_Af_PACKET(_out,position,1,1,""+1,queueID);
 			break;
-			/*
-			case 'i':
-				_compte.setClientKey(packet.substring(2));
+			case 'G':
+				String[] args = packet.substring(2).split("\\|");
+				int giftId, playerId;
+				try
+				{
+					giftId = Integer.parseInt(args[0]);
+					playerId = Integer.parseInt(args[1]);
+				}catch(NumberFormatException e){return;};
+				
+				Personnage player = World.getPersonnage(playerId);
+				if(player == null) return;
+				Compte account = player.get_compte();
+				if(account == null) return;
+				Gift gift = account.getGift(giftId);
+
+
+				if(gift == null) return;
+
+				for(Entry<Integer, Integer> entry : gift.getItems().entrySet())
+				{
+					Objet obj  = World.getObjTemplate(entry.getKey()).createNewItem(entry.getValue(), gift.maximizeStat());
+					if(player.addObjet(obj, true))
+						World.addObjet(obj, true);
+				}
+				
+				_compte.removeGift(giftId);
+				
+				SQLManager.DELETE_GIFT_BY_GIFTID(giftId);
+				SQLManager.DELETE_GIFT_BY_ACCOUNT(giftId);
+				
+				SocketManager.GAME_SEND_ATTRIBUTE_GIFT_SUCCESS(_out);
+				
+				_compte.sendListGift();
+
+				SocketManager.GAME_SEND_PERSO_LIST(_out, account.get_persos(), account.get_subscriber());
+				SQLManager.SAVE_PERSONNAGE(player, true);
 			break;
-			*/
+				
+			case 'i':
+				String uniqueID = null;
+				try
+				{
+					uniqueID = packet.substring(2);
+				}catch(Exception e){}
+				if(uniqueID != null) _compte.setClientKey(uniqueID);
+				else _compte.getGameThread().kick();
+			break;
 			case 'L':
-				SocketManager.GAME_SEND_PERSO_LIST(_out, _compte.get_persos());
-				//SocketManager.GAME_SEND_HIDE_GENERATE_NAME(_out);
+				_compte.sendListGift();
+				SocketManager.GAME_SEND_PERSO_LIST(_out, _compte.get_persos(), _compte.get_subscriber());
 			break;
 			
 			case 'S':
@@ -4200,7 +4586,7 @@ public class GameThread implements Runnable
 			
 			case 'P':
 				SocketManager.REALM_SEND_REQUIRED_APK(_out);
-				break;
+			break;
 		}
 	}
 
@@ -4225,5 +4611,5 @@ public class GameThread implements Runnable
 		System.out.println("Packet: "+GA._packet);
 		//*/
 	}
-
+	
 }

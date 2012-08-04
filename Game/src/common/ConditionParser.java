@@ -23,7 +23,9 @@ public class ConditionParser
 			req = havePO(req, perso);
 		if(req.contains("PN"))
 			req = canPN(req, perso);
-	 	//TODO : Gérer PJ Pj
+		if(req.contains("PJ"))
+			req = canPJ(req, perso);
+	 	//TODO : Gérer Pj
 		try
 		{
 				//Stats stuff compris
@@ -48,7 +50,7 @@ public class ConditionParser
 			 	jep.addVariable("PK", perso.get_kamas());
 			 	jep.addVariable("PG", perso.get_classe());
 			 	jep.addVariable("PS", perso.get_sexe());
-			 	jep.addVariable("PZ", 1);//Abonnement
+			 	jep.addVariable("PZ", 1);//Abonnement TODO
 			 	jep.addVariable("PX", perso.get_compte().get_gmLvl());
 			 	jep.addVariable("PW", perso.getMaxPod());
 			 	jep.addVariable("PB", perso.get_curCarte().getSubArea().get_id());
@@ -279,6 +281,27 @@ public class ConditionParser
 				continue;
 			}
 			if(perso.get_name().toLowerCase().compareTo(cur) == 0)
+			{
+				copyCond += "1";
+			}else
+			{
+				copyCond += "0";
+			}
+		}
+		return copyCond;
+	}
+	
+	public static String canPJ(String cond,Personnage perso)//On remplace le PJ par 1 et si le metier correspond == 1 sinon == 0
+	{
+		String copyCond = "";
+		for(String cur : cond.split("=="))
+		{
+			if(cur.contains("PJ")) 
+			{
+				copyCond += "1==";
+				continue;
+			}
+			if(perso.getMetierByID(Integer.parseInt(cur)) != null)
 			{
 				copyCond += "1";
 			}else

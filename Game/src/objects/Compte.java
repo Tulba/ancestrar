@@ -4,6 +4,7 @@ import game.GameThread;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -54,6 +55,7 @@ public class Compte {
 			return g;
 		}
 	}
+	
 	public static class EnemyList
 	{
 		private ArrayList<String> _pseudos = new ArrayList<String>();
@@ -102,7 +104,8 @@ public class Compte {
 	private String _reponse;
 	private boolean _banned = false;
 	private int _gmLvl = 0;
-	private int _subscriber = 0;//Time en minute
+	private int _subscriber = 0;//Time en secondes
+	private boolean _subscriberMessage = true;
 	private String _curIP = "";
 	private String _lastConnectionDate = "";
 	private GameThread _gameThread;
@@ -114,8 +117,10 @@ public class Compte {
 	private Bank _bank;
 	private FriendList _friends;
 	private EnemyList _enemys;
+	private String _ClientKey;
+	private Map<Integer, Gift> giftList = new TreeMap<Integer, Gift>();
 	
-	public Compte(int aGUID,String aName,String aPass, String aPseudo,String aQuestion,String aReponse,int aGmLvl, int subscriber, boolean aBanned, String aLastIp, String aLastConnectionDate, String curIP)
+	public Compte(int aGUID, String aName, String aPass, String aPseudo, String aQuestion, String aReponse, int aGmLvl, int subscriber, boolean aBanned, String aLastIp, String aLastConnectionDate, String curIP, String gifts)
 	{
 		this._GUID 					= aGUID;
 		this._name 					= aName;
@@ -148,6 +153,23 @@ public class Compte {
 			World.AddEnemyList(this._GUID, new EnemyList(""));
 			
 			SQLManager.ADD_ACCOUNT_DATA(this._GUID);
+		}
+		if(!gifts.isEmpty())
+		{
+			if(gifts.contains(";"))
+			{ 
+				for(String gift : gifts.split(";"))
+				{
+					int giftId = Integer.parseInt(gift);
+					Gift toAdd = World.getGift(giftId);
+					this.giftList.put(giftId, toAdd);
+				}
+			}else
+			{
+				int giftId = Integer.parseInt(gifts);
+				Gift toAdd = World.getGift(giftId);
+				this.giftList.put(giftId, toAdd);
+			}
 		}
 	}
 	
@@ -452,9 +474,40 @@ public class Compte {
 		_gmLvl = gmLvl;
 	}
 	
-	public int get_subscriber() 
+	public int get_subscriber()
 	{
-		return _subscriber;
+		//Retourne le temps restant
+		if(!Ancestra.USE_SUBSCRIBE) return 525600;
+		if(_subscriber == 0)
+		{
+			//Si non abo ou abo dépasser
+			return 0;
+		}else
+		if((System.currentTimeMillis()/1000) > _subscriber)
+		{
+			//Il faut désabonner le compte
+			_subscriber = 0;
+			SQLManager.UPDATE_ACCOUNT_SUBSCRIBE(get_GUID(), 0);
+			return 0;
+		}else
+		{
+			//Temps restant
+			int TimeRemaining = (int) (_subscriber - (System.currentTimeMillis()/1000));
+			//Conversion en minute
+			int TimeRemMinute = (int) Math.floor(TimeRemaining/60);
+			
+			return TimeRemMinute;
+		}
+	}
+	
+	public boolean get_subscriberMessage()
+	{
+		return _subscriberMessage;
+	}
+	
+	public void set_subscriberMessage(boolean b)
+	{
+		_subscriberMessage = b;
 	}
 	
 	public void setCurIP(String ip)
@@ -487,6 +540,16 @@ public class Compte {
 		_gameThread = t;
 	}
 	
+	public void setClientKey(String ID)
+	{
+		_ClientKey = ID;
+	}
+	
+	public String getClientKey()
+	{
+		return _ClientKey;
+	}
+	
 	public boolean isOnline()
 	{
 		if(_gameThread != null)return true;
@@ -507,7 +570,7 @@ public class Compte {
 	{
 		return _persos.size();
 	}
-
+	
 	public void addPerso(Personnage perso)
 	{
 		_persos.put(perso.get_GUID(),perso);
@@ -554,6 +617,35 @@ public class Compte {
 			if(P.get_curExchange() != null)P.get_curExchange().cancel();
 			//Si en groupe
 			if(P.getGroup() != null)P.getGroup().leave(P);
+			//Si dans livre
+			if(P.is_onCraftBookCrafter())
+			{
+				P.set_onCraftBookCrafter(false);
+				World.removeCrafterOnBook(P.get_GUID());
+			}
+			//Mettre fin aux demande d'échange
+			if(P.get_isTradingWith() > 0)
+			{
+				Personnage p = World.getPersonnage(P.get_isTradingWith());
+				if(p != null)
+				{
+					if(p.isOnline())
+					{
+						PrintWriter out = p.get_compte().getGameThread().get_out();
+						SocketManager.GAME_SEND_EV_PACKET(out);
+						p.set_isTradingWith(0);
+					}
+				}
+			}
+			//Mettre fin au demande d'échange craft
+			if(P.get_isCraftingWith() != 0)
+			{
+				Personnage target = World.getPersonnage(P.get_isCraftingWith());
+				if(target == null || target.get_isCraftingWith() != P.get_GUID()) return;
+				SocketManager.GAME_SEND_EV_PACKET(target.get_compte().getGameThread().get_out());
+				target.set_isCraftingWith(0);
+				target.set_isCraftingWithskID(0);
+			}
 			
 			//Si en combat
 			if(P.get_fight() != null)P.get_fight().leftFight(P, null);
@@ -570,5 +662,38 @@ public class Compte {
 		}
 		_persos.clear();
 		World.removeAccount(_GUID, get_name().toLowerCase());
+	}
+	
+	public Map<Integer,Gift> getGifts()
+	{
+	   return giftList;
+	}
+
+	public Gift getGift(int id)
+	{
+	  return giftList.get(id);
+	}
+	  
+	public void addGift(Gift gift)
+	{
+	  giftList.put(gift.getId(), gift);
+	}
+	
+	public void sendListGift()
+	{
+		if(giftList.size() > 0)
+		{
+			for(Gift cgift : giftList.values())
+			{
+				if(cgift == null) continue;
+				SocketManager.GAME_SEND_GIFT(_gameThread.get_out(), cgift.parsePacket());
+				break;
+			}
+		}
+	}
+	
+	public void removeGift(int giftId)
+	{
+		giftList.remove(giftId);
 	}
 }

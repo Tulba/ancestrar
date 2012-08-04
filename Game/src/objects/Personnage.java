@@ -66,6 +66,7 @@ public class Personnage {
 	private boolean _showFriendConnection;
 	private String _canaux;
 	Stats _baseStats;
+	private boolean _hasEndFight = false;
 	private Fight _fight;
 	private boolean _away;
 	private Carte _curCarte;
@@ -89,11 +90,18 @@ public class Personnage {
 	private Exchange _curExchange;
 	//Dialogue
 	private int _isTalkingWith = 0;
+	private static int _timeDialog = 0;
+	public Timer _DialogTimer = null;
 	//Invitation
 	private int _inviting = 0;
 	//Job
 	private JobAction _curJobAction;
 	private Map<Integer,StatsMetier> _metiers = new TreeMap<Integer,StatsMetier>();
+	private String _isJobActivate = "";
+	private boolean _onCraftBook = false;
+	private boolean _onCraftBookCrafter = false;
+	private int _isCraftingWith = 0;
+	private int _isCraftingWithskID = 0;
 	//Enclos
 	private MountPark _inMountPark;
 	//Monture
@@ -130,8 +138,8 @@ public class Personnage {
 	public Map<Integer,Personnage> _Follower = new TreeMap<Integer,Personnage>();
 	public Personnage _Follows = null;
 	//Fantome
-	public boolean _isGhosts = false;
-	private int _Speed = 0;
+	private int _isDead = 0;
+	private String _Restriction = "0";
 	//Coffre
 	private Trunk _curTrunk;
 	//Maison
@@ -171,6 +179,7 @@ public class Personnage {
 			_time = time;
 		}
 	}
+	
 	public static class Group
 	{
 		private ArrayList<Personnage> _persos = new ArrayList<Personnage>();
@@ -233,6 +242,7 @@ public class Personnage {
 				SocketManager.GAME_SEND_PM_DEL_PACKET_TO_GROUP(this,p.get_GUID());
 		}
 	}
+	
 	public static class Stats
 	{
 		private Map<Integer,Integer> Effects = new TreeMap<Integer,Integer>();
@@ -613,59 +623,9 @@ public class Personnage {
 		}
 		
 		this._title = title;
-		if(_energy == 0) set_Ghosts();
+		if(_energy == 0) set_isDead();
 	}
 	
-	//Clone double
-	public Personnage(int _guid, String _name, int _sexe, int _classe,
-			int _color1, int _color2, int _color3,int _lvl,
-			int _size, int _gfxid, Map<Integer,Integer> stats,
-			String stuff,int pdvPer, byte seeAlign, int mount, int alvl, byte alignement)
-	{
-		this._GUID = _guid;
-		this._name = _name;
-		this._sexe = _sexe;
-		this._classe = _classe;
-		this._color1 = _color1;
-		this._color2 = _color2;
-		this._color3 = _color3;
-		this._lvl = _lvl;
-		this._aLvl = alvl;
-		this._size = _size;
-		this._gfxID = _gfxid;
-		this._baseStats = new Stats(stats,true,this);
-		if(!stuff.equals(""))
-		{
-			if(stuff.charAt(stuff.length()-1) == '|')
-				stuff = stuff.substring(0,stuff.length()-1);
-			SQLManager.LOAD_ITEMS(stuff.replace("|",","));
-		}
-		for(String item : stuff.split("\\|"))
-		{
-			if(item.equals(""))continue;
-			String[] infos = item.split(":");
-			int guid = Integer.parseInt(infos[0]);
-			Objet obj = World.getObjet(guid);
-			if( obj == null)continue;
-			_items.put(obj.getGuid(), obj);
-		}
-		
-		this._PDVMAX = (_lvl-1)*5+Constants.getBasePdv(_classe)+getTotalStats().getEffect(Constants.STATS_ADD_VITA);
-		this._PDV = (_PDVMAX*pdvPer)/100;
-		
-		_exPdv = _PDV;
-		
-		this._align = alignement;
-		if(this.get_align() != 0)
-		{
-			this._showWings = seeAlign==1;
-		}else
-		{
-			this._showWings = false;
-		}
-		if(mount != -1)this._mount = World.getDragoByID(mount);
-	}
-
 	public static Personnage CREATE_PERSONNAGE(String name, int sexe, int classe, int color1, int color2, int color3,Compte compte)
 	{
 		String z = "";
@@ -723,6 +683,7 @@ public class Personnage {
 			Constants.onLevelUpSpells(perso, a);
 		}
 		perso._sortsPlaces = Constants.getStartSortsPlaces(classe);
+		SocketManager.GAME_SEND_WELCOME(perso);
 		if(!SQLManager.ADD_PERSO_IN_BDD(perso))
 			return null;
 		
@@ -730,68 +691,113 @@ public class Personnage {
 	
 		return perso;
 	}
+	/**Clone/Double**/
+	public Personnage(int _guid, String _name, int _sexe, int _classe, int _color1, int _color2, int _color3,int _lvl, int _size, int _gfxid, Map<Integer,Integer> stats, String stuff,int pdvPer, byte seeAlign, int mount, int alvl, byte alignement)
+	{
+		this._GUID = _guid;
+		this._name = _name;
+		this._sexe = _sexe;
+		this._classe = _classe;
+		this._color1 = _color1;
+		this._color2 = _color2;
+		this._color3 = _color3;
+		this._lvl = _lvl;
+		this._aLvl = alvl;
+		this._size = _size;
+		this._gfxID = _gfxid;
+		this._baseStats = new Stats(stats,true,this);
+		if(!stuff.equals(""))
+		{
+			if(stuff.charAt(stuff.length()-1) == '|')
+				stuff = stuff.substring(0,stuff.length()-1);
+			//SQLManager.LOAD_ITEMS(stuff.replace("|",",")); Osef déjà charger ?
+		}
+		for(String item : stuff.split("\\|"))
+		{
+			if(item.equals(""))continue;
+			String[] infos = item.split(":");
+			int guid = Integer.parseInt(infos[0]);
+			Objet obj = World.getObjet(guid);
+			if( obj == null)continue;
+			_items.put(obj.getGuid(), obj);
+		}
+		
+		this._PDVMAX = (_lvl-1)*5+Constants.getBasePdv(_classe)+getTotalStats().getEffect(Constants.STATS_ADD_VITA);
+		this._PDV = (_PDVMAX*pdvPer)/100;
+		
+		_exPdv = _PDV;
+		
+		this._align = alignement;
+		if(this.get_align() != 0)
+		{
+			this._showWings = seeAlign==1;
+		}else
+		{
+			this._showWings = false;
+		}
+		if(mount != -1)this._mount = World.getDragoByID(mount);
+	}
 	
-	
-	public static Personnage ClonePerso(Personnage P, int id)
+	public Personnage ClonePerso(int id)
 	{	
 		TreeMap<Integer,Integer> stats = new TreeMap<Integer,Integer>();
-		stats.put(Constants.STATS_ADD_VITA, P.get_baseStats().getEffect(Constants.STATS_ADD_VITA));
-		stats.put(Constants.STATS_ADD_FORC, P.get_baseStats().getEffect(Constants.STATS_ADD_FORC));
-		stats.put(Constants.STATS_ADD_SAGE, P.get_baseStats().getEffect(Constants.STATS_ADD_SAGE));
-		stats.put(Constants.STATS_ADD_INTE, P.get_baseStats().getEffect(Constants.STATS_ADD_INTE));
-		stats.put(Constants.STATS_ADD_CHAN, P.get_baseStats().getEffect(Constants.STATS_ADD_CHAN));
-		stats.put(Constants.STATS_ADD_AGIL, P.get_baseStats().getEffect(Constants.STATS_ADD_AGIL));
-		stats.put(Constants.STATS_ADD_PA, P.get_baseStats().getEffect(Constants.STATS_ADD_PA));
-		stats.put(Constants.STATS_ADD_PM, P.get_baseStats().getEffect(Constants.STATS_ADD_PM));
-		stats.put(Constants.STATS_ADD_RP_NEU, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_NEU));
-		stats.put(Constants.STATS_ADD_RP_TER, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_TER));
-		stats.put(Constants.STATS_ADD_RP_FEU, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_FEU));
-		stats.put(Constants.STATS_ADD_RP_EAU, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_EAU));
-		stats.put(Constants.STATS_ADD_RP_AIR, P.get_baseStats().getEffect(Constants.STATS_ADD_RP_AIR));
-		stats.put(Constants.STATS_ADD_AFLEE, P.get_baseStats().getEffect(Constants.STATS_ADD_AFLEE));
-		stats.put(Constants.STATS_ADD_MFLEE, P.get_baseStats().getEffect(Constants.STATS_ADD_MFLEE));
+		stats.put(Constants.STATS_ADD_VITA, get_baseStats().getEffect(Constants.STATS_ADD_VITA));
+		stats.put(Constants.STATS_ADD_FORC, get_baseStats().getEffect(Constants.STATS_ADD_FORC));
+		stats.put(Constants.STATS_ADD_SAGE, get_baseStats().getEffect(Constants.STATS_ADD_SAGE));
+		stats.put(Constants.STATS_ADD_INTE, get_baseStats().getEffect(Constants.STATS_ADD_INTE));
+		stats.put(Constants.STATS_ADD_CHAN, get_baseStats().getEffect(Constants.STATS_ADD_CHAN));
+		stats.put(Constants.STATS_ADD_AGIL, get_baseStats().getEffect(Constants.STATS_ADD_AGIL));
+		stats.put(Constants.STATS_ADD_PA, get_baseStats().getEffect(Constants.STATS_ADD_PA));
+		stats.put(Constants.STATS_ADD_PM, get_baseStats().getEffect(Constants.STATS_ADD_PM));
+		stats.put(Constants.STATS_ADD_RP_NEU, get_baseStats().getEffect(Constants.STATS_ADD_RP_NEU));
+		stats.put(Constants.STATS_ADD_RP_TER, get_baseStats().getEffect(Constants.STATS_ADD_RP_TER));
+		stats.put(Constants.STATS_ADD_RP_FEU, get_baseStats().getEffect(Constants.STATS_ADD_RP_FEU));
+		stats.put(Constants.STATS_ADD_RP_EAU, get_baseStats().getEffect(Constants.STATS_ADD_RP_EAU));
+		stats.put(Constants.STATS_ADD_RP_AIR, get_baseStats().getEffect(Constants.STATS_ADD_RP_AIR));
+		stats.put(Constants.STATS_ADD_AFLEE, get_baseStats().getEffect(Constants.STATS_ADD_AFLEE));
+		stats.put(Constants.STATS_ADD_MFLEE, get_baseStats().getEffect(Constants.STATS_ADD_MFLEE));
 		
 		byte showWings = 0;
 		int alvl = 0;
-		if(P.get_align() != 0 && P._showWings)
+		if(get_align() != 0 && _showWings)
 		{
 			showWings = 1;
-			alvl = P.getGrade();
+			alvl = getGrade();
 		}
 		int mountID = -1;
-		if(P.getMount() != null)
+		if(getMount() != null)
 		{
-			mountID = P.getMount().get_id();
+			mountID = getMount().get_id();
 		}
 		
 		Personnage Clone = new Personnage(
 				id, 
-				P.get_name(), 
-				P.get_sexe(), 
-				P.get_classe(), 
-				P.get_color1(), 
-				P.get_color2(), 
-				P.get_color3(), 
-				P.get_lvl(), 
+				get_name(), 
+				get_sexe(), 
+				get_classe(), 
+				get_color1(), 
+				get_color2(), 
+				get_color3(), 
+				get_lvl(), 
 				100, 
-				P.get_gfxID(),
+				get_gfxID(),
 				stats,
-				P.parseObjetsToDB(),
+				parseObjetsToDB(),
 				100,
 				showWings,
 				mountID,
 				alvl,
-				P.get_align()
+				get_align()
 				);
 		
 		Clone.set_isClone(true);
-		if(P._onMount)
+		if(_onMount)
 		{
 			Clone._onMount = true;
 		}
 		return Clone;
 	}
-	
+	/**Clone/Double**/
 	public String parseALK()
 	{
 		StringBuilder perso = new StringBuilder();
@@ -830,13 +836,13 @@ public class Personnage {
 		//Envoie des bonus pano si besoin
 		for(int a = 1;a<World.getItemSetNumber();a++)
 		{
-			int num =getNumbEquipedItemOfPanoplie(a);
+			int num = getNumbEquipedItemOfPanoplie(a);
 			if(num == 0)continue;
 			SocketManager.GAME_SEND_OS_PACKET(this, a);
 		}
 		
 		//envoie des données de métier
-		if(_metiers.size() >0)
+		if(_metiers.size() > 0)
 		{
 			ArrayList<StatsMetier> list = new ArrayList<StatsMetier>();
 			list.addAll(_metiers.values());
@@ -861,7 +867,7 @@ public class Personnage {
 		SocketManager.GAME_SEND_ZONE_ALLIGN_STATUT(out);
 		SocketManager.GAME_SEND_SPELL_LIST(this);
 		SocketManager.GAME_SEND_EMOTE_LIST(this,_emotes,"0");
-		SocketManager.GAME_SEND_RESTRICTIONS(out);
+		SocketManager.GAME_SEND_RESTRICTIONS(out, "6bk");
 		SocketManager.GAME_SEND_Ow_PACKET(this);
 		SocketManager.GAME_SEND_SEE_FRIEND_CONNEXION(out,_showFriendConnection);
 		this.get_compte().SendOnline();
@@ -905,6 +911,47 @@ public class Personnage {
 		_sitTimer.start();
 		//on le demarre coté client
 		SocketManager.GAME_SEND_ILS_PACKET(this, 2000);
+		//Update des familiers
+		for(Entry<Integer, Objet> entry : _items.entrySet())
+		{
+			if(entry.getValue().getTemplate().getType() == Constants.ITEM_TYPE_FAMILIER)
+			{
+				PetsEntry p = World.get_PetsEntry(entry.getValue().getGuid());
+				Pets pets = World.get_Pets(entry.getValue().getTemplate().getID());
+				if(p == null || pets == null)
+				{
+					if(p != null && p.get_PDV() > 0) SocketManager.GAME_SEND_Im_PACKET(this, "025");
+					continue;
+				}
+				if(pets.get_Type() == 0 || pets.get_Type() == 1) continue;
+				p.update_pets(this, Integer.parseInt(pets.get_Gap().split(",")[1]));
+			}
+		}
+		if(_energy > 0 && _energy < 2000)
+		{
+			SocketManager.MESSAGE_BOX(this.get_compte().getGameThread().get_out(), "111|" + _energy);      
+		}
+		if(get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)//Non abonné
+		{
+			if(_curCarte.getSubArea().get_subscribe())//Se connecte dans une zone abo
+			{
+				//On le place a sa statue
+				_curCarte = World.getCarte(Constants.getClassStatueMap(get_classe()));
+				_curCell = World.getCarte(Constants.getClassStatueMap(get_classe())).getCase(Constants.getClassStatueCell(get_classe()));
+			}
+			
+			Objet obj = getObjetByPos(Constants.ITEM_POS_FAMILIER);
+			if(obj != null)//Familier
+			{
+				obj.setPosition(Constants.ITEM_POS_NO_EQUIPED);
+				SocketManager.GAME_SEND_OBJET_MOVE_PACKET(this,obj);
+			}
+			
+			if(isOnMount())//Pas de monture non plus
+			{
+				toogleOnMount();
+			}
+		}
 	}
 	
 	public void regenLife()
@@ -923,6 +970,7 @@ public class Personnage {
 		if(get_compte().getGameThread() == null) return;
 		PrintWriter out = get_compte().getGameThread().get_out();
 		
+		//Si il est vendeur
 		if(is_showSeller() == true && World.getSeller(get_curCarte().get_id()) != null && World.getSeller(get_curCarte().get_id()).contains(get_GUID()))
 		{
 			World.removeSeller(get_GUID(), get_curCarte().get_id());
@@ -977,7 +1025,7 @@ public class Personnage {
 				str.append(this._guildMember.getGuild().get_name()).append(";").append(this._guildMember.getGuild().get_emblem()).append(";");
 			}
 			else str.append(";;");
-			str.append(get_Speed()).append(";");//Restriction
+			str.append(get_Restriction()).append(";");//Restriction
 			str.append((_onMount&&_mount!=null?_mount.get_color():"")).append(";");
 			str.append(";");
 		}
@@ -1470,7 +1518,7 @@ public class Personnage {
 			SocketManager.GAME_SEND_PM_MOD_PACKET_TO_GROUP(_group,this);
 		}
 	}
-
+	
 	public void setSitted(boolean b)
 	{
 		_sitted = b;
@@ -1514,9 +1562,6 @@ public class Personnage {
 	{
 		return get_compte().isMuted();
 	}
-	
-	
-	
 	
 	public void set_curCarte(Carte carte)
 	{
@@ -1631,14 +1676,14 @@ public class Personnage {
             return _curHouse;
     }
 
-	public void set_Speed(int _Speed)
+	public void set_Restriction(String Restriction)
 	{
-		this._Speed = _Speed;
+		this._Restriction = Restriction;
 	}
 
-	public int get_Speed()
+	public String get_Restriction()
 	{
-		return _Speed;
+		return _Restriction;
 	}
 
 	public void addCapital(int pts)
@@ -1725,12 +1770,8 @@ public class Personnage {
 		
 		if(PW != null)
 		{
-		SocketManager.GAME_SEND_MAPDATA(
-				PW,
-				newMapID,
-				_curCarte.get_date(),
-				_curCarte.get_key());
-		_curCarte.addPlayer(this);
+			SocketManager.GAME_SEND_MAPDATA(PW, newMapID, _curCarte.get_date(), _curCarte.get_key());
+			_curCarte.addPlayer(this);
 		}
 		
 		if(!_Follower.isEmpty())//On met a jour la carte des personnages qui nous suivent
@@ -1743,7 +1784,11 @@ public class Personnage {
 					_Follower.remove(t.get_GUID());
 			}
 		}
-
+		if(get_compte().get_subscriber() == 0 && _curCarte.getSubArea().get_subscribe() && get_compte().get_subscriberMessage() && Ancestra.USE_SUBSCRIBE)///Non abonné, zone abo et premier message
+		{
+			SocketManager.GAME_SEND_SUBSCRIBE_MESSAGE(this, "+10");
+			get_compte().set_subscriberMessage(false);
+		}
 	}
 	
 	public String getStringVar(String str)
@@ -1982,7 +2027,6 @@ public class Personnage {
 			SocketManager.GAME_SEND_eD_PACKET_TO_MAP(get_curCarte(), this.get_GUID(), toOrientation);
 		}
 	}
-	
 	/** Spell **/
 	public boolean is_showSpells()
 	{
@@ -2144,6 +2188,11 @@ public class Personnage {
 	public SortStats getSortStatBySortIfHas(int spellID)
 	{
 		return _sorts.get(spellID);
+	}
+	
+	public boolean hasSpell(int spellID)
+	{
+		return (getSortStatBySortIfHas(spellID) == null ? false : true);
 	}
 	/** Spell **/
 	/** Marchand **/
@@ -2360,6 +2409,19 @@ public class Personnage {
 	public void addStoreItem(int guid, int price)
 	{
 		_storeItems.put(guid, price);
+	}
+	
+	public int storeBuy()
+	{
+		int total = 0;
+		for (Entry<Integer, Integer> value : _storeItems.entrySet())
+		{
+			Objet O = World.getObjet(value.getKey());
+			int multiple = O.getQuantity();
+			int add = value.getValue() * multiple;
+			total += add;
+		}
+		return total;
 	}
     /** Marchand **/
 	/** Stuff **/
@@ -2581,6 +2643,77 @@ public class Personnage {
 		return stats;
 	}
 	/** Stats **/
+	/** Energie **/
+	public int get_isDead()
+	{
+		return _isDead;
+	}
+	
+	public void set_isDead()//Apres reconnection il n'est plus en tombe mais en fantome
+	{
+		set_canAggro(false);
+		set_away(true);
+		_isDead = 2;
+		
+		set_gfxID(8004);
+		set_Restriction("-40");
+	}
+	
+	public void set_FuneralStone()
+	{
+		if(isOnMount()) toogleOnMount();
+		set_canAggro(false);
+		set_away(true);
+		_isDead = 1;
+		
+		set_Restriction("AR3K");
+		set_gfxID(Integer.parseInt(get_classe()+"3"));
+		SocketManager.GAME_SEND_RESTRICTIONS(this.get_compte().getGameThread().get_out(), "3K");
+		SocketManager.MESSAGE_BOX(this.get_compte().getGameThread().get_out(), "112");
+		SocketManager.GAME_SEND_ALTER_GM_PACKET(get_curCarte(), this);
+	}
+	
+	public void set_Ghosts()
+	{
+		if(isOnMount()) toogleOnMount();
+		set_canAggro(false);
+		set_away(true);
+		_isDead = 2;
+		
+		set_gfxID(8004);
+		set_Restriction("-40");
+		teleport((short)7411, 250);
+		//teleport((short)8534, 297);
+		//teleportToCemetery();
+		SocketManager.GAME_SEND_INFO_HIGHLIGHT_PACKET(this, Constants.ALL_PHOENIX);
+	}
+	
+	public void set_Alive()
+	{
+		if(_isDead == 0 || _isDead == 1) return;
+		set_canAggro(true);
+		set_away(false);
+		_isDead = 0;
+		set_PDV(1);
+		set_energy(1000);
+		set_gfxID(Integer.parseInt(get_classe()+""+get_sexe()));
+		set_Restriction("0");
+		SocketManager.GAME_SEND_STATS_PACKET(this);
+		SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(get_curCarte(), get_GUID());
+		SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(get_curCarte(), this);
+		set_gfxID(this.get_classe()*10 + this.get_sexe());
+	}
+	
+	/*
+	public void teleportToCemetery() 
+	{
+	     int[] cemeteryInfos = _curCarte.getSubArea().get_area().getCemetery();
+	     if(cemeteryInfos.length <= 0)
+	      return;
+	     teleport((short)cemeteryInfos[0], cemeteryInfos[1]);
+	}
+	*/
+	/** Energie **/
 	/** Objets **/
 	public String parseObjetsToDB()
 	{
@@ -2601,45 +2734,6 @@ public class Personnage {
 				return true;
 		return false;
 	}
-	/** Objets **/
-	/** Energie **/
-	/*
-	public void set_FuneralStone()
-	{
-		// Ce transformer en tombe TODO
-		set_gfxID(Integer.parseInt(get_classe()+"3"));
-	}
-	*/
-	public void set_Ghosts()
-	{
-		if(isOnMount()) toogleOnMount();
-		_isGhosts = true;
-		set_gfxID(8004);
-		set_canAggro(false);
-		set_away(true);
-		set_Speed(-40);
-		teleport((short)8534, 297);
-		//Le teleporter aux zone de mort la plus proche
-		/*for(Carte map : ) FIXME
-		{
-			map.
-		}*/
-	}
-	
-	public void set_Alive()
-	{
-		if(!_isGhosts) return;
-		_isGhosts = false;
-		set_energy(1000);
-		set_gfxID(Integer.parseInt(get_classe()+""+get_sexe()));
-		set_canAggro(true);
-		set_away(false);
-		set_Speed(0);
-		SocketManager.GAME_SEND_STATS_PACKET(this);
-		SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(get_curCarte(), get_GUID());
-		SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(get_curCarte(), this);
-	}
-	/** Energie **/
 	
 	public boolean addObjet(Objet newObj,boolean stackIfSimilar)
 	{
@@ -2649,8 +2743,9 @@ public class Personnage {
 			if(obj.getTemplate().getID() == newObj.getTemplate().getID()
 				&& obj.getStats().isSameStats(newObj.getStats())
 				&& stackIfSimilar
-				&& newObj.getTemplate().getType() != 85
-				&& obj.getPosition() == Constants.ITEM_POS_NO_EQUIPED)//Si meme Template et Memes Stats et Objet non équipé
+				&& newObj.getTemplate().getType() != Constants.ITEM_TYPE_PIERRE_AME_PLEINE
+				&& obj.getPosition() == Constants.ITEM_POS_NO_EQUIPED
+				&& newObj.getTemplate().getType() != Constants.ITEM_TYPE_FAMILIER)//Si meme Template et Memes Stats et Objet non équipé
 			{
 				obj.setQuantity(obj.getQuantity()+newObj.getQuantity());//On ajoute QUA item a la quantité de l'objet existant
 				SQLManager.SAVE_ITEM(obj);
@@ -2762,7 +2857,8 @@ public class Personnage {
 			if(obj.getTemplate().getID() == exObj.getTemplate().getID()
 				&& obj.getStats().isSameStats(exObj.getStats())
 				&& obj.getGuid() != exObj.getGuid()
-				&& obj.getPosition() == Constants.ITEM_POS_NO_EQUIPED)
+				&& obj.getPosition() == Constants.ITEM_POS_NO_EQUIPED
+				&& obj.getTemplate().getType() != Constants.ITEM_TYPE_FAMILIER)
 			return obj;
 		}
 		return null;
@@ -2772,7 +2868,7 @@ public class Personnage {
 	{
 		for(Objet obj : _items.values())
 		{
-			if(obj.getPosition() != Constants.ITEM_POS_NO_EQUIPED)continue;
+			if(obj.getPosition() != Constants.ITEM_POS_NO_EQUIPED && obj.getPosition() != Constants.ITEM_POS_FAMILIER)continue;
 			if(obj.getTemplate().getID() != i)continue;
 			if(obj.getQuantity() >= q)return true;
 		}
@@ -2804,7 +2900,7 @@ public class Personnage {
 		_kamas = _kamas + prix;
 		SocketManager.GAME_SEND_STATS_PACKET(this);
 		SocketManager.GAME_SEND_Ow_PACKET(this);
-		SocketManager.GAME_SEND_ESK_PACKEt(this);
+		SocketManager.GAME_SEND_ESK_PACKET(this);
 	}
 	/** NPC **/
 	/** Bank **/
@@ -2997,7 +3093,6 @@ public class Personnage {
 		SQLManager.UPDATE_BANK(get_compte().getBank());
 	}
 	/** Bank **/
-	
 	/** MountPark **/
 	public void openMountPark()
 	{
@@ -3015,7 +3110,7 @@ public class Personnage {
 		{
 			SocketManager.GAME_SEND_ECK_PACKET(this, 16, str);
 		}else if(get_guild() != null && 
-				World.getPersonnage(_inMountPark.get_owner()).get_guild() != null && 
+				World.getPersonnage(_inMountPark.get_owner()) != null && World.getPersonnage(_inMountPark.get_owner()).get_guild() != null && 
 				World.getPersonnage(_inMountPark.get_owner()).get_guild() == get_guild() && 
 				getGuildMember().canDo(Constants.G_USEENCLOS))//Meme guilde + droits
 		{
@@ -3190,6 +3285,56 @@ public class Personnage {
 		for(StatsMetier SM : _metiers.values())if(SM.getTemplate().getId() == job)return SM;
 		return null;
 	}
+	
+	public String get_isJobActivate()
+	{
+		return _isJobActivate;
+	}
+	
+	public void set_isJobActivate(String isJobActivate)
+	{
+		this._isJobActivate = isJobActivate;
+	}
+	
+	public boolean is_onCraftBook()
+	{
+		return _onCraftBook;
+	}
+	
+	public void set_onCraftBook(boolean onCraftBook)
+	{
+		this._onCraftBook = onCraftBook;
+	}
+	
+	public int get_isCraftingWith()
+	{
+		return _isCraftingWith;
+	}
+	
+	public void set_isCraftingWith(int isCraftingWith)
+	{
+		this._isCraftingWith = isCraftingWith;
+	}
+	
+	public int get_isCraftingWithskID()
+	{
+		return _isCraftingWithskID;
+	}
+	
+	public void set_isCraftingWithskID(int isCraftingWithskID)
+	{
+		this._isCraftingWithskID = isCraftingWithskID;
+	}
+	
+	public boolean is_onCraftBookCrafter()
+	{
+		return _onCraftBookCrafter;
+	}
+	
+	public void set_onCraftBookCrafter(boolean onCraftBookCrafter)
+	{
+		this._onCraftBookCrafter = onCraftBookCrafter;
+	}
 	/** Job **/
 	/** Friend/Enemy **/
 	public void SetSeeFriendOnline(boolean bool)
@@ -3254,6 +3399,12 @@ public class Personnage {
 	
 	public void toogleOnMount()
 	{
+		if(!isOnMount() && get_compte().get_subscriber() == 0 && Ancestra.USE_SUBSCRIBE)
+		{
+			SocketManager.GAME_SEND_EXCHANGE_REQUEST_ERROR(get_compte().getGameThread().get_out(),'S');
+			return;
+		}
+		
 		_onMount = !_onMount;
 		Objet obj = getObjetByPos(Constants.ITEM_POS_FAMILIER);
 		if(_onMount && obj != null)
@@ -3381,32 +3532,46 @@ public class Personnage {
 		int hloose = _honor*5/100;//FIXME: perte de X% honneur
 		switch(c)
 		{
-		case '*':
-			SocketManager.GAME_SEND_GIP_PACKET(this,hloose);
-		return;
-		case '+':
-			setShowWings(true);
-			SocketManager.GAME_SEND_STATS_PACKET(this);
-			SQLManager.SAVE_PERSONNAGE(this, false);
-		break;
-		case '-':
-			setShowWings(false);
-			_honor -= hloose;
-			SocketManager.GAME_SEND_STATS_PACKET(this);
-			SQLManager.SAVE_PERSONNAGE(this, false);
-		break;
+			case '*':
+				SocketManager.GAME_SEND_GIP_PACKET(this,hloose);
+			return;
+			case '+':
+				setShowWings(true);
+				SocketManager.GAME_SEND_STATS_PACKET(this);
+				SQLManager.SAVE_PERSONNAGE(this, false);
+			break;
+			case '-':
+				setShowWings(false);
+				_honor -= hloose;
+				SocketManager.GAME_SEND_STATS_PACKET(this);
+				SQLManager.SAVE_PERSONNAGE(this, false);
+			break;
 		}
-		//SocketManager.GAME_SEND_ALTER_GM_PACKET(_curCarte, this);
 	}
-
+	
 	public void addHonor(int winH)
 	{
-		int g = getGrade();
-		_honor += winH;
+		if(_align == 0) return;
+        int curGrade = getGrade();             
+        _honor += winH;
+        SocketManager.GAME_SEND_Im_PACKET(this, "080;"+winH);
+        //Changement de grade
+        if(getGrade() != curGrade)
+        {
+        	SocketManager.GAME_SEND_Im_PACKET(this, "082;"+getGrade());
+        }
+	}
+	
+	public void remHonor(int losePH)
+	{
+		if(_align == 0) return;
+		int curGrade = getGrade();
+		_honor -= losePH;
+		SocketManager.GAME_SEND_Im_PACKET(this, "081;"+losePH);
 		//Changement de grade
-		if(getGrade() != g)
+		if(getGrade() != curGrade)
 		{
-			//TODO: Message IG
+			SocketManager.GAME_SEND_Im_PACKET(this, "083;"+getGrade());
 		}
 	}
 	/** Alignement **/
@@ -3634,8 +3799,6 @@ public class Personnage {
 		teleport(p.get_curCarte().get_id(), (p.get_curCell().getID()+cellPositiontoadd));
 	}
 	
-	/** Zaap/Zaapi **/
-	/** Mariage **/
 	public void Divorce()
 	{
 		if(isOnline())
@@ -3700,8 +3863,73 @@ public class Personnage {
 		}
 		return nb;
 	}
-
-
+	
+	public Timer DialogTimer()
+	{
+		_timeDialog = 0;
+	    ActionListener action = new ActionListener ()
+	      {
+	        public void actionPerformed (ActionEvent event)
+	        {
+	        	_timeDialog++;
+	        	if(_timeDialog > 120 && get_isOnPercepteurID() != 0)
+	        	{
+	        		//Expulsion du percepteur
+	        		if(get_isTradingWith() == 0 &&
+	        				   get_curExchange() == null &&
+	        				   getCurJobAction() == null &&
+	        				   getInMountPark() == null &&
+	        				   !isInBank() &&
+	        				   get_isOnPercepteurID() == 0 &&
+	        				   getInTrunk() == null)
+	        					return;
+	        		if(get_isOnPercepteurID() != 0)
+	        		{
+	        			Percepteur perco = World.getPerco(get_isOnPercepteurID());
+	        			if(perco == null) return;
+	        			for(Personnage z : World.getGuild(perco.get_guildID()).getMembers())
+	        			{
+	        				if(z.isOnline())
+	        				{
+	        					SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
+	        					String str = "";
+	        					str += "G"+perco.get_N1()+","+perco.get_N2();
+	        					str += "|.|"+World.getCarte((short)perco.get_mapID()).getX()+"|"+World.getCarte((short)perco.get_mapID()).getY()+"|";
+	        					str += get_name()+"|";
+	        					str += perco.get_LogXp()+";";
+	        					str += perco.get_LogItems();
+	        					SocketManager.GAME_SEND_gT_PACKET(z, str);
+	        				}
+	        			}
+	        			get_curCarte().RemoveNPC(perco.getGuid());
+	        			SocketManager.GAME_SEND_ERASE_ON_MAP_TO_MAP(get_curCarte(), perco.getGuid());
+	        			perco.DelPerco(perco.getGuid());
+	        			SQLManager.DELETE_PERCO(perco.getGuid());
+	        			set_isOnPercepteurID(0);
+	        		}
+	        		
+	        		SQLManager.SAVE_PERSONNAGE(get_compte().get_curPerso(),true);
+	        		SocketManager.GAME_SEND_EV_PACKET(get_compte().getGameThread().get_out());
+	        		set_isTradingWith(0);
+	        		set_away(false);
+	        		setInBank(false);
+	        		setInTrunk(null);
+	        		_DialogTimer.stop();
+	        	}
+	        }
+	      };
+	    return new Timer (1000, action);
+	}
+	
+	public boolean is_hasEndFight()
+	{
+		return _hasEndFight;
+	}
+	
+	public void set_hasEndFight(boolean hasEndFight)
+	{
+		this._hasEndFight = hasEndFight;
+	}
 	
 	public void resetVars()
 	{
@@ -3730,6 +3958,12 @@ public class Personnage {
 		_Follows = null;
 		_curTrunk = null;
 		_curHouse = null;
-		_isGhosts = false;
+		_isDead = 0;
+		_isJobActivate = "";
+		_onCraftBook = false;
+		_onCraftBookCrafter = false;
+		_isCraftingWith = 0;
+		_isCraftingWithskID = 0;
+		set_hasEndFight(false);
 	}
 }
