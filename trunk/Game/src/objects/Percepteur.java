@@ -1,5 +1,6 @@
 package objects;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
@@ -9,6 +10,7 @@ import objects.Fight.Fighter;
 import common.SQLManager;
 import common.SocketManager;
 import common.World;
+import common.World.Drop;
 
 public class Percepteur
 {
@@ -30,6 +32,8 @@ public class Percepteur
 	//Les logs
 	private Map<Integer,Objet> _LogObjets = new TreeMap<Integer,Objet>();
 	private long _LogXP = 0;
+	//La défense
+	private Map<Integer, Personnage> _DefensepersosID = new TreeMap<Integer, Personnage>();
 	
 	public Percepteur(int guid, short map, int cellID, byte orientation, int GuildID, 
 			short N1, short N2, String items, long kamas, long xp)
@@ -176,6 +180,11 @@ public class Percepteur
 		return _cellID;
 	}
 	
+	public void set_cellID(int id)
+	{
+		_cellID = id;
+	}
+	
 	public void set_inFightID(int ID)
 	{
 		_inFightID = ID;
@@ -223,10 +232,12 @@ public class Percepteur
 	    					packet.append("45000;");//TimerActuel
 	    				}else
 	    				{
-	    					packet.append(perco.getValue().get_turnTimer()).append(";");//TimerActuel
+	    					packet.append(perco.getValue().get_turnTimer()).append(";");//TimerActuel si combat
 	    				}
 	    				packet.append("45000;");//TimerInit
-	    				packet.append("7;");//Nombre de place maximum FIXME : En fonction de la map
+	    				int numcase = (World.getCarte(perco.getValue().get_mapID()).get_maxTeam1()-1);
+	    				if(numcase > 7) numcase = 7;
+	    				packet.append(numcase).append(";");//Nombre de place maximum : En fonction de la map moins celle du perco
 	    				packet.append("?,?,");//?
 	    			}else
 	    			{
@@ -295,7 +306,7 @@ public class Percepteur
 		{
 			if(perco.getValue().get_inFight() > 0 && perco.getValue().get_guildID() == guildID)
 			{
-				SocketManager.GAME_SEND_gITp_PACKET(perso, parseAttaqueToGuild(perco.getValue().getGuid(), perco.getValue().get_mapID(), perco.getValue().get_inFightID()));
+				SocketManager.GAME_SEND_gITp_PACKET(perso, parseAttaqueToGuild(perco.getValue()));
 			}
 		}
 	}
@@ -306,17 +317,17 @@ public class Percepteur
 		{
 			if(perco.getValue().get_inFight() > 0 && perco.getValue().get_guildID() == guildID)
 			{
-				SocketManager.GAME_SEND_gITP_PACKET(perso, parseDefenseToGuild(perco.getValue().getGuid(), perco.getValue().get_mapID(), perco.getValue().get_inFightID()));
+				SocketManager.GAME_SEND_gITP_PACKET(perso, parseDefenseToGuild(perco.getValue()));
 			}
 		}
 	}
 	
-	public static String parseAttaqueToGuild(int guid, short mapid, int fightid)
+	public static String parseAttaqueToGuild(Percepteur perco)
 	{
 		StringBuilder str = new StringBuilder();
-		str.append("+").append(guid);
+		str.append("+").append(perco.getGuid());
 		
-		Fight F = World.getCarte(mapid).getFight(fightid);
+		Fight F = World.getCarte(perco.get_mapID()).getFight(perco.get_inFightID());
 		for(Fighter f : F.getFighters(1))//Attaque
 		{
 			str.append("|");
@@ -328,23 +339,23 @@ public class Percepteur
 		return str.toString();
 	}
 	
-	public static String parseDefenseToGuild(int guid, short mapid, int fightid)
+	public static String parseDefenseToGuild(Percepteur perco)
 	{
 		StringBuilder str = new StringBuilder();
-		str.append("+").append(guid);
+		str.append("+").append(perco.getGuid());
 		
-		Fight F = World.getCarte(mapid).getFight(fightid);
-		for(Fighter f : F.getFighters(2))//Defense
+		for(Entry<Integer, Personnage> P : perco.getDefenseFight().entrySet())//Defense
 		{
-			if(f.getPersonnage() == null) continue;//On sort le percepteur
+			Personnage p = P.getValue();
+			if(p == null) continue;
 			str.append("|");
-			str.append(Integer.toString(f.getPersonnage().get_GUID(), 36)).append(";");
-			str.append(f.getPersonnage().get_name()).append(";");
-			str.append(f.getPersonnage().get_gfxID()).append(";");
-			str.append(f.getPersonnage().get_lvl()).append(";");
-			str.append(Integer.toString(f.getPersonnage().get_color1(), 36)).append(";");
-			str.append(Integer.toString(f.getPersonnage().get_color2(), 36)).append(";");
-			str.append(Integer.toString(f.getPersonnage().get_color3(), 36)).append(";");
+			str.append(Integer.toString(p.get_GUID(), 36)).append(";");
+			str.append(p.get_name()).append(";");
+			str.append(p.get_gfxID()).append(";");
+			str.append(p.get_lvl()).append(";");
+			str.append(Integer.toString(p.get_color1(), 36)).append(";");
+			str.append(Integer.toString(p.get_color2(), 36)).append(";");
+			str.append(Integer.toString(p.get_color3(), 36)).append(";");
 			str.append("0;");
 		}
 		return str.toString();
@@ -511,5 +522,43 @@ public class Percepteur
 				continue;
 			}
 		}
+	}
+	
+	public boolean addDefenseFight(Personnage P)
+	{
+		if(_DefensepersosID.size() >= World.getCarte(this.get_mapID()).get_maxTeam1())
+		{
+			return false;
+		}else
+		{
+			_DefensepersosID.put(P.get_GUID(), P);
+			return true;
+		}
+	}
+	
+	public void delDefenseFight(Personnage P)
+	{
+		if(_DefensepersosID.containsKey(P.get_GUID()))
+			_DefensepersosID.remove(P.get_GUID());
+	}
+	
+	public void clearDefenseFight()
+	{
+		_DefensepersosID.clear();
+	}
+	
+	public Map<Integer, Personnage> getDefenseFight()
+	{
+		return _DefensepersosID;
+	}
+	
+	public ArrayList<Drop> getDrops()
+	{
+		ArrayList<Drop> toReturn = new ArrayList<World.Drop>();
+		for(Objet obj : _objets.values()) 
+		{
+			toReturn.add(new Drop(obj.getTemplate().getID(),0, 100, obj.getQuantity()));
+		}
+		return toReturn;
 	}
 }

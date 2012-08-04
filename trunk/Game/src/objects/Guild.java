@@ -512,4 +512,16 @@ public class Guild {
 		packet.append(get_Capital()).append("|").append((1000+(10*get_lvl()))).append("|").append(compileSpell());
 		return packet.toString();
 	}
+	
+	public String parseQuestionTaxCollector() 
+	{
+        StringBuilder packet = new StringBuilder(10);
+        packet.append('1').append(';');
+        packet.append(_name).append(',');
+        packet.append(get_Stats(Constants.STATS_ADD_PODS)).append(',');
+        packet.append(get_Stats(Constants.STATS_ADD_PROS)).append(',');
+        packet.append(get_Stats(Constants.STATS_ADD_SAGE)).append(',');
+        packet.append(_nbrPerco);
+        return packet.toString();
+	}
 }

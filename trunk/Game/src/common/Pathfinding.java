@@ -486,6 +486,7 @@ public class Pathfinding {
 		//On renvoie -1 si pas trouvé
 		return cellID==startCell?-1:cellID;
 	}
+	
 	public static ArrayList<Case> getShortestPathBetween(Carte map, int start, int dest, int distMax)
 	{	
 		ArrayList<Case> curPath = new ArrayList<Case>();
@@ -572,6 +573,35 @@ public class Pathfinding {
 		if((curPath2.size() < curPath.size() && curPath2.size() > 0) || curPath.isEmpty())
 			curPath = curPath2;
 		return curPath;
+	}
+	
+	public static String getShortestStringPathBetween(Carte map, int start, int dest, int distMax)
+	{
+		if (start == dest) return null;
+		ArrayList<Case> path = getShortestPathBetween(map, start, dest, distMax);
+		if (path == null) return null;
+		String pathstr = "";
+		int curCaseID = start;
+		char curDir = '\000';
+		for (Case c : path)
+		{
+			char d = getDirBetweenTwoCase(curCaseID, c.getID(), map, true);
+			if (d == 0) return null;
+			if (curDir != d)
+			{
+				if (path.indexOf(c) != 0)
+					pathstr = pathstr + CryptManager.cellID_To_Code(curCaseID);
+				pathstr = pathstr + d;
+				curDir = d;
+			}
+			curCaseID = c.getID();
+		}
+		if (curCaseID != start)
+		{
+			pathstr = pathstr + CryptManager.cellID_To_Code(curCaseID);
+		}
+		if (pathstr == "") return null;
+		return "a" + CryptManager.cellID_To_Code(start) + pathstr;
 	}
 	
 	public static ArrayList<Integer> getListCaseFromFighter(Fight fight, Fighter fighter)
@@ -713,5 +743,19 @@ public class Pathfinding {
 			}
 		}
 		return null;
+	}
+	
+	public static ArrayList<Fighter> getFightersAround(int cellID,Carte map,Fight fight)
+	{
+		char[] dirs = {'b','d','f','h'};
+		ArrayList<Fighter> fighters = new ArrayList<Fighter>();
+		
+		for(char dir : dirs)
+		{
+			Fighter f = map.getCase(GetCaseIDFromDirrection(cellID, dir, map, false)).getFirstFighter();
+			if(f != null)
+				fighters.add(f);
+		}
+		return fighters;
 	}
 }

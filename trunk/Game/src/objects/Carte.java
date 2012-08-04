@@ -38,6 +38,8 @@ public class Carte {
 	private byte _maxGroup = 3;
 	private Map<Integer,ArrayList<Action>> _endFightAction = new TreeMap<Integer,ArrayList<Action>>();
 	private byte _maxSize;
+	private int _maxTeam0 = 0;
+	private int _maxTeam1 = 0;
 	
 	public static class MountPark
 	{
@@ -298,14 +300,12 @@ public class Carte {
 	public static class Case
 	{
 		private int _id;
-		private Map<Integer, Personnage>	_persos;		//= new TreeMap<Integer, Personnage>();
-		private Map<Integer, Fighter> 		_fighters;	//= new TreeMap<Integer, Fighter>();
+		private Map<Integer, Personnage>	_persos;
+		private Map<Integer, Fighter> 		_fighters;
 		private boolean _Walkable = true;
 		private boolean _LoS = true;
 		private short _map;
-		//private ArrayList<Action> _onCellPass;
-		//private ArrayList<Action> _onItemOnCell;
-		private ArrayList<Action> _onCellStop;// = new ArrayList<Action>();
+		private ArrayList<Action> _onCellStop;
 		private InteractiveObject _object;
 		private Objet _droppedItem;
 		
@@ -327,6 +327,7 @@ public class Carte {
 		{
 			return _droppedItem;
 		}
+		
 		public boolean canDoAction(int id)
 		{
 			switch(id)
@@ -782,7 +783,7 @@ public class Carte {
 				//Boucher
 				case 132:
 					return _object.getID() == 7025;
-				case 157:
+				case 157://Zaapi
 					return (_object.getID() == 7030 || _object.getID() == 7031);
 				case 44://Sauvegarder le Zaap
 				case 114://Utiliser le Zaap
@@ -921,6 +922,8 @@ public class Carte {
 				case 104://Ouvrir
 				case 105://Code
 					return (_object.getID() == 7350 || _object.getID() == 7351 || _object.getID() == 7353);
+				case 170://Liste des artisans
+					return _object.getID() == 7035;
 				//Action ID non trouvé
 				default:
 					GameServer.addToLog("MapActionID non existant dans Case.canDoAction: "+id);
@@ -1182,12 +1185,17 @@ public class Carte {
 					perso.setInHouse(h4);
 					h4.SellIt(perso);
 				break;
-				
+				case 170://Liste des artisans
+					perso.set_onCraftBook(true);
+					String CategID = "2;11;13;14;15;16;17;18;19;20;24;25;26;27;28;31;36;41;43;44;45;46;47;48;49;50;56;58;60;62;63;64;65";
+					SocketManager.GAME_SEND_ECK_PACKET(perso, 14, CategID);
+				break;
 				default:
 					GameServer.addToLog("Case.startAction non definie pour l'actionID = "+actionID);
 				break;
 			}
 		}
+		
 		public void finishAction(Personnage perso, GameAction GA)
 		{
 			int actionID = -1;
@@ -1237,7 +1245,6 @@ public class Carte {
 
 		public void clearOnCellAction()
 		{
-			//_onCellStop.clear();
 			_onCellStop = null;
 		}
 
@@ -1260,6 +1267,13 @@ public class Carte {
 		this._h = _h;
 		this._key = _key;
 		this._placesStr = places;
+		//On récupére le nombre de cellule de combat :
+		try
+		{
+			String[] split = places.split("\\|");
+			this._maxTeam0 = (split[0].length()/2);
+			this._maxTeam1 = (split[1].length()/2);
+		}catch(Exception e){}
 		this._maxGroup = maxGroup;
 		this._maxSize = maxSize;
 		String[] mapInfos = mapPos.split(",");
@@ -1510,7 +1524,7 @@ public class Carte {
 	public String get_placesStr() {
 		return _placesStr;
 	}
-
+	
 	public void addPlayer(Personnage perso)
 	{
 		SocketManager.GAME_SEND_ADD_PLAYER_TO_MAP(this,perso);
@@ -1600,7 +1614,8 @@ public class Carte {
 		return _fights.size();
 	}
 	
-	public Map<Integer, Fight> get_fights() {
+	public Map<Integer, Fight> get_fights()
+	{
 		return _fights;
 	}
 
@@ -1651,42 +1666,6 @@ public class Carte {
 		}
 		int rand = Formulas.getRandomValue(0, freecell.size()-1);
 		return freecell.get(rand);
-		/*
-		int max =  _cases.size()-_w;
-		int rand = 0;
-		int lim = 0;
-		boolean isOccuped;
-		
-		do
-		{
-			isOccuped = false;
-			rand = Formulas.getRandomValue(_w,max);
-			if(lim >50)
-				return 0;
-			for(Entry<Integer,MobGroup> group : _mobGroups.entrySet())
-			{
-				if (group.getValue().getCellID() != 0)
-				{
-					if(group.getValue().getCellID() == _cases.get(_cases.keySet().toArray()[rand]).getID())
-						isOccuped = true;
-				}
-			}
-			for(Entry<Integer,NPC> npc : _npcs.entrySet())
-			{
-				if(npc.getValue().get_cellID() == _cases.get(_cases.keySet().toArray()[rand]).getID())
-					isOccuped = true;
-			}
-			
-			if (_cases.get(_cases.keySet().toArray()[rand]).isWalkable() && !isOccuped)
-			{
-				return _cases.get(_cases.keySet().toArray()[rand]).getID();
-			}
-			
-			lim++;
-		}while(!_cases.get(_cases.keySet().toArray()[rand]).isWalkable() && !isOccuped);
-		
-		return 0;
-		//*/
 	}
 	
 	public void refreshSpawns()
@@ -1704,7 +1683,7 @@ public class Carte {
 		spawnGroup(Constants.ALIGNEMENT_BRAKMARIEN,1,true,-1);//Spawn du groupe de gardes brakmarien s'il y a
 	}
 	
-	public void onPlayerArriveOnCell(Personnage perso,int caseID)
+	public void onPlayerArriveOnCell(Personnage perso,int caseID, boolean hasEndingFight)
 	{
 		if(_cases.get(caseID) == null)return;
 		Objet obj = _cases.get(caseID).getDroppedItem();
@@ -1722,17 +1701,34 @@ public class Carte {
 		//Si le joueur a changer de map ou ne peut etre aggro
 		if(perso.get_curCarte().get_id() != _id || !perso.canAggro())return;
 		
-		for(MobGroup group : _mobGroups.values())
+		if(!hasEndingFight)
 		{
-			if(Pathfinding.getDistanceBetween(this,caseID,group.getCellID()) <= group.getAggroDistance())//S'il y aggro
+			for(MobGroup group : _mobGroups.values())
 			{
-				if((group.getAlignement() == -1 || ((perso.get_align() == 1 || perso.get_align() == 2) && (perso.get_align() != group.getAlignement()))) && ConditionParser.validConditions(perso, group.getCondition()))
+				if(Pathfinding.getDistanceBetween(this,caseID,group.getCellID()) <= group.getAggroDistance())//S'il y aggro
 				{
-					GameServer.addToLog(perso.get_name()+" lance un combat contre le groupe "+group.getID()+" sur la map "+_id);
-					startFigthVersusMonstres(perso,group);
-					return;
+					if((group.getAlignement() == -1 || ((perso.get_align() == 1 || perso.get_align() == 2) && (perso.get_align() != group.getAlignement()))) && ConditionParser.validConditions(perso, group.getCondition()))
+					{
+						if(perso.get_compte().get_subscriber() == 0 && getSubArea().get_subscribe() && Ancestra.USE_SUBSCRIBE) return;
+						GameServer.addToLog(perso.get_name()+" lance un combat contre le groupe "+group.getID()+" sur la map "+_id);
+						startFigthVersusMonstres(perso,group);
+						return;
+					}
 				}
 			}
+		}
+		//Activation de l'invitation d'autre joueurs si il ce trouve a proximité d'une table de craft.
+		String JobID = Constants.isValidPlaceToInviteCraft(perso, caseID);
+		if(!JobID.isEmpty())
+		{
+			SocketManager.GAME_SEND_CRAFT_PUBLIC_MODE(perso);
+			SocketManager.GAME_SEND_CRAFT_PUBLIC_MODE(perso, '+', JobID);
+			perso.set_isJobActivate(JobID);
+		}else
+		if(!perso.get_isJobActivate().isEmpty())
+		{
+			SocketManager.GAME_SEND_CRAFT_PUBLIC_MODE(perso, '-', perso.get_isJobActivate());
+			perso.set_isJobActivate("");
 		}
 	}
 	
@@ -1755,7 +1751,7 @@ public class Carte {
 			id = ((Integer)(_fights.keySet().toArray()[_fights.size()-1]))+1;
 		_fights.put(id, new Fight(id,this,perso,perco));
 		SocketManager.GAME_SEND_MAP_FIGHT_COUNT_TO_MAP(this);
-		//On actualise la guilde+Message d'attaque FIXME
+		
 		for(Personnage z : World.getGuild(_fights.get(id).get_guildID()).getMembers())
 		{
 			if(z == null) continue;
@@ -1764,7 +1760,7 @@ public class Carte {
 				SocketManager.GAME_SEND_gITM_PACKET(z, Percepteur.parsetoGuild(z.get_guild().get_id()));
 				Percepteur.parseAttaque(z, _fights.get(id).get_guildID());
 				Percepteur.parseDefense(z, _fights.get(id).get_guildID());
-				SocketManager.GAME_SEND_MESSAGE(z, "Un de vos percepteurs a ete attaque.", Ancestra.CONFIG_MOTD_COLOR);
+				SocketManager.GAME_SEND_PERCO_INFOS_PACKET(z, perco, "A");
 			}
 		}
 	}
@@ -1852,5 +1848,137 @@ public class Carte {
 	public int getStoreCount()
 	{
 		return (World.getSeller(get_id()) == null?0:World.getSeller(get_id()).size());
+	}
+	
+	public int get_maxTeam1() {
+		return _maxTeam1;
+	}
+
+	public int get_maxTeam0() {
+		return _maxTeam0;
+	}
+	
+	public boolean hasEndFightAction(int actionId)
+	{
+		return _endFightAction.containsKey(actionId);
+	}
+	
+	public int getRandomNearFreeCellID(int cellid)//obtenir une cell aléatoire et proche
+	{
+		ArrayList<Integer> freecell = new ArrayList<Integer>();
+		ArrayList<Integer> cases = new ArrayList<Integer>();
+		
+		cases.add((cellid+1));
+		cases.add((cellid-1));
+		cases.add((cellid+2));
+		cases.add((cellid-2));
+		cases.add((cellid+14));
+		cases.add((cellid-14));
+		cases.add((cellid+15));
+		cases.add((cellid-15));
+		cases.add((cellid+16));
+		cases.add((cellid-16));
+		cases.add((cellid+27));
+		cases.add((cellid-27));
+		cases.add((cellid+28));
+		cases.add((cellid-28));
+		cases.add((cellid+29));
+		cases.add((cellid-29));
+		cases.add((cellid+30));
+		cases.add((cellid-30));
+		cases.add((cellid+31));
+		cases.add((cellid-31));
+		cases.add((cellid+42));
+		cases.add((cellid-42));
+		cases.add((cellid+43));
+		cases.add((cellid-43));
+		cases.add((cellid+44));
+		cases.add((cellid-44));
+		cases.add((cellid+45));
+		cases.add((cellid-45));
+		cases.add((cellid+57));
+		cases.add((cellid-57));
+		cases.add((cellid+58));
+		cases.add((cellid-58));
+		cases.add((cellid+59));
+		cases.add((cellid-59));
+		
+		for(Integer entry : cases)
+		{
+			if(_cases.get(entry) == null) continue;
+			//Si la case n'est pas marchable
+			if(!_cases.get(entry).isWalkable(true))continue;
+			//Si la case est prise par un groupe de monstre
+			boolean ok = true;
+			for(Entry<Integer,MobGroup> mgEntry : _mobGroups.entrySet())
+			{
+				if(mgEntry.getValue().getCellID() == _cases.get(entry).getID())
+					ok = false;
+			}
+			if(!ok)continue;
+			//Si la case est prise par un npc
+			ok = true;
+			for(Entry<Integer,NPC> npcEntry : _npcs.entrySet())
+			{
+				if(npcEntry.getValue().get_cellID() == _cases.get(entry).getID())
+					ok = false;
+			}
+			if(!ok)continue;
+			//Si la case est prise par un joueur
+			if(!_cases.get(entry).getPersos().isEmpty())continue;
+			//Sinon
+			freecell.add(_cases.get(entry).getID());
+		}
+		if(freecell.isEmpty())
+		{
+			GameServer.addToLog("Aucune cellulle libre n'a ete trouve sur la map "+_id+" groupe non déplacé");
+			return -1;
+		}
+		int rand = Formulas.getRandomValue(0, freecell.size()-1);
+		return freecell.get(rand);
+	}
+	
+	public void onMap_MonstersDisplacement()
+	{
+		if(getMobGroups().size() == 0) return;
+		int RandNumb = Formulas.getRandomValue(1, getMobGroups().size());
+		int i = 0;
+	    for (Entry<Integer, MobGroup> entry : getMobGroups().entrySet())
+	    {
+	    	i++;
+	    	if(i != RandNumb) continue;
+	        int cell = getRandomNearFreeCellID(entry.getValue().getCellID());
+	        String pathstr;
+	        try{
+	        	pathstr = Pathfinding.getShortestStringPathBetween(this, entry.getValue().getCellID(), cell, 0);
+	        }catch(Exception e){return;}
+	        if (pathstr == null) return;
+	        entry.getValue().setCellID(cell);
+	        for (Personnage z : getPersos())
+	        {
+	        	SocketManager.GAME_SEND_GA_PACKET(z.get_compte().getGameThread().get_out(), "0", "1", entry.getValue().getID()+"", pathstr);
+	        }
+	    }
+	    
+	    int MoveOrNot = Formulas.getRandomValue(1, 2);
+	    if(MoveOrNot == 1)
+	    {
+		    Percepteur perco = Percepteur.GetPercoByMapID(get_id());
+		    if(perco == null) return;
+		    if(perco.get_inFight() > 0) return;
+		    
+		    int cell = getRandomNearFreeCellID(perco.get_cellID());
+		    String pathstr;
+		    try{
+		    	pathstr = Pathfinding.getShortestStringPathBetween(this, perco.get_cellID(), cell, 0);
+		    }catch(Exception e){return;}
+		    if(pathstr == null) return;
+		    
+		    perco.set_cellID(cell);
+		    for(Personnage z : getPersos())
+		    {
+		    	SocketManager.GAME_SEND_GA_PACKET(z.get_compte().getGameThread().get_out(), "0", "1", perco.getGuid()+"", pathstr);
+		    }
+	    }
 	}
 }

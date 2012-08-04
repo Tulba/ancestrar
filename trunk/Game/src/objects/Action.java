@@ -65,22 +65,39 @@ public class Action {
 				int cost = perso.get_compte().getBankCost();
 				if(cost > 0)
 				{
-					long nKamas = perso.get_kamas() - cost;
-					if(nKamas <0)//Si le joueur n'a pas assez de kamas pour ouvrir la banque
-					{
-						SocketManager.GAME_SEND_Im_PACKET(perso, "1128;"+cost);
-						return;
-					}
-					perso.set_kamas(nKamas);
-					SocketManager.GAME_SEND_STATS_PACKET(perso);
-					SocketManager.GAME_SEND_Im_PACKET(perso, "020;"+cost);
+					final long playerKamas = perso.get_kamas();
+                    final long kamasRemaining = playerKamas - cost;
+                    final long bankKamas = perso.get_compte().GetBankKamas();
+                    final long totalKamas = bankKamas+playerKamas;
+                    if(kamasRemaining < 0)//Si le joueur n'a pas assez de kamas SUR LUI pour ouvrir la banque
+                    {
+                        if(bankKamas >= cost)
+                        {
+                        	perso.get_compte().setBankKamas(bankKamas-cost); //On modifie les kamas de la banque
+                        }
+                        else if(totalKamas >= cost)
+                        {
+                        	perso.set_kamas(0);//On puise l'entièreter des kamas du joueurs. Ankalike ?
+                        	perso.get_compte().setBankKamas(totalKamas-cost);//On modifie les kamas de la banque
+                        	SocketManager.GAME_SEND_STATS_PACKET(perso);
+                        	SocketManager.GAME_SEND_Im_PACKET(perso, "020;"+playerKamas);
+                        }else
+                        {
+                        	SocketManager.MESSAGE_BOX(perso.get_compte().getGameThread().get_out(), "110|"+cost);
+                        	return;
+                        }
+                    }else //Si le joueur a les kamas sur lui on lui retire directement
+                    {
+                    	perso.set_kamas(kamasRemaining);
+                    	SocketManager.GAME_SEND_STATS_PACKET(perso);
+                    	SocketManager.GAME_SEND_Im_PACKET(perso, "020;"+cost);
+                    }
 				}
 				SocketManager.GAME_SEND_ECK_PACKET(perso.get_compte().getGameThread().get_out(), 5, "");
 				SocketManager.GAME_SEND_EL_BANK_PACKET(perso);
 				perso.set_away(true);
 				perso.setInBank(true);
 			break;
-			
 			case 0://Téléportation
 				try
 				{
@@ -90,7 +107,6 @@ public class Action {
 					perso.teleport(newMapID,newCellID);	
 				}catch(Exception e ){return;};
 			break;
-			
 			case 1://Discours NPC
 				out = perso.get_compte().getGameThread().get_out();
 				if(args.equalsIgnoreCase("DV"))
@@ -506,6 +522,24 @@ public class Action {
 					perso.get_curCarte().startFigthVersusMonstres(perso, group);
 		        }catch(Exception e){GameServer.addToLog(e.getMessage());};
 			break;
+			case 28://Rune métier
+				int Job = 0;
+				try
+				{
+					Job = Integer.parseInt(args);
+				}catch(Exception e){GameServer.addToLog(e.getMessage());};
+				if(perso.is_onCraftBookCrafter())
+				{
+					perso.set_onCraftBookCrafter(false);
+					World.removeCrafterOnBook(perso.get_GUID(), Job);
+					SocketManager.GAME_SEND_Ej_PACKET(perso, '-', Job);
+				}else
+				{
+					perso.set_onCraftBookCrafter(true);
+					World.addCrafterOnBook(perso.get_GUID(), Job);
+					SocketManager.GAME_SEND_Ej_PACKET(perso, '+', Job);
+				}
+			break;
 			case 50://Traque
 				if(perso.get_traque() == null)
 				{
@@ -572,7 +606,7 @@ public class Action {
 					}
 					newObj.addTxtStat(960, align);
 					*/
-					newObj.addTxtStat(989, tempP.get_name());
+					newObj.getTxtStat().put(989, tempP.get_name());
 					
 					//Si retourne true, on l'ajoute au monde
 					if(perso.addObjet(newObj, true)){
@@ -582,10 +616,10 @@ public class Action {
 				perso.removeByTemplateID(T.getID(),20);
 			}
 			}
-			else{
-			SocketManager.GAME_SEND_MESSAGE(perso, "Thomas Sacre : Vous venez juste de signer un contrat, vous devez vous reposer." , "000000");
-				}
-
+			else
+			{
+				SocketManager.GAME_SEND_MESSAGE(perso, "Thomas Sacre : Vous venez juste de signer un contrat, vous devez vous reposer." , "000000");
+			}
 			break;
 			case 51://Cible sur la géoposition
 				String perr = "";
@@ -642,6 +676,18 @@ public class Action {
 					perso.Divorce();
 				}
 			break;
+			case 116://EPO
+				Objet EPO = World.getObjet(itemID);
+				if(EPO == null) return;
+				Objet pets = perso.getObjetByPos(Constants.ITEM_POS_FAMILIER);
+				if(pets == null) return;
+				PetsEntry MyPets = World.get_PetsEntry(pets.getGuid());
+				if(MyPets == null) return;
+				if(EPO.getTemplate().getConditions().contains(pets.getTemplate().getID()+""))
+				{
+					MyPets.Give_EPO(perso);
+				}
+			break;
 			case 228://Faire animation Hors Combat
 				try
 				{
@@ -651,6 +697,12 @@ public class Action {
 					perso.changeOrientation(1);
 					SocketManager.GAME_SEND_GA_PACKET_TO_MAP(perso.get_curCarte(), "0", 228, perso.get_GUID()+";"+cellid+","+Animations.PrepareToGA(animation), "");
 				}catch(Exception e){GameServer.addToLog(e.getMessage());};
+			break;
+			case 229://Animation d'incarnam à astrub
+				short map = Constants.getClassStatueMap(perso.get_classe());
+				int cell = Constants.getClassStatueCell(perso.get_classe());
+				SocketManager.GAME_SEND_GA_PACKET(perso.get_compte().getGameThread().get_out(), "", "2", perso.get_GUID()+"", "7");
+				perso.teleport(map, cell);
 			break;
 			default:
 				GameServer.addToLog("Action ID="+ID+" non implantee");

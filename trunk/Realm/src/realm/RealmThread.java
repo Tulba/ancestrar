@@ -94,7 +94,7 @@ public class RealmThread implements Runnable {
 				_out.close();
 				if(_compte != null)
 				{
-					SQLManager.SET_CUR_IP("", _compte.get_GUID());
+					SQLManager.UPDATE_ACCOUNT("", false, _compte.get_subscriberTime(), _compte.get_GUID());
 					_compte.setRealmThread(null);
 					Realm.deleteAccount(_compte);
 				}
@@ -109,7 +109,7 @@ public class RealmThread implements Runnable {
 				_out.close();
 				if(_compte != null)
 				{
-					SQLManager.SET_CUR_IP("", _compte.get_GUID());
+					SQLManager.UPDATE_ACCOUNT("", false, _compte.get_subscriberTime(), _compte.get_GUID());
 					_compte.setRealmThread(null);
 					Realm.deleteAccount(_compte);
 				}
@@ -247,7 +247,7 @@ public class RealmThread implements Runnable {
 			_compte.setRealmThread(this);
 			_compte.setCurIP(ip);
 			
-			SQLManager.SET_CUR_IP(ip, _compte.get_GUID());
+			SQLManager.UPDATE_ACCOUNT(ip, false, _compte.get_subscriberTime(), _compte.get_GUID());
 			
 			SocketManager.SEND_Ad_Ac_AH_AlK_AQ_PACKETS(_out, _compte.get_pseudo(), (_compte.get_gmLvl() > 0 ? (1) : (0)), _compte.get_question(), _compte.get_gmLvl());
 		break;
@@ -263,7 +263,7 @@ public class RealmThread implements Runnable {
 			if(packet.substring(0, 2).equals("Ax"))
 			{
 				if (_compte == null)return;
-				SocketManager.SEND_PERSO_LIST(_out, _compte.get_subscriber(), _compte.get_GUID());
+				SocketManager.SEND_PERSO_LIST(_out, _compte.get_subscriberTime(), _compte.get_GUID());
 			}else
 			if(packet.substring(0, 2).equals("AX"))
 			{

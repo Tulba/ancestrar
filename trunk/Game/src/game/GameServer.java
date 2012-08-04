@@ -21,68 +21,60 @@ public class GameServer implements Runnable{
 	private Thread _t;
 	private ArrayList<GameThread> _clients = new ArrayList<GameThread>();
 	private ArrayList<Compte> _waitings = new ArrayList<Compte>();
-	private Timer _saveTimer;
-	private Timer _loadActionTimer;
-	private Timer _reloadMobTimer;
-	private Timer _lastPacketTimer;
+	
+	private Timer _actionTimer;
+	private int _saveTimer = 0, _loadActionTimer = 0, _reloadMobTimer = 0;
+	
 	private long _startTime;
 	private int _maxPlayer = 0;
 	
 	public GameServer(String Ip)
 	{
 		try {
-			_saveTimer = new Timer();
-			_saveTimer.schedule(new TimerTask()
+			
+			_actionTimer = new Timer();
+			_actionTimer.schedule(new TimerTask()
 			{
 				public void run()
 				{
-					if(!Ancestra.isSaving)
+					_saveTimer++;
+					_loadActionTimer++;
+					_reloadMobTimer++;
+					if(_saveTimer == (Ancestra.CONFIG_SAVE_TIME/60000))
 					{
-						Thread t = new Thread(new SaveThread());
-						t.start();
+						if(!Ancestra.isSaving)
+						{
+							Thread t = new Thread(new SaveThread());
+							t.start();
+						}
+						_saveTimer = 0;
 					}
-				}
-			}, Ancestra.CONFIG_SAVE_TIME,Ancestra.CONFIG_SAVE_TIME);
-			
-			_loadActionTimer = new Timer();
-			_loadActionTimer.schedule(new TimerTask()
-			{
-				public void run()
-				{
-					SQLManager.LOAD_ACTION();
-					GameServer.addToLog("Les live actions ont ete appliquees");
-				}
-			}, Ancestra.CONFIG_LOAD_DELAY,Ancestra.CONFIG_LOAD_DELAY);
-			
-			_reloadMobTimer = new Timer();
-			_reloadMobTimer.schedule(new TimerTask()
-			{
-				public void run()
-				{
-					World.RefreshAllMob();
-					GameServer.addToLog("La recharge des mobs est finie");
-				}
-			}, Ancestra.CONFIG_RELOAD_MOB_DELAY,Ancestra.CONFIG_RELOAD_MOB_DELAY);
-			
-			_lastPacketTimer = new Timer();
-			_lastPacketTimer.schedule(new TimerTask()
-			{
-				public void run()
-				{
+					if(_loadActionTimer == (Ancestra.CONFIG_LOAD_DELAY/60000))
+					{
+						SQLManager.LOAD_ACTION();
+						GameServer.addToLog("Les live actions ont ete appliquees");
+						_loadActionTimer = 0;
+					}
+					if(_reloadMobTimer == (Ancestra.CONFIG_RELOAD_MOB_DELAY/60000))
+					{
+						World.RefreshAllMob();
+						GameServer.addToLog("La recharge des mobs est finie");
+						_reloadMobTimer = 0;
+					}
 					for(Personnage perso : World.getOnlinePersos()) 
-					{ 
+					{
 						if (perso.getLastPacketTime() + Ancestra.CONFIG_MAX_IDLE_TIME < System.currentTimeMillis())
 						{
 							
 							if(perso != null && perso.get_compte().getGameThread() != null && perso.isOnline())
 							{
 								GameServer.addToLog("Kick pour inactiviter de : "+perso.get_name());
-								SocketManager.REALM_SEND_MESSAGE(perso.get_compte().getGameThread().get_out(),"01|"); 
+								SocketManager.MESSAGE_BOX(perso.get_compte().getGameThread().get_out(),"01|"); 
 								perso.get_compte().getGameThread().kick();
 							}
 						}
-						
 					}
+					World.MoveMobsOnMaps();
 				}
 			}, 60000,60000);
 			

@@ -5,10 +5,12 @@ import game.GameServer;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 
 
 import objects.Personnage;
 import objects.Metier.JobAction;
+import objects.Metier.StatsMetier;
 import objects.Objet.ObjTemplate;
 import objects.Personnage.Stats;
 import objects.Sort.SortStats;
@@ -25,7 +27,9 @@ public class Constants
 	public static Map<Integer, String> ZAAPI = new TreeMap<Integer, String>();
 	//ZAAP <mapID,cellID>
 	public static Map<Integer, Integer> ZAAPS = new TreeMap<Integer, Integer>();
-	
+	//Energie
+	public static final String ALL_PHOENIX = "-11;-54|2;-12|-41;-17|5;-9|25;-4|36;5|12;12|10;19|-10;13|-14;31|-43;0|-60;-3|-58;18|24;-43|27;-33";
+
 	//Valeur des droits de guilde
 	public static int G_BOOST = 2;			//Gérer les boost
 	public static int G_RIGHT = 4;			//Gérer les droits
@@ -121,140 +125,140 @@ public class Constants
 	public static final int JOB_BIJOUTIER2			= 67;
 	
 	//Items
-		//Positions
-		public static final int ITEM_POS_NO_EQUIPED 	= -1;
-		public static final int ITEM_POS_AMULETTE		= 0;
-		public static final int ITEM_POS_ARME			= 1;
-		public static final int ITEM_POS_ANNEAU1		= 2;
-		public static final int ITEM_POS_CEINTURE		= 3;
-		public static final int ITEM_POS_ANNEAU2		= 4;
-		public static final int ITEM_POS_BOTTES			= 5;
-		public static final int ITEM_POS_COIFFE		 	= 6;
-		public static final int ITEM_POS_CAPE			= 7;
-		public static final int ITEM_POS_FAMILIER		= 8;
-		public static final int ITEM_POS_DOFUS1			= 9;
-		public static final int ITEM_POS_DOFUS2			= 10;
-		public static final int ITEM_POS_DOFUS3			= 11;
-		public static final int ITEM_POS_DOFUS4			= 12;
-		public static final int ITEM_POS_DOFUS5			= 13;
-		public static final int ITEM_POS_DOFUS6			= 14;
-		public static final int ITEM_POS_BOUCLIER		= 15;
+	//Positions
+	public static final int ITEM_POS_NO_EQUIPED 	= -1;
+	public static final int ITEM_POS_AMULETTE		= 0;
+	public static final int ITEM_POS_ARME			= 1;
+	public static final int ITEM_POS_ANNEAU1		= 2;
+	public static final int ITEM_POS_CEINTURE		= 3;
+	public static final int ITEM_POS_ANNEAU2		= 4;
+	public static final int ITEM_POS_BOTTES			= 5;
+	public static final int ITEM_POS_COIFFE		 	= 6;
+	public static final int ITEM_POS_CAPE			= 7;
+	public static final int ITEM_POS_FAMILIER		= 8;
+	public static final int ITEM_POS_DOFUS1			= 9;
+	public static final int ITEM_POS_DOFUS2			= 10;
+	public static final int ITEM_POS_DOFUS3			= 11;
+	public static final int ITEM_POS_DOFUS4			= 12;
+	public static final int ITEM_POS_DOFUS5			= 13;
+	public static final int ITEM_POS_DOFUS6			= 14;
+	public static final int ITEM_POS_BOUCLIER		= 15;
 		
-		//Types
-		public static final int ITEM_TYPE_AMULETTE			= 1;
-		public static final int ITEM_TYPE_ARC				= 2;
-		public static final int ITEM_TYPE_BAGUETTE			= 3;
-		public static final int ITEM_TYPE_BATON				= 4;
-		public static final int ITEM_TYPE_DAGUES			= 5;
-		public static final int ITEM_TYPE_EPEE				= 6;
-		public static final int ITEM_TYPE_MARTEAU			= 7;
-		public static final int ITEM_TYPE_PELLE				= 8;
-		public static final int ITEM_TYPE_ANNEAU			= 9;
-		public static final int ITEM_TYPE_CEINTURE			= 10;
-		public static final int ITEM_TYPE_BOTTES			= 11;
-		public static final int ITEM_TYPE_POTION			= 12;
-		public static final int ITEM_TYPE_PARCHO_EXP		= 13;
-		public static final int ITEM_TYPE_DONS				= 14;
-		public static final int ITEM_TYPE_RESSOURCE			= 15;
-		public static final int ITEM_TYPE_COIFFE			= 16;
-		public static final int ITEM_TYPE_CAPE				= 17;
-		public static final int ITEM_TYPE_FAMILIER			= 18;
-		public static final int ITEM_TYPE_HACHE				= 19;
-		public static final int ITEM_TYPE_OUTIL				= 20;
-		public static final int ITEM_TYPE_PIOCHE			= 21;
-		public static final int ITEM_TYPE_FAUX				= 22;
-		public static final int ITEM_TYPE_DOFUS				= 23;
-		public static final int ITEM_TYPE_QUETES			= 24;
-		public static final int ITEM_TYPE_DOCUMENT			= 25;
-		public static final int ITEM_TYPE_FM_POTION			= 26;
-		public static final int ITEM_TYPE_TRANSFORM			= 27;
-		public static final int ITEM_TYPE_BOOST_FOOD		= 28;
-		public static final int ITEM_TYPE_BENEDICTION		= 29;
-		public static final int ITEM_TYPE_MALEDICTION		= 30;
-		public static final int ITEM_TYPE_RP_BUFF			= 31;
-		public static final int ITEM_TYPE_PERSO_SUIVEUR		= 32;
-		public static final int ITEM_TYPE_PAIN				= 33;
-		public static final int ITEM_TYPE_CEREALE			= 34;
-		public static final int ITEM_TYPE_FLEUR				= 35;
-		public static final int ITEM_TYPE_PLANTE			= 36;
-		public static final int ITEM_TYPE_BIERE				= 37;
-		public static final int ITEM_TYPE_BOIS				= 38;
-		public static final int ITEM_TYPE_MINERAIS			= 39;
-		public static final int ITEM_TYPE_ALLIAGE			= 40;
-		public static final int ITEM_TYPE_POISSON			= 41;
-		public static final int ITEM_TYPE_BONBON			= 42;
-		public static final int ITEM_TYPE_POTION_OUBLIE		= 43;
-		public static final int ITEM_TYPE_POTION_METIER		= 44;
-		public static final int ITEM_TYPE_POTION_SORT		= 45;
-		public static final int ITEM_TYPE_FRUIT				= 46;
-		public static final int ITEM_TYPE_OS				= 47;
-		public static final int ITEM_TYPE_POUDRE			= 48;
-		public static final int ITEM_TYPE_COMESTI_POISSON	= 49;
-		public static final int ITEM_TYPE_PIERRE_PRECIEUSE	= 50;
-		public static final int ITEM_TYPE_PIERRE_BRUTE		=51;
-		public static final int ITEM_TYPE_FARINE			=52;
-		public static final int ITEM_TYPE_PLUME				=53;
-		public static final int ITEM_TYPE_POIL				=54;
-		public static final int ITEM_TYPE_ETOFFE			=55;
-		public static final int ITEM_TYPE_CUIR				=56;
-		public static final int ITEM_TYPE_LAINE				=57;
-		public static final int ITEM_TYPE_GRAINE			=58;
-		public static final int ITEM_TYPE_PEAU				=59;
-		public static final int ITEM_TYPE_HUILE				=60;
-		public static final int ITEM_TYPE_PELUCHE			=61;
-		public static final int ITEM_TYPE_POISSON_VIDE		=62;
-		public static final int ITEM_TYPE_VIANDE			=63;
-		public static final int ITEM_TYPE_VIANDE_CONSERVEE	=64;
-		public static final int ITEM_TYPE_QUEUE				=65;
-		public static final int ITEM_TYPE_METARIA			=66;
-		public static final int ITEM_TYPE_LEGUME			=68;
-		public static final int ITEM_TYPE_VIANDE_COMESTIBLE	=69;
-		public static final int ITEM_TYPE_TEINTURE			=70;
-		public static final int ITEM_TYPE_EQUIP_ALCHIMIE	=71;
-		public static final int ITEM_TYPE_OEUF_FAMILIER		=72;
-		public static final int ITEM_TYPE_MAITRISE			=73;
-		public static final int ITEM_TYPE_FEE_ARTIFICE		=74;
-		public static final int ITEM_TYPE_PARCHEMIN_SORT	=75;
-		public static final int ITEM_TYPE_PARCHEMIN_CARAC	=76;
-		public static final int ITEM_TYPE_CERTIFICAT_CHANIL	=77;
-		public static final int ITEM_TYPE_RUNE_FORGEMAGIE	=78;
-		public static final int ITEM_TYPE_BOISSON			=79;
-		public static final int ITEM_TYPE_OBJET_MISSION		=80;
-		public static final int ITEM_TYPE_SAC_DOS			=81;
-		public static final int ITEM_TYPE_BOUCLIER			=82;
-		public static final int ITEM_TYPE_PIERRE_AME		=83;
-		public static final int ITEM_TYPE_CLEFS				=84;
-		public static final int ITEM_TYPE_PIERRE_AME_PLEINE	=85;
-		public static final int ITEM_TYPE_POPO_OUBLI_PERCEP	=86;
-		public static final int ITEM_TYPE_PARCHO_RECHERCHE	=87;
-		public static final int ITEM_TYPE_PIERRE_MAGIQUE	=88;
-		public static final int ITEM_TYPE_CADEAUX			=89;
-		public static final int ITEM_TYPE_FANTOME_FAMILIER	=90;
-		public static final int ITEM_TYPE_DRAGODINDE		=91;
-		public static final int ITEM_TYPE_BOUFTOU			=92;
-		public static final int ITEM_TYPE_OBJET_ELEVAGE		=93;
-		public static final int ITEM_TYPE_OBJET_UTILISABLE	=94;
-		public static final int ITEM_TYPE_PLANCHE			=95;
-		public static final int ITEM_TYPE_ECORCE			=96;
-		public static final int ITEM_TYPE_CERTIF_MONTURE	=97;
-		public static final int ITEM_TYPE_RACINE			=98;
-		public static final int ITEM_TYPE_FILET_CAPTURE		=99;
-		public static final int ITEM_TYPE_SAC_RESSOURCE		=100;
-		public static final int ITEM_TYPE_ARBALETE			=102;
-		public static final int ITEM_TYPE_PATTE				=103;
-		public static final int ITEM_TYPE_AILE				=104;
-		public static final int ITEM_TYPE_OEUF				=105;
-		public static final int ITEM_TYPE_OREILLE			=106;
-		public static final int ITEM_TYPE_CARAPACE			=107;
-		public static final int ITEM_TYPE_BOURGEON			=108;
-		public static final int ITEM_TYPE_OEIL				=109;
-		public static final int ITEM_TYPE_GELEE				=110;
-		public static final int ITEM_TYPE_COQUILLE			=111;
-		public static final int ITEM_TYPE_PRISME			=112;
-		public static final int ITEM_TYPE_OBJET_VIVANT		=113;
-		public static final int ITEM_TYPE_ARME_MAGIQUE		=114;
-		public static final int ITEM_TYPE_FRAGM_AME_SHUSHU	=115;
-		public static final int ITEM_TYPE_POTION_FAMILIER	=116;
+	//Types
+	public static final int ITEM_TYPE_AMULETTE			= 1;
+	public static final int ITEM_TYPE_ARC				= 2;
+	public static final int ITEM_TYPE_BAGUETTE			= 3;
+	public static final int ITEM_TYPE_BATON				= 4;
+	public static final int ITEM_TYPE_DAGUES			= 5;
+	public static final int ITEM_TYPE_EPEE				= 6;
+	public static final int ITEM_TYPE_MARTEAU			= 7;
+	public static final int ITEM_TYPE_PELLE				= 8;
+	public static final int ITEM_TYPE_ANNEAU			= 9;
+	public static final int ITEM_TYPE_CEINTURE			= 10;
+	public static final int ITEM_TYPE_BOTTES			= 11;
+	public static final int ITEM_TYPE_POTION			= 12;
+	public static final int ITEM_TYPE_PARCHO_EXP		= 13;
+	public static final int ITEM_TYPE_DONS				= 14;
+	public static final int ITEM_TYPE_RESSOURCE			= 15;
+	public static final int ITEM_TYPE_COIFFE			= 16;
+	public static final int ITEM_TYPE_CAPE				= 17;
+	public static final int ITEM_TYPE_FAMILIER			= 18;
+	public static final int ITEM_TYPE_HACHE				= 19;
+	public static final int ITEM_TYPE_OUTIL				= 20;
+	public static final int ITEM_TYPE_PIOCHE			= 21;
+	public static final int ITEM_TYPE_FAUX				= 22;
+	public static final int ITEM_TYPE_DOFUS				= 23;
+	public static final int ITEM_TYPE_QUETES			= 24;
+	public static final int ITEM_TYPE_DOCUMENT			= 25;
+	public static final int ITEM_TYPE_FM_POTION			= 26;
+	public static final int ITEM_TYPE_TRANSFORM			= 27;
+	public static final int ITEM_TYPE_BOOST_FOOD		= 28;
+	public static final int ITEM_TYPE_BENEDICTION		= 29;
+	public static final int ITEM_TYPE_MALEDICTION		= 30;
+	public static final int ITEM_TYPE_RP_BUFF			= 31;
+	public static final int ITEM_TYPE_PERSO_SUIVEUR		= 32;
+	public static final int ITEM_TYPE_PAIN				= 33;
+	public static final int ITEM_TYPE_CEREALE			= 34;
+	public static final int ITEM_TYPE_FLEUR				= 35;
+	public static final int ITEM_TYPE_PLANTE			= 36;
+	public static final int ITEM_TYPE_BIERE				= 37;
+	public static final int ITEM_TYPE_BOIS				= 38;
+	public static final int ITEM_TYPE_MINERAIS			= 39;
+	public static final int ITEM_TYPE_ALLIAGE			= 40;
+	public static final int ITEM_TYPE_POISSON			= 41;
+	public static final int ITEM_TYPE_BONBON			= 42;
+	public static final int ITEM_TYPE_POTION_OUBLIE		= 43;
+	public static final int ITEM_TYPE_POTION_METIER		= 44;
+	public static final int ITEM_TYPE_POTION_SORT		= 45;
+	public static final int ITEM_TYPE_FRUIT				= 46;
+	public static final int ITEM_TYPE_OS				= 47;
+	public static final int ITEM_TYPE_POUDRE			= 48;
+	public static final int ITEM_TYPE_COMESTI_POISSON	= 49;
+	public static final int ITEM_TYPE_PIERRE_PRECIEUSE	= 50;
+	public static final int ITEM_TYPE_PIERRE_BRUTE		=51;
+	public static final int ITEM_TYPE_FARINE			=52;
+	public static final int ITEM_TYPE_PLUME				=53;
+	public static final int ITEM_TYPE_POIL				=54;
+	public static final int ITEM_TYPE_ETOFFE			=55;
+	public static final int ITEM_TYPE_CUIR				=56;
+	public static final int ITEM_TYPE_LAINE				=57;
+	public static final int ITEM_TYPE_GRAINE			=58;
+	public static final int ITEM_TYPE_PEAU				=59;
+	public static final int ITEM_TYPE_HUILE				=60;
+	public static final int ITEM_TYPE_PELUCHE			=61;
+	public static final int ITEM_TYPE_POISSON_VIDE		=62;
+	public static final int ITEM_TYPE_VIANDE			=63;
+	public static final int ITEM_TYPE_VIANDE_CONSERVEE	=64;
+	public static final int ITEM_TYPE_QUEUE				=65;
+	public static final int ITEM_TYPE_METARIA			=66;
+	public static final int ITEM_TYPE_LEGUME			=68;
+	public static final int ITEM_TYPE_VIANDE_COMESTIBLE	=69;
+	public static final int ITEM_TYPE_TEINTURE			=70;
+	public static final int ITEM_TYPE_EQUIP_ALCHIMIE	=71;
+	public static final int ITEM_TYPE_OEUF_FAMILIER		=72;
+	public static final int ITEM_TYPE_MAITRISE			=73;
+	public static final int ITEM_TYPE_FEE_ARTIFICE		=74;
+	public static final int ITEM_TYPE_PARCHEMIN_SORT	=75;
+	public static final int ITEM_TYPE_PARCHEMIN_CARAC	=76;
+	public static final int ITEM_TYPE_CERTIFICAT_CHANIL	=77;
+	public static final int ITEM_TYPE_RUNE_FORGEMAGIE	=78;
+	public static final int ITEM_TYPE_BOISSON			=79;
+	public static final int ITEM_TYPE_OBJET_MISSION		=80;
+	public static final int ITEM_TYPE_SAC_DOS			=81;
+	public static final int ITEM_TYPE_BOUCLIER			=82;
+	public static final int ITEM_TYPE_PIERRE_AME		=83;
+	public static final int ITEM_TYPE_CLEFS				=84;
+	public static final int ITEM_TYPE_PIERRE_AME_PLEINE	=85;
+	public static final int ITEM_TYPE_POPO_OUBLI_PERCEP	=86;
+	public static final int ITEM_TYPE_PARCHO_RECHERCHE	=87;
+	public static final int ITEM_TYPE_PIERRE_MAGIQUE	=88;
+	public static final int ITEM_TYPE_CADEAUX			=89;
+	public static final int ITEM_TYPE_FANTOME_FAMILIER	=90;
+	public static final int ITEM_TYPE_DRAGODINDE		=91;
+	public static final int ITEM_TYPE_BOUFTOU			=92;
+	public static final int ITEM_TYPE_OBJET_ELEVAGE		=93;
+	public static final int ITEM_TYPE_OBJET_UTILISABLE	=94;
+	public static final int ITEM_TYPE_PLANCHE			=95;
+	public static final int ITEM_TYPE_ECORCE			=96;
+	public static final int ITEM_TYPE_CERTIF_MONTURE	=97;
+	public static final int ITEM_TYPE_RACINE			=98;
+	public static final int ITEM_TYPE_FILET_CAPTURE		=99;
+	public static final int ITEM_TYPE_SAC_RESSOURCE		=100;
+	public static final int ITEM_TYPE_ARBALETE			=102;
+	public static final int ITEM_TYPE_PATTE				=103;
+	public static final int ITEM_TYPE_AILE				=104;
+	public static final int ITEM_TYPE_OEUF				=105;
+	public static final int ITEM_TYPE_OREILLE			=106;
+	public static final int ITEM_TYPE_CARAPACE			=107;
+	public static final int ITEM_TYPE_BOURGEON			=108;
+	public static final int ITEM_TYPE_OEIL				=109;
+	public static final int ITEM_TYPE_GELEE				=110;
+	public static final int ITEM_TYPE_COQUILLE			=111;
+	public static final int ITEM_TYPE_PRISME			=112;
+	public static final int ITEM_TYPE_OBJET_VIVANT		=113;
+	public static final int ITEM_TYPE_ARME_MAGIQUE		=114;
+	public static final int ITEM_TYPE_FRAGM_AME_SHUSHU	=115;
+	public static final int ITEM_TYPE_POTION_FAMILIER	=116;
 		
 	//Alignement
 	public static final int ALIGNEMENT_NEUTRE		=	-1;
@@ -339,6 +343,12 @@ public class Constants
 		{146},{21},
 		//Forgeur Hache
 		{65},{143},
+		//Sculteur de Baton
+		{147},{17},
+		//Sculteur de Baguette
+		{148},{16},
+		//Sculteur d'Arc
+		{149},{15},
 		//Forgemage de Hache
 		{115},
 		//Forgemage de dagues
@@ -365,6 +375,33 @@ public class Constants
 		{171},{182}
 	};
 	
+	public static final int[][] JOB_PROTECTORS = //{protectorId, itemId}
+	{
+		{684,289},{684,2018},{685,400},{685,2032},{686,533},{686,1671},{687,401},{687,2021},{688,423},{688,2026},
+		{689,532},{689,2029},{690,7018},{691,405},{692,425},{692,2035},{693,39},{694,441},{695,442},{696,443},
+		{697,445},{698,444},{699,7032},{700,350},{701,446},{702,313},{703,7033},{704,421},{705,428},{706,395},
+		{707,380},{708,593},{709,594},{710,7059},{711,303},{712,473},{713,476},{714,460},{715,2358},{716,2357},
+		{717,471},{718,461},{719,7013},{720,7925},{721,474},{722,449},{723,7016},{724,470},{725,7014},{726,1782},
+		{726,1790},{727,607},{727,1844},{727,1846},{728,603},{729,598},{730,1757},{730,1759},{731,1750},{732,1847},
+		{732,1749},{733,1794},{733,1796},{734,1805},{734,1807},{735,600},{735,1799},{736,1779},{736,1792},{737,1784},
+		{737,1788},{738,1801},{738,1803},{739,602},{739,1853}
+	};
+ 
+	public static int getProtectorLvl(int lvl)
+	{
+		if(lvl < 40)
+			return 10;
+		if(lvl < 80)
+			return 20;
+		if(lvl < 120)
+			return 30;
+		if(lvl < 160)
+			return 40;
+		if(lvl < 200)
+			return 50;
+		return 10;
+	}
+	
 	//Buff déclenché en cas de frappe
 	public static final int[] ON_HIT_BUFFS		=	{9,79,107,788};
 	
@@ -374,7 +411,7 @@ public class Constants
 	public static final int STATS_REM_PA			= 	101;
 	public static final int STATS_ADD_VIE			= 	110;
 	public static final int STATS_ADD_PA			= 	111;
-	public static final int STATS_ADD_DOMA			=	112;
+	public static final int STATS_ADD_DOMA			=	121;
 	
 	public static final int STATS_MULTIPLY_DOMMAGE	=	114;
 	public static final int STATS_ADD_CC			=	115;
@@ -470,6 +507,12 @@ public class Constants
 	public static final int EFFECT_PASS_TURN		= 	140;
 	//Capture
 	public static final int CAPTURE_MONSTRE			=	623;
+	//Pets
+	public static final int STATS_PETS_PDV			=	800;
+	public static final int STATS_PETS_POIDS		=	806;
+	public static final int STATS_PETS_DATE			=	808;
+	public static final int STATS_PETS_EPO			=	940;
+	public static final int STATS_PETS_SOUL 		= 	717;
 	
 	
 	//Methodes
@@ -478,7 +521,7 @@ public class Constants
 		short pos = 10298;
 		switch(classID)
 		{
-			
+			//TODO
 		}
 		if(Ancestra.CONFIG_CUSTOM_STARTMAP)
 		{
@@ -486,7 +529,87 @@ public class Constants
 		}
 		return pos;
 	}
-
+	
+	public static int getStartCell(int classID)
+	{
+		int pos = 314;
+		switch(classID)
+		{
+		//TODO
+		}
+		if(Ancestra.CONFIG_CUSTOM_STARTMAP)
+		{
+			return Ancestra.CONFIG_START_CELL;
+		}
+		return pos;
+	}
+	
+	public static short getClassStatueMap(int classID)
+	{
+		short pos = 10298;
+		switch(classID)
+		{
+			case 1:
+				return 7398;
+			case 2:
+				return 7545;
+			case 3:
+				return 7442;
+			case 4:
+				return 7392;
+			case 5:
+				return 7332;
+			case 6:
+				return 7446;
+			case 7:
+				return 7361;
+			case 8:
+				return 7427;
+			case 9:
+				return 7378;
+			case 10:
+				return 7395;
+			case 11:
+				return 7336;
+			case 12:
+				return 8035;
+		}
+		return pos;
+	}
+	
+	public static int getClassStatueCell(int classID)
+	{
+		int pos = 314;
+		switch(classID)
+		{
+			case 1:
+				return 299;
+			case 2:
+				return 311;
+			case 3:
+				return 255;
+			case 4:
+				return 282;
+			case 5:
+				return 326;
+			case 6:
+				return 300;
+			case 7:
+				return 207;
+			case 8:
+				return 282;
+			case 9:
+				return 368;
+			case 10:
+				return 370;
+			case 11:
+				return 197;
+			case 12:
+				return 384;
+		}
+		return pos;
+	}
+	
 	public static TreeMap<Integer, Character> getStartSortsPlaces(int classID)
 	{
 		TreeMap<Integer,Character> start = new TreeMap<Integer,Character>();
@@ -623,20 +746,6 @@ public class Constants
 			break;
 		}
 		return start;
-	}
-
-	public static int getStartCell(int classID)
-	{
-		int pos = 314;
-		switch(classID)
-		{
-			
-		}
-		if(Ancestra.CONFIG_CUSTOM_STARTMAP)
-		{
-			return Ancestra.CONFIG_START_CELL;
-		}
-		return pos;
 	}
 	
 	public static int getBasePdv(int classID)
@@ -1142,7 +1251,7 @@ public class Constants
 		}
 		return 5;
 	}
-
+	
 	public static int getAggroByLevel(int lvl)
 	{
 		int aggro = 0;
@@ -1151,7 +1260,7 @@ public class Constants
 			aggro = 3;
 		return aggro;
 	}
-
+	
 	public static boolean isValidPlaceForItem(ObjTemplate template, int place)
 	{
 		switch(template.getType())
@@ -1239,8 +1348,6 @@ public class Constants
 			case ITEM_TYPE_DONS:
 				if(place >= 35 && place <= 48)return true;
 			break;
-				
-			
 		}
 		return false;
 	}
@@ -1860,60 +1967,60 @@ public class Constants
 
 			case JOB_S_ARC:
 			//Sculter Arc
-			list.add(new JobAction(17,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(15,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
 			//ReSculter Arc
-			list.add(new JobAction(16,3,0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(149,3,0,true,getChanceForMaxCase(lvl),-1));
 			break;
 
 			case JOB_S_BATON:
 			//Sculter Baton
-			list.add(new JobAction(147,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(17,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
 			//ReSculter Baton
-			list.add(new JobAction(148,3,0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(147,3,0,true,getChanceForMaxCase(lvl),-1));
 			break;
 
 			case JOB_S_BAGUETTE:
 			//Sculter Baguette
-			list.add(new JobAction(149,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(16,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
 			//ReSculter Baguette
-			list.add(new JobAction(15,3,0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(148,3,0,true,getChanceForMaxCase(lvl),-1));
 			break;
 
 			case JOB_CORDOMAGE:
-				//FM Bottes
-				list.add(new JobAction(163,3,0,true,lvl,0));
-				//FM Ceinture
-				list.add(new JobAction(164,3,0,true,lvl,0));
+			//FM Bottes
+			list.add(new JobAction(163,3,0,true,lvl,0));
+			//FM Ceinture
+			list.add(new JobAction(164,3,0,true,lvl,0));
 			break;
 
 			case JOB_JOAILLOMAGE:
-				//FM Anneau
-				list.add(new JobAction(169,3,0,true,lvl,0));
-				//FM  Amullette
-				list.add(new JobAction(168,3,0,true,lvl,0));
+			//FM Anneau
+			list.add(new JobAction(169,3,0,true,lvl,0));
+			//FM  Amullette
+			list.add(new JobAction(168,3,0,true,lvl,0));
 			break;
 
 			case JOB_COSTUMAGE:
-				//FM Chapeau
-				list.add(new JobAction(165,3,0,true,lvl,0));
-				//FM Cape
-				list.add(new JobAction(167,3,0,true,lvl,0));
-				//FM Sac
-				list.add(new JobAction(166,3,0,true,lvl,0));
+			//FM Chapeau
+			list.add(new JobAction(165,3,0,true,lvl,0));
+			//FM Cape
+			list.add(new JobAction(167,3,0,true,lvl,0));
+			//FM Sac
+			list.add(new JobAction(166,3,0,true,lvl,0));
 			break;
 
 			case JOB_F_EPEE:
 			//Forger Epée
 			list.add(new JobAction(20,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
 			//Reforger Epée
-			list.add(new JobAction(146,3,0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(145,3,0,true,getChanceForMaxCase(lvl),-1));
 			break;
 
 			case JOB_F_DAGUE:
 			//Forger Dague
-			list.add(new JobAction(142,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(18,getTotalCaseByJobLevel(lvl),0,true,getChanceForMaxCase(lvl),-1));
 			//Reforger Dague
-			list.add(new JobAction(18,3,0,true,getChanceForMaxCase(lvl),-1));
+			list.add(new JobAction(142,3,0,true,getChanceForMaxCase(lvl),-1));
 			break;
 
 			case JOB_F_MARTEAU:
@@ -1938,36 +2045,36 @@ public class Constants
 			break;
 
 			case JOB_FM_HACHES:
-				//Reforger une hache
-				list.add(new JobAction(115,3,0,true,lvl,0));
+			//Reforger une hache
+			list.add(new JobAction(115,3,0,true,lvl,0));
 			break;
 			case JOB_FM_DAGUE:
-				//Reforger une dague
-				list.add(new JobAction(1,3,0,true,lvl,0));
+			//Reforger une dague
+			list.add(new JobAction(1,3,0,true,lvl,0));
 			break;
 			case JOB_FM_EPEE:
-				//Reforger une épée
-				list.add(new JobAction(113,3,0,true,lvl,0));
+			//Reforger une épée
+			list.add(new JobAction(113,3,0,true,lvl,0));
 			break;
 			case JOB_FM_MARTEAU:
-				//Reforger une marteau
-				list.add(new JobAction(116,3,0,true,lvl,0));
+			//Reforger une marteau
+			list.add(new JobAction(116,3,0,true,lvl,0));
 			break;
 			case JOB_FM_PELLE:
-				//Reforger une pelle
-				list.add(new JobAction(117,3,0,true,lvl,0));
+			//Reforger une pelle
+			list.add(new JobAction(117,3,0,true,lvl,0));
 			break;
 			case JOB_SM_ARC:
-				//Resculpter un arc
-				list.add(new JobAction(118,3,0,true,lvl,0));
+			//Resculpter un arc
+			list.add(new JobAction(118,3,0,true,lvl,0));
 			break;
 			case JOB_SM_BATON:
-				//Resculpter un baton
-				list.add(new JobAction(120,3,0,true,lvl,0));
+			//Resculpter un baton
+			list.add(new JobAction(120,3,0,true,lvl,0));
 			break;
 			case JOB_SM_BAGUETTE:
-				//Resculpter une baguette
-				list.add(new JobAction(119,3,0,true,lvl,0));
+			//Resculpter une baguette
+			list.add(new JobAction(119,3,0,true,lvl,0));
 			break;
 			
 			case JOB_CHASSEUR:
@@ -2270,7 +2377,7 @@ public class Constants
 
 	public static boolean isMageJob(int id)
 	{
-		if((id>12 && id <50) || (id>61 && id <65))return true;
+		if((id>42 && id <51) || (id>61 && id <65))return true;
 		return false;
 	}
 	
@@ -2663,6 +2770,7 @@ public class Constants
 		}
 		return stats;
 	}
+	
 	public static ObjTemplate getParchoTemplateByMountColor(int color)
 	{
 		switch(color)
@@ -2812,6 +2920,7 @@ public class Constants
 		}
 		return null;
 	}
+	
 	public static int getMountColorByParchoTemplate(int tID)
 	{
 		for(int a = 1;a<100;a++)if(getParchoTemplateByMountColor(a)!=null)if(getParchoTemplateByMountColor(a).getID() == tID)return a; 
@@ -2886,5 +2995,435 @@ public class Constants
 		}
 		
 		return -1;
+	}
+	
+	public static String isValidPlaceToInviteCraft(Personnage perso, int caseID)
+	{
+		int IOObject = 0;
+		if(perso.get_curCarte().getCase(caseID) != null && perso.get_curCarte().getCase(caseID).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID+15) != null && perso.get_curCarte().getCase(caseID+15).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID+15).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID-15) != null && perso.get_curCarte().getCase(caseID-15).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID-15).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID+14) != null && perso.get_curCarte().getCase(caseID+14).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID+14).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID-14) != null && perso.get_curCarte().getCase(caseID-14).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID-14).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID+12) != null && perso.get_curCarte().getCase(caseID+12).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID+12).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID-12) != null && perso.get_curCarte().getCase(caseID-12).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID-12).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID+13) != null && perso.get_curCarte().getCase(caseID+13).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID+13).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID-13) != null && perso.get_curCarte().getCase(caseID-13).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID-13).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID+10) != null && perso.get_curCarte().getCase(caseID+10).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID+10).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID-10) != null && perso.get_curCarte().getCase(caseID-10).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID-10).getObject().getID();
+		}else
+		if(perso.get_curCarte().getCase(caseID+11) != null && perso.get_curCarte().getCase(caseID+11).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID+11).getObject().getID();
+		}
+		else
+		if(perso.get_curCarte().getCase(caseID-11) != null && perso.get_curCarte().getCase(caseID-11).getObject() != null)
+		{
+			IOObject = perso.get_curCarte().getCase(caseID-11).getObject().getID();
+		}
+		
+		String PossiblejobID = "";
+		switch(IOObject)
+		{
+			case 0:
+				return "";
+			case 7001:
+				PossiblejobID = JOB_BOULANGER+"";
+			break;
+			case 7002:
+			case 7005:
+				PossiblejobID = JOB_MINEUR+"";
+			break;
+			case 7003:
+				PossiblejobID = JOB_BUCHERON+"";
+			break;
+			case 7007:
+				PossiblejobID = JOB_PAYSAN+"";
+			break;
+			case 7008:
+			case 7009:
+			case 7010:
+				PossiblejobID = JOB_BIJOUTIER+"";
+			break;
+			case 7011:
+				PossiblejobID = JOB_CORDONIER+"";
+			break;
+			case 7012://Enclume
+				PossiblejobID = JOB_F_EPEE+",";
+				PossiblejobID += JOB_F_MARTEAU+",";
+				PossiblejobID += JOB_F_DAGUE+",";
+				PossiblejobID += JOB_F_PELLE+",";
+				PossiblejobID += JOB_F_HACHES+"";
+			break;
+			case 7013://Sculteur
+				PossiblejobID = JOB_S_ARC+",";
+				PossiblejobID += JOB_S_BATON+",";
+				PossiblejobID += JOB_S_BAGUETTE+"";
+			break;
+			case 7014:
+			case 7015:
+			case 7016:
+				PossiblejobID = JOB_TAILLEUR+"";
+			break;
+			case 7019:
+				PossiblejobID = JOB_ALCHIMISTE+"";
+			break;
+			case 7020://Enclume magique
+				PossiblejobID = JOB_FM_DAGUE+",";
+				PossiblejobID += JOB_FM_EPEE+",";
+				PossiblejobID += JOB_FM_MARTEAU+",";
+				PossiblejobID += JOB_FM_PELLE+",";
+				PossiblejobID += JOB_FM_HACHES+",";
+				PossiblejobID += JOB_SM_ARC+",";
+				PossiblejobID += JOB_SM_BAGUETTE+",";
+				PossiblejobID += JOB_SM_BATON+"";
+			break;
+			case 7022:
+				PossiblejobID = JOB_POISSONNIER+"";
+			break;
+			case 7024:
+				PossiblejobID = JOB_PECHEUR+"";
+			break;
+			case 7023:
+				PossiblejobID = JOB_CHASSEUR+"";
+			break;
+			case 7025:
+				PossiblejobID = JOB_BOUCHER+"";
+			break;
+			case 7027:
+				PossiblejobID = JOB_F_BOUCLIER+"";
+			break;
+			case 7036:
+				PossiblejobID = JOB_COSTUMAGE+"";
+			break;
+			case 7037:
+				PossiblejobID = JOB_CORDOMAGE+"";
+			break;
+			case 7038:
+				PossiblejobID = JOB_JOAILLOMAGE+"";
+			break;
+			case 7039:
+				PossiblejobID = JOB_BRICOLEUR+"";
+			break;
+		}
+		//On vérifie qu'il possède le boulot
+		boolean HaveJob = false;
+		if(perso.getObjetByPos(Constants.ITEM_POS_ARME) == null) return "";
+		if(PossiblejobID.isEmpty()) return "";
+		if(PossiblejobID.contains(","))
+		{
+			for(String JobID : PossiblejobID.split(","))
+			{
+				if(perso.getMetierByID(Integer.parseInt(JobID)) != null) HaveJob = true;
+			}
+		}else
+		{
+			if(perso.getMetierByID(Integer.parseInt(PossiblejobID)) != null) HaveJob = true;
+		}
+		if(!HaveJob) return "";
+		
+		//On vérifie qu'il remplis les conditions pour le boulot
+		int ID = perso.getObjetByPos(Constants.ITEM_POS_ARME).getTemplate().getID();
+		String PossibleSkillID = "";
+		if(PossiblejobID.contains(","))
+		{
+			for(String JobID : PossiblejobID.split(","))
+			{
+				int JobID2 = Integer.parseInt(JobID);
+				for(Entry<Integer,StatsMetier> e : perso.getMetiers().entrySet())
+				{
+					if(e.getValue().getTemplate().isValidTool(ID))
+					{
+						if(JobID2 == e.getValue().getTemplate().getId())
+						{
+							PossibleSkillID += getSkillIDbyJobID(JobID2)+ ";";
+						}
+					}
+				}
+			}
+		}else
+		{
+			for(Entry<Integer,StatsMetier> e : perso.getMetiers().entrySet())
+			{
+				if(e.getValue().getTemplate().isValidTool(ID))
+				{
+					if(Integer.parseInt(PossiblejobID) == e.getValue().getTemplate().getId())
+					{
+						PossibleSkillID +=  getSkillIDbyJobID(Integer.parseInt(PossiblejobID))+";";
+					}
+				}
+			}
+		}
+		return (PossibleSkillID.length() < 2?"":PossibleSkillID.substring(0, PossibleSkillID.length()-1));
+	}
+
+	public static String getSkillIDbyJobID(int JobID)
+	{
+		String PossibleSkillID = "";
+		switch(JobID)
+		{
+			case JOB_BOULANGER:
+				PossibleSkillID = "109;27";
+			break;
+			case JOB_MINEUR:
+				PossibleSkillID = "48;32";
+			break;
+			case JOB_BUCHERON:
+				PossibleSkillID = "101";
+			break;
+			case JOB_PAYSAN:
+				PossibleSkillID = "122;47";
+			break;
+			case JOB_BIJOUTIER:
+				PossibleSkillID = "11;12";
+			break;
+			case JOB_CORDONIER:
+				PossibleSkillID = "13;14";
+			break;
+			case JOB_F_EPEE:
+				PossibleSkillID = "20;145";
+			break;
+			case JOB_F_MARTEAU:
+				PossibleSkillID = "19;144";
+			break;
+			case JOB_F_DAGUE:
+				PossibleSkillID = "18;142";
+			break;
+			case JOB_F_PELLE:
+				PossibleSkillID = "21;146";
+			break;
+			case JOB_F_HACHES:
+				PossibleSkillID = "65;143";
+			break;
+			case JOB_S_ARC:
+				PossibleSkillID = "15;149";
+			break;
+			case JOB_S_BATON:
+				PossibleSkillID = "17;147";
+			break;
+			case JOB_S_BAGUETTE:
+				PossibleSkillID = "16;148";
+			break;
+			case JOB_TAILLEUR:
+				PossibleSkillID = "63;64;123";
+			break;
+			case JOB_ALCHIMISTE:
+				PossibleSkillID = "23";
+			break;
+			case JOB_FM_DAGUE:
+				PossibleSkillID = "1";
+			break;
+			case JOB_FM_EPEE:
+				PossibleSkillID = "113";
+			break;
+			case JOB_FM_MARTEAU:
+				PossibleSkillID = "116";
+			break;
+			case JOB_FM_PELLE:
+				PossibleSkillID = "117";
+			break;
+			case JOB_FM_HACHES:
+				PossibleSkillID = "115";
+			break;
+			case JOB_SM_ARC:
+				PossibleSkillID = "118";
+			break;
+			case JOB_SM_BAGUETTE:
+				PossibleSkillID = "119";
+			break;
+			case JOB_SM_BATON:
+				PossibleSkillID = "120";
+			break;
+			case JOB_POISSONNIER:
+				PossibleSkillID = "135";
+			break;
+			case JOB_PECHEUR:
+				PossibleSkillID = "133";
+			break;
+			case JOB_CHASSEUR:
+				PossibleSkillID = "134";
+			break;
+			case JOB_BOUCHER:
+				PossibleSkillID = "132";
+			break;
+			case JOB_F_BOUCLIER:
+				PossibleSkillID = "156";
+			break;
+			case JOB_COSTUMAGE:
+				PossibleSkillID = "167;166;165";
+			break;
+			case JOB_CORDOMAGE:
+				PossibleSkillID = "164;163";
+			break;
+			case JOB_JOAILLOMAGE:
+				PossibleSkillID = "168;169";
+			break;
+			case JOB_BRICOLEUR:
+				PossibleSkillID = "171;182";
+			break;
+		}
+		return PossibleSkillID;
+		
+	}
+
+	public static int getJobIDbySkillID(int skID)
+	{
+		int JobID = 0;
+		switch(skID)
+		{
+			case 109:
+			case 27:
+				JobID = JOB_BOULANGER;
+			break;
+			case 48:
+			case 32:
+				JobID = JOB_MINEUR;
+			break;
+			case 101:
+				JobID = JOB_BUCHERON;
+			break;
+			case 122:
+			case 47:
+				JobID = JOB_PAYSAN;
+			break;
+			case 11:
+			case 12:
+				JobID = JOB_BIJOUTIER;
+			break;
+			case 13:
+			case 14:
+				JobID = JOB_CORDONIER;
+			break;
+			case 20:
+			case 145:
+				JobID = JOB_F_EPEE;
+			break;
+			case 19:
+			case 144:
+				JobID = JOB_F_MARTEAU;
+			break;
+			case 18:
+			case 142:
+				JobID = JOB_F_DAGUE;
+			break;
+			case 21:
+			case 146:
+				JobID = JOB_F_PELLE;
+			break;
+			case 65:
+			case 143:
+				JobID = JOB_F_HACHES;
+			break;
+			case 15:
+			case 149:
+				JobID = JOB_S_ARC;
+			break;
+			case 17:
+			case 147:
+				JobID = JOB_S_BATON;
+			break;
+			case 16:
+			case 148:
+				JobID = JOB_S_BAGUETTE;
+			break;
+			case 63:
+			case 64:
+			case 123:
+				JobID = JOB_TAILLEUR;
+			break;
+			case 23:
+				JobID = JOB_ALCHIMISTE;
+			break;
+			case 1:
+				JobID = JOB_FM_DAGUE;
+			break;
+			case 113:
+				JobID = JOB_FM_EPEE;
+			break;
+			case 116:
+				JobID = JOB_FM_MARTEAU;
+			break;
+			case 117:
+				JobID = JOB_FM_PELLE;
+			break;
+			case 115:
+				JobID = JOB_FM_HACHES;
+			break;
+			case 118:
+				JobID = JOB_SM_ARC;
+			break;
+			case 119:
+				JobID = JOB_SM_BAGUETTE;
+			break;
+			case 120:
+				JobID = JOB_SM_BATON;
+			break;
+			case 135:
+				JobID = JOB_POISSONNIER;
+			break;
+			case 133:
+				JobID = JOB_PECHEUR;
+			break;
+			case 134:
+				JobID = JOB_CHASSEUR;
+			break;
+			case 132:
+				JobID = JOB_BOUCHER;
+			break;
+			case 156:
+				JobID = JOB_F_BOUCLIER;
+			break;
+			case 167:
+			case 166:
+			case 165:
+				JobID = JOB_COSTUMAGE;
+			break;
+			case 164:
+			case 163:
+				JobID = JOB_CORDOMAGE;
+			break;
+			case 168:
+			case 169:
+				JobID = JOB_JOAILLOMAGE;
+			break;
+			case 171:
+			case 182:
+				JobID = JOB_BRICOLEUR;
+			break;
+		}
+		return JobID;
+		
 	}
 }

@@ -17,6 +17,11 @@ public class SocketManager
 			packet = CryptManager.toUtf(packet);
 			out.print((packet)+(char)0x00);
 			out.flush();
+			if(Ancestra.REALM_DEBUG)
+			{
+				Ancestra.addToRealmLog("Realm: Send>>"+packet.toString());
+				System.out.println("Realm: Send>>"+packet);
+			}
 		}
 	}
 	
@@ -180,7 +185,7 @@ public class SocketManager
 		String str = acc.get_GUID()+"|"+acc.get_name()+"|"+acc.get_pass()+"|"
 		+acc.get_pseudo()+"|"+acc.get_question()+"|"+acc.get_reponse()+"|"
 		+acc.get_gmLvl()+"|"+acc.get_subscriber()+"|"+(acc.isBanned()?1:0)+"|"
-		+acc.getLastIP()+"|"+acc.getLastConnectionDate()+"|"+acc.get_curIP();
+		+acc.getLastIP()+"|"+acc.getLastConnectionDate()+"|"+acc.get_curIP()+"|"+acc.get_giftID();
 		G.getThread().sendAddWaiting(str);
 		
 		packet.append("YK").append(G.getIP()).append(":").append(G.getPort()).append(";").append(guid);

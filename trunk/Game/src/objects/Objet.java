@@ -1,13 +1,10 @@
 package objects;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 import objects.Personnage.Stats;
-import common.Ancestra;
 import common.Constants;
 import common.Formulas;
 import common.SQLManager;
@@ -77,69 +74,96 @@ public class Objet {
 			return BonusCC;
 		}
 		
-		public int getPOmin() {
+		public int getPOmin()
+		{
 			return POmin;
 		}
 		
-		public int getPOmax() {
+		public int getPOmax()
+		{
 			return POmax;
 		}
-
-		public int getTauxCC() {
+		
+		public int getTauxCC()
+		{
 			return TauxCC;
 		}
-
-		public int getTauxEC() {
+		
+		public int getTauxEC()
+		{
 			return TauxEC;
 		}
-
+		
 		public int getPACost()
 		{
 			return PACost;
 		}
-		public int getID() {
+		
+		public int getID()
+		{
 			return ID;
 		}
-
-		public String getStrTemplate() {
+		
+		public String getStrTemplate()
+		{
 			return StrTemplate;
 		}
-
-		public String getName() {
+				
+		public String getName()
+		{
 			return name;
 		}
-
-		public int getType() {
+		
+		public int getType()
+		{
 			return type;
 		}
-
-		public int getLevel() {
+		
+		public int getLevel()
+		{
 			return level;
 		}
-
-		public int getPod() {
+		
+		public int getPod()
+		{
 			return pod;
 		}
-
-		public int getPrix() {
+		
+		public int getPrix()
+		{
 			return prix;
 		}
-
-		public int getPanopID() {
+		
+		public int getPanopID()
+		{
 			return panopID;
 		}
-
-		public String getConditions() {
+		
+		public String getConditions()
+		{
 			return conditions;
 		}
 		
 		public Objet createNewItem(int qua,boolean useMax)
-		{		
-			Objet item = new Objet(World.getNewItemGuid(), ID, qua, Constants.ITEM_POS_NO_EQUIPED, generateNewStatsFromTemplate(StrTemplate,useMax),getEffectTemplate(StrTemplate));
+		{
+			int id = World.getNewItemGuid();
+			Objet item;
+			if(type == Constants.ITEM_TYPE_FAMILIER)
+			{
+				//Les nouveaux familiers n'ont que des txtStats
+				item = new Objet(id, ID, qua, Constants.ITEM_POS_NO_EQUIPED, new Stats(false, null), new ArrayList<SpellEffect>(), new TreeMap<Integer, Integer>(), World.get_Pets(ID).generateNewtxtStatsForPets());
+				//Ajouter du Pets_data SQL et World
+				long time = System.currentTimeMillis();
+				World.addPetsEntry(new PetsEntry(id,time,0,10,0,false));
+				SQLManager.ADD_PETS_DATA(id, time);
+			}else
+			{
+				item = new Objet(id, ID, qua, Constants.ITEM_POS_NO_EQUIPED, generateNewStatsFromTemplate(StrTemplate,useMax), getEffectTemplate(StrTemplate), new TreeMap<Integer, Integer>(), new TreeMap<Integer, String>());
+			}
 			return item;
 		}
-
-		private Stats generateNewStatsFromTemplate(String statsTemplate,boolean useMax)
+		
+		public Stats generateNewStatsFromTemplate(String statsTemplate,boolean useMax)
 		{
 			Stats itemStats = new Stats(false, null);
 			//Si stats Vides
@@ -147,14 +171,18 @@ public class Objet {
 			
 			String[] splitted = statsTemplate.split(",");
 			for(String s : splitted)
-			{	
+			{
 				String[] stats = s.split("#");
 				int statID = Integer.parseInt(stats[0],16);
 				boolean follow = true;
 				
 				for(int a : Constants.ARMES_EFFECT_IDS)//Si c'est un Effet Actif
+				{
 					if(a == statID)
+					{
 						follow = false;
+					}
+				}
 				if(!follow)continue;//Si c'était un effet Actif d'arme
 				
 				String jet = "";
@@ -210,7 +238,7 @@ public class Objet {
 		{
 			return (this.ID+";"+StrTemplate);
 		}
-
+		
 		public void applyAction(Personnage perso, Personnage target, int objID, short cellid)
 		{
 			for(Action a : onUseActions)a.apply(perso, target, objID, cellid);
@@ -224,6 +252,7 @@ public class Objet {
 	private Personnage.Stats Stats = new Stats();
 	private ArrayList<SpellEffect> Effects = new ArrayList<SpellEffect>();
 	private Map<Integer,String> txtStats = new TreeMap<Integer,String>();
+	private Map<Integer,Integer> SoulStats = new TreeMap<Integer,Integer>();
 	
 	public Objet (int Guid, int template,int qua, int pos, String strStats)
 	{
@@ -235,7 +264,7 @@ public class Objet {
 		Stats = new Stats();
 		parseStringToStats(strStats);
 	}
-
+	
 	public Objet()
 	{
 		
@@ -245,11 +274,17 @@ public class Objet {
 	{
 		String[] split = strStats.split(",");
 		for(String s : split)
-		{	
+		{
 			try
 			{
 				String[] stats = s.split("#");
 				int statID = Integer.parseInt(stats[0],16);
+				
+				if(statID == Constants.STATS_PETS_SOUL)
+				{
+					SoulStats.put(Integer.parseInt(stats[1], 16), Integer.parseInt(stats[3], 16));
+					continue;
+				}
 				
 				//Stats spécials
 				if(statID == 997 || statID == 996)
@@ -257,8 +292,9 @@ public class Objet {
 					txtStats.put(statID, stats[4]);
 					continue;
 				}
+				
 				//Si stats avec Texte (Signature, apartenance, etc)
-				if((!stats[3].equals("") && !stats[3].equals("0")))
+				if((!stats[3].equals("") && (!stats[3].equals("0") || statID == Constants.STATS_PETS_DATE || statID == Constants.STATS_PETS_PDV || statID == Constants.STATS_PETS_POIDS || statID == Constants.STATS_PETS_EPO)))//Si le stats n'est pas vide et (n'est pas égale à 0 ou est de type familier)
 				{
 					txtStats.put(statID, stats[3]);
 					continue;
@@ -284,10 +320,20 @@ public class Objet {
 			}catch(Exception e){continue;};
 		}
 	}
-
-	public void addTxtStat(int i,String s)
+	
+	public void addSoulStat(int i, int j)
 	{
-		txtStats.put(i, s);
+		SoulStats.put(i, j);
+	}
+	
+	public Map<Integer, Integer> getSoulStat()
+	{
+		return SoulStats;
+	}
+	
+	public Map<Integer, String> getTxtStat()
+	{
+		return txtStats;
 	}
 	
 	public String getTraquedName()
@@ -303,7 +349,7 @@ public class Objet {
 		return null;
 	}
 	
-	public Objet(int Guid, int template, int qua, int pos,	Stats stats,ArrayList<SpellEffect> effects)
+	public Objet(int Guid, int template, int qua, int pos, Stats stats, ArrayList<SpellEffect> effects, Map<Integer, Integer> _SoulStat, Map<Integer, String> _txtStats)
 	{
 		this.guid = Guid;
 		this.template = World.getObjTemplate(template);
@@ -311,33 +357,42 @@ public class Objet {
 		this.position = pos;
 		this.Stats = stats;
 		this.Effects = effects;
+		this.SoulStats = _SoulStat;
+		this.txtStats = _txtStats;
 	}
 	
-	public Personnage.Stats getStats() {
+	public Personnage.Stats getStats()
+	{
 		return Stats;
 	}
-
-	public int getQuantity() {
+	
+	public int getQuantity()
+	{
 		return quantity;
 	}
-
-	public void setQuantity(int quantity) {
+	
+	public void setQuantity(int quantity)
+	{
 		this.quantity = quantity;
 	}
-
-	public int getPosition() {
+	
+	public int getPosition()
+	{
 		return position;
 	}
-
-	public void setPosition(int position) {
+	
+	public void setPosition(int position)
+	{
 		this.position = position;
 	}
-
-	public ObjTemplate getTemplate() {
+	
+	public ObjTemplate getTemplate()
+	{
 		return template;
 	}
-
-	public int getGuid() {
+	
+	public int getGuid()
+	{
 		return guid;
 	}
 	
@@ -351,7 +406,7 @@ public class Objet {
 
 	public String parseStatsString()
 	{
-		if(getTemplate().getType() == 83)	//Si c'est une pierre d'âme vide
+		if(getTemplate().getType() == Constants.ITEM_TYPE_PIERRE_AME)//Si c'est une pierre d'âme vide
 			return getTemplate().getStrTemplate();
 		
 		StringBuilder stats = new StringBuilder();
@@ -393,195 +448,52 @@ public class Objet {
 			{
 				stats.append(Integer.toHexString(entry.getKey())).append("#0#0#").append(entry.getValue());	
 			}
-			else
+			else if(entry.getKey() == Constants.STATS_PETS_PDV || entry.getKey() == Constants.STATS_PETS_POIDS || entry.getKey() == Constants.STATS_PETS_DATE)
+			{
+				PetsEntry p = World.get_PetsEntry(this.getGuid());
+				if(p == null)
+				{
+					if(entry.getKey() == Constants.STATS_PETS_PDV) stats.append(Integer.toHexString(entry.getKey())).append("#").append("a").append("#0#a");
+					if(entry.getKey() == Constants.STATS_PETS_POIDS) stats.append(Integer.toHexString(entry.getKey())).append("#").append("0").append("#0#0");
+					if(entry.getKey() == Constants.STATS_PETS_DATE) stats.append(Integer.toHexString(entry.getKey())).append("#").append("0").append("#0#0");
+				}
+				else
+				{
+					if(entry.getKey() == Constants.STATS_PETS_PDV) stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(p.get_PDV())).append("#0#").append(Integer.toHexString(p.get_PDV()));
+					if(entry.getKey() == Constants.STATS_PETS_POIDS) stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(p.parse_Corpulence())).append("#"+(p.get_Corpulence()> 0?p.parse_Corpulence():0)+"#").append(Integer.toHexString(p.parse_Corpulence()));
+					if(entry.getKey() == Constants.STATS_PETS_DATE) stats.append(Integer.toHexString(entry.getKey())).append(p.parse_LastEatDate());
+					if(p.get_isEupeoh() && entry.getKey() == Constants.STATS_PETS_EPO) stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(p.get_isEupeoh()?1:0)).append("#0#").append(Integer.toHexString(p.get_isEupeoh()?1:0));
+				}
+			}else
 			{
 				stats.append(Integer.toHexString(entry.getKey())).append("#0#0#0#").append(entry.getValue());
 			}
 			isFirst = false;
 		}
+		
+		for(Entry<Integer,Integer> entry : SoulStats.entrySet())
+		{
+			if(!isFirst)
+				stats.append(",");
+			
+			stats.append(Integer.toHexString(Constants.STATS_PETS_SOUL)).append("#").append(Integer.toHexString(entry.getKey())).append("#").append("0").append("#").append(Integer.toHexString(entry.getValue()));
+			
+			isFirst = false;
+		}
 		return stats.toString();
 	}
 	
-	public String parseToSave()
+	public void set_Template(int Tid)
 	{
-		return parseStatsString();
+		this.template = World.getObjTemplate(Tid);
 	}
 	
 	/* *********FM SYSTEM********* */
-	public String parseFMStatsString(String statsstr, Objet obj, int add, boolean negatif)
-	{
-		StringBuilder stats = new StringBuilder();
-		boolean isFirst = true;
-		for(SpellEffect SE : obj.Effects)
-		{
-			if(!isFirst)
-				stats.append(",");
-			
-			String[] infos = SE.getArgs().split(";");
-			try
-			{
-				stats.append(Integer.toHexString(SE.getEffectID())).append("#").append(infos[0]).append("#").append(infos[1]).append("#0#").append(infos[5]);
-			}catch(Exception e)
-			{
-				e.printStackTrace();
-				continue;
-			};
-			
-			isFirst = false;
-		}
-		
-		for(Entry<Integer,Integer> entry : obj.Stats.getMap().entrySet())
-		{
-			if(!isFirst)stats.append(",");
-			if(Integer.toHexString(entry.getKey()).compareTo(statsstr) == 0)
-			{
-				int newstats = 0;
-				if(negatif)
-				{
-					newstats = entry.getValue()-add;
-					if(newstats < 1) continue;
-				}else
-				{
-					newstats = entry.getValue()+add;
-				}
-				String jet = "0d0+"+newstats;
-				stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(entry.getValue())).append(add).append("#0#0#").append(jet);
-			}
-			else
-			{
-				String jet = "0d0+"+entry.getValue();
-				stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(entry.getValue())).append("#0#0#").append(jet);
-			}
-			isFirst = false;
-		}
-		
-		for(Entry<Integer,String> entry : obj.txtStats.entrySet())
-		{
-			if(!isFirst)stats.append(",");
-			stats.append(Integer.toHexString(entry.getKey())).append("#0#0#0#").append(entry.getValue());
-			isFirst = false;
-		}
-		
-		return stats.toString();
-	}
-	
-	public String parseFMEchecStatsString(Objet obj, double poid)
-	{
-		StringBuilder stats = new StringBuilder();
-		boolean isFirst = true;
-		for(SpellEffect SE : obj.Effects)
-		{
-			if(!isFirst)
-				stats.append(",");
-			
-			String[] infos = SE.getArgs().split(";");
-			try
-			{
-				stats.append(Integer.toHexString(SE.getEffectID())).append("#").append(infos[0]).append("#").append(infos[1]).append("#0#").append(infos[5]);
-			}catch(Exception e)
-			{
-				e.printStackTrace();
-				continue;
-			};
-			
-			isFirst = false;
-		}
-		
-		for(Entry<Integer,Integer> entry : obj.Stats.getMap().entrySet())
-		{
-				//En cas d'echec les stats négatives Chance,Agi,Intel,Force,Portee,Vita augmentes
-				int newstats = 0;
-				
-				if(entry.getKey() == 152 ||
-				   entry.getKey() == 154 ||
-				   entry.getKey() == 155 ||
-				   entry.getKey() == 157 ||
-				   entry.getKey() == 116 ||
-				   entry.getKey() == 153)
-				{
-					float a = (float)((entry.getValue()*poid)/100);
-					if(a < 1) a = 1;
-					float chute = (float)(entry.getValue()+a);
-					newstats = (int)Math.floor(chute);
-					//On limite la chute du négatif a sont maximum
-					if(newstats > Metier.getBaseMaxJet(obj.getTemplate().getID(), Integer.toHexString(entry.getKey())))
-					{
-						newstats = Metier.getBaseMaxJet(obj.getTemplate().getID(), Integer.toHexString(entry.getKey()));
-					}
-				}else
-				{
-				if(entry.getKey() == 127 || entry.getKey() == 101) continue;//PM, pas de négatif ainsi que PA
-				
-					float chute = (float)(entry.getValue()-((entry.getValue()*poid)/100));
-					newstats = (int)Math.floor(chute);
-				}
-				if(newstats < 1) continue;
-				String jet = "0d0+"+newstats;
-				if(!isFirst)stats.append(",");
-				stats.append(Integer.toHexString(entry.getKey())).append("#").append(Integer.toHexString(newstats)).append("#0#0#").append(jet);
-				isFirst = false;
-		}
-		
-		for(Entry<Integer,String> entry : obj.txtStats.entrySet())
-		{
-			if(!isFirst)stats.append(",");
-			stats.append(Integer.toHexString(entry.getKey())).append("#0#0#0#").append(entry.getValue());
-			isFirst = false;
-		}
-		return stats.toString();
-	}
-	
-	public Stats generateNewStatsFromTemplate(String statsTemplate,boolean useMax)
-	{
-		Stats itemStats = new Stats(false, null);
-		//Si stats Vides
-		if(statsTemplate.equals("") || statsTemplate == null) return itemStats;
-
-		String[] splitted = statsTemplate.split(",");
-		for(String s : splitted)
-		{	
-			String[] stats = s.split("#");
-			int statID = Integer.parseInt(stats[0],16);
-			boolean follow = true;
-			
-			for(int a : Constants.ARMES_EFFECT_IDS)//Si c'est un Effet Actif
-				if(a == statID)
-					follow = false;
-			if(!follow)continue;//Si c'était un effet Actif d'arme
-			
-			String jet = "";
-			int value  = 1;
-			try
-			{
-				jet = stats[4];
-				value = Formulas.getRandomJet(jet);
-				if(useMax)
-				{
-					try
-					{
-						//on prend le jet max
-						int min = Integer.parseInt(stats[1],16);
-						int max = Integer.parseInt(stats[2],16);
-						value = min;
-						if(max != 0)value = max;
-					}catch(Exception e){value = Formulas.getRandomJet(jet);};			
-				}
-			}catch(Exception e){};
-			itemStats.addOneStat(statID, value);
-		}
-		return itemStats;
-	}
-	
-	public void setStats (Stats SS)
-	{
-		Stats = SS;
-	}
-	
-	public static int getPoidOfActualItem(String statsTemplate)//Donne le poid de l'item actuel
+	public int getPoidOfActualItem()//Donne le poid de l'item actuel
 	{
 		int poid = 0;
 		int somme = 0;
-		String[] splitted = statsTemplate.split(",");
+		String[] splitted = parseStatsString().replace(";","#").split(",");
 		for(String s : splitted)
 		{
 			String[] stats = s.split("#");
@@ -659,21 +571,12 @@ public class Objet {
 		}
 		return somme;
 	}
-
-	public static int getPoidOfBaseItem(int i)//Donne le poid de l'item actuel
+	
+	public int getPoidOfBaseItem()//Donne le poid de base de l'item actuel
 	{
 		int poid = 0;
 		int somme = 0;
-		String NaturalStatsItem = "";
-		ResultSet RS;
-		try {
-			RS = SQLManager.executeQuery("SELECT statsTemplate from `item_template` WHERE `id`='"+i+"';",Ancestra.DB_NAME);
-			RS.next();
-				NaturalStatsItem = RS.getString("statsTemplate");
-		} catch (SQLException e) {
-			System.out.println("Erreur SQL : "+e.getMessage());
-			e.printStackTrace();
-		}
+		String NaturalStatsItem = getTemplate().getStrTemplate();
 
 		if(NaturalStatsItem == null || NaturalStatsItem.isEmpty()) return 0;
 		String[] splitted = NaturalStatsItem.split(",");
@@ -755,12 +658,12 @@ public class Objet {
 		return somme;
 	}
 	/* *********FM SYSTEM********* */
-
+	
 	public ArrayList<SpellEffect> getEffects()
 	{
 		return Effects;
 	}
-
+	
 	public ArrayList<SpellEffect> getCritEffects()
 	{
 		ArrayList<SpellEffect> effets = new ArrayList<SpellEffect>();
@@ -787,19 +690,20 @@ public class Objet {
 		}
 		return effets;
 	}
-
+	
 	public static Objet getCloneObjet(Objet obj,int qua)
 	{
-		Objet ob = new Objet(World.getNewItemGuid(), obj.getTemplate().getID(), qua,Constants.ITEM_POS_NO_EQUIPED, obj.getStats(), obj.getEffects());
+		Objet ob = new Objet(World.getNewItemGuid(), obj.getTemplate().getID(), qua,Constants.ITEM_POS_NO_EQUIPED, obj.getStats(), obj.getEffects(), obj.getSoulStat(), obj.getTxtStat());
 		return ob;
 	}
-
+	
 	public void clearStats()
 	{
 		//On vide l'item de tous ces effets
 		Stats = new Stats();
 		Effects.clear();
 		txtStats.clear();
+		SoulStats.clear();
 	}
 	
 }

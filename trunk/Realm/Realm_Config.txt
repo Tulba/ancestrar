@@ -19,3 +19,6 @@ REALM_DB_COMMIT = 3000
 
 # DEBUG (DEBUG = See on console)
 REALM_DEBUG = true
+
+# Abonnement
+USE_SUBSCRIBE = false

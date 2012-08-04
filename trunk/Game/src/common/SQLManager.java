@@ -184,6 +184,28 @@ public class SQLManager {
 		}
 	}
 	
+	public static void UPDATE_ACCOUNT_SUBSCRIBE(int guid, int SubScribe)
+	{
+		String baseQuery = "UPDATE accounts SET " +
+		"`subscription` = ?" +
+		" WHERE `guid` = ?;";
+		
+		try
+		{
+			PreparedStatement p = newTransact(baseQuery, realmCon);
+			
+			p.setInt(1, SubScribe);
+			p.setInt(2, guid);
+			
+			p.executeUpdate();
+			closePreparedStatement(p);
+		}catch(SQLException e)
+		{
+			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
 	public static void LOAD_ACCOUNTS_DATA()
 	{
 		try{
@@ -484,7 +506,8 @@ public class SQLManager {
 						RS.getInt("id"),
 						RS.getInt("area"),
 						RS.getInt("alignement"),
-						RS.getString("name")
+						RS.getString("name"),
+						(RS.getInt("subscribeNeed")==1?true:false)
 					);
 				World.addSubArea(SA);
 				//on ajoute la sous zone a la zone
@@ -1121,7 +1144,7 @@ public class SQLManager {
 					
 					p.setInt(1, obj.getQuantity());
 					p.setInt(2, obj.getPosition());
-					p.setString(3, obj.parseToSave());
+					p.setString(3, obj.parseStatsString());
 					p.setInt(4, Integer.parseInt(idStr));
 					
 					p.execute();
@@ -1140,7 +1163,7 @@ public class SQLManager {
 					
 					p.setInt(1, obj.getQuantity());
 					p.setInt(2, obj.getPosition());
-					p.setString(3, obj.parseToSave());
+					p.setString(3, obj.parseStatsString());
 					p.setInt(4, Integer.parseInt(idStr));
 					
 					p.execute();
@@ -1382,7 +1405,7 @@ public class SQLManager {
 		p.setInt(2,item.getTemplate().getID());
 		p.setInt(3,item.getQuantity());
 		p.setInt(4,item.getPosition());
-		p.setString(5,item.parseToSave());
+		p.setString(5,item.parseStatsString());
 		
 		p.execute();
 		closePreparedStatement(p);
@@ -1558,7 +1581,7 @@ public class SQLManager {
 			p.setInt(2, item.getTemplate().getID());
 			p.setInt(3, item.getQuantity());
 			p.setInt(4, item.getPosition());
-			p.setString(5,item.parseToSave());
+			p.setString(5,item.parseStatsString());
 			
 			p.execute();
 			closePreparedStatement(p);
@@ -2332,24 +2355,18 @@ public class SQLManager {
 		public static boolean persoExist(String name)
 		{
 			boolean exist = false;
-			PreparedStatement p;
-			String query = "SELECT COUNT(*) AS exist FROM personnages WHERE name LIKE ?;";
 			try
 			{
-				p = newTransact(query, gameCon);
-				p.setString(1, name);
-				ResultSet RS =  p.executeQuery();
+				ResultSet RS =  executeQuery("SELECT COUNT(*) AS exist FROM personnages WHERE name LIKE '"+name+"';", Ancestra.DB_NAME);
+				RS.next();
+				int nb = RS.getInt("exist");
 				
-				boolean found = RS.first();
-				
-				if(found)
+				if(nb > 0)
 				{
-					if(RS.getInt("exist") != 0)
-						exist = true;
+					exist = true;
 				}
 				
 				closeResultSet(RS);
-				closePreparedStatement(p);
 			}catch(SQLException e)
 			{
 				GameServer.addToLog("SQL ERROR: "+e.getMessage());
@@ -2697,36 +2714,6 @@ public class SQLManager {
 					e.printStackTrace();
 				}
 		}
-		/*
-		public static void SAVE_HDV_AVGPRICE()
-		{
-			String baseQuery = "UPDATE `item_template`"+
-								" SET sold = ?,avgPrice = ?"+
-								" WHERE id = ?;";
-			
-			PreparedStatement queries = null;
-			
-			try
-			{
-				queries = newTransact(baseQuery, gameCon);
-				
-				for(ObjTemplate curTemp : World.getObjTemplates())
-				{
-					if(curTemp.getSold() == 0)
-						continue;
-					
-					queries.setLong(1, curTemp.getSold());
-					queries.setInt(2, curTemp.getAvgPrice());
-					queries.setInt(3, curTemp.getID());
-					queries.executeUpdate();
-				}
-				closePreparedStatement(queries);
-			}catch(SQLException e)
-			{
-				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
-				e.printStackTrace();
-			}
-		}*/
 		public static void LOAD_ANIMATIONS()
 		{
 			try
@@ -2780,7 +2767,6 @@ public class SQLManager {
                 }
                 return nbr;
         }
-       
         public static void TRUNK_CODE(Personnage P, Trunk t, String packet)
         {      
                 PreparedStatement p;
@@ -2798,7 +2784,6 @@ public class SQLManager {
                         GameServer.addToLog("Game: Query: "+query);
                 }
         }
-       
         public static void UPDATE_TRUNK(Trunk t)
         {      
                 PreparedStatement p;
@@ -2817,7 +2802,6 @@ public class SQLManager {
                         GameServer.addToLog("Game: Query: "+query);
                 }
         }
-        
     	public static void ADD_ACCOUNT_DATA(int guid)
     	{
     		try{
@@ -2836,7 +2820,6 @@ public class SQLManager {
     			e.printStackTrace();
     		}
     	}
-    	
     	public static void UPDATE_BANK(Bank bk)
     	{
     		try{
@@ -2853,7 +2836,6 @@ public class SQLManager {
     			e.printStackTrace();
     		}
     	}
-    	
     	public static void UPDATE_FL_AND_EL(int guid, String FL, String EL)
     	{
     		try{
@@ -2863,6 +2845,203 @@ public class SQLManager {
     			p.setString(2, EL);
     			p.setInt(3, guid);
     			p.execute();
+    			closePreparedStatement(p);
+    		}catch(SQLException e)
+    		{
+    			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+    			e.printStackTrace();
+    		}
+    	}
+		public static int LOAD_PETS()
+		{
+			int i = 0;
+			try
+			{
+				ResultSet RS = executeQuery("SELECT * from pets;",Ancestra.DB_NAME);
+				while(RS.next())
+				{
+					i++;
+					World.addPets(new Pets(
+							RS.getInt("TemplateID"),
+							RS.getInt("Type"),
+							RS.getString("Gap"),
+							RS.getString("StatsUp"),
+							RS.getInt("Max"),
+							RS.getInt("Gain"),
+							RS.getInt("DeadTemplate")
+					));
+				}
+				closeResultSet(RS);
+				return i;
+			}catch(SQLException e)
+			{
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+				return i;
+			}
+		}
+		public static int LOAD_PETS_ENTRY()
+		{
+			int i = 0;
+			try
+			{
+				ResultSet RS = executeQuery("SELECT * from pets_data;",Ancestra.DB_NAME);
+				while(RS.next())
+				{
+					i++;
+					World.addPetsEntry(new PetsEntry(
+							RS.getInt("id"),
+							RS.getLong("LastEatDate"),
+							RS.getInt("quaEat"),
+							RS.getInt("pdv"),
+							RS.getInt("Corpulence"),
+							(RS.getInt("isEPO")==1?true:false)
+					));
+				}
+				closeResultSet(RS);
+				return i;
+			}catch(SQLException e)
+			{
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+				return i;
+			}
+		}
+    	public static void ADD_PETS_DATA(int id, long LastEatDate)
+    	{
+    		try{
+    			String bquery = "INSERT INTO pets_data(`id`, `LastEatDate`, `quaEat`, `pdv`, `Corpulence`, `isEPO`) VALUES (?,?,?,?,?,?);";
+    			PreparedStatement p = newTransact(bquery, gameCon);
+    			p.setInt(1, id);
+    			p.setLong(2, LastEatDate);
+    			p.setInt(3, 0);
+    			p.setInt(4, 10);
+    			p.setInt(5, 0);
+    			p.setInt(6, 0);
+    			p.execute();
+    			closePreparedStatement(p);
+    		}catch(SQLException e)
+    		{
+    			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+    			e.printStackTrace();
+    		}
+    	}
+        public static void UPDATE_PETS_DATA(PetsEntry pets)
+        {
+        	PreparedStatement p;
+        	String query = "UPDATE `pets_data` SET `LastEatDate`=?, `quaEat`=?, `pdv`=?, `Corpulence`=?, `isEPO`=? WHERE `id`=?";
+
+        	try {
+        		p = newTransact(query, gameCon);
+        		p.setLong(1, pets.get_LastEatDate());
+        		p.setInt(2, pets.get_quaEat());
+        		p.setInt(3, pets.get_PDV());
+        		p.setInt(4, pets.get_Corpulence());
+        		p.setInt(5, (pets.get_isEupeoh()==true?1:0));
+        		p.setInt(6, pets.get_ObjectID());
+                       
+        		p.execute();
+        		closePreparedStatement(p);
+        	} catch (SQLException e) {
+        		GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+        		GameServer.addToLog("Game: Query: "+query);
+        	}
+        }
+        public static void REMOVE_PETS_DATA(int id)
+        { 
+    		String baseQuery = "DELETE FROM pets_data WHERE id = ?;";
+    		try {
+    			PreparedStatement p = newTransact(baseQuery, gameCon);
+    			p.setInt(1, id);
+    			
+    			p.execute();
+    			closePreparedStatement(p);
+    		} catch (SQLException e) {
+    			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+    			GameServer.addToLog("Game: Query: "+baseQuery);
+    		}
+        }
+    	public static int LOAD_CHALLENGES()
+    	{
+    		int i = 0;
+    		try
+    		{
+    			ResultSet RS = executeQuery("SELECT * from challenge;",Ancestra.DB_NAME);
+    			while(RS.next())
+    			{
+    				StringBuilder chal = new StringBuilder();
+    				chal.append(RS.getInt("id")).append(",");
+    				chal.append(RS.getInt("gainXP")).append(",");
+    				chal.append(RS.getInt("gainDrop")).append(",");
+    				chal.append(RS.getInt("gainParMob")).append(",");
+    				chal.append(RS.getInt("conditions"));
+    				World.addChallenge(chal.toString());
+    				i++;
+    			}
+    			closeResultSet(RS);
+    			return i;
+    		}catch(SQLException e)
+    		{
+				GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+				return i;
+    		}
+    	}
+    	public static int LOAD_GIFTS()
+    	{
+    		int i = 0;
+    		try
+    		{
+    			ResultSet RS = executeQuery("SELECT * from gift;", Ancestra.DB_NAME);
+    			
+    			while(RS.next())
+    			{
+    				World.addGift(new Gift(
+    						RS.getInt("giftId"),
+    						RS.getString("title"),
+    						RS.getString("description"),
+    						RS.getString("pictureUrl"),
+    						RS.getString("items")));
+    				i++; 
+    			}
+    			closeResultSet(RS);
+    			return i;
+    		}
+    		catch(SQLException e)
+    		{
+    			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+				e.printStackTrace();
+    			return i;
+    		}
+    	}
+    	public static void DELETE_GIFT_BY_GIFTID(int guid)
+    	{
+    		String baseQuery = "DELETE FROM gift WHERE giftId = ?;";
+    		try
+    		{
+    			PreparedStatement p = newTransact(baseQuery, gameCon);
+    			p.setInt(1, guid);
+    			
+    			p.execute();
+    			closePreparedStatement(p);
+    		}catch(SQLException e)
+    		{
+    			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
+    			GameServer.addToLog("Game: Query: "+baseQuery);
+    		}
+    	}
+    	public static void DELETE_GIFT_BY_ACCOUNT(int guid)
+    	{
+    		String baseQuery = "UPDATE accounts SET `giftID`=? WHERE `guid`=?";
+    		
+    		try
+    		{
+    			PreparedStatement p = newTransact(baseQuery, realmCon);
+    			
+    			p.setString(1, "");
+    			p.setInt(2, guid);
+    			
+    			p.executeUpdate();
     			closePreparedStatement(p);
     		}catch(SQLException e)
     		{

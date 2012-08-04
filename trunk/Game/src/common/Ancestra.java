@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -41,10 +42,10 @@ public class Ancestra {
 	public static String DB_PASS;
 	public static String DB_NAME;
 	//Timer
-	public static long FLOOD_TIME = 60000;
-	public static int CONFIG_SAVE_TIME = 10*60*10000;
-	public static int CONFIG_LOAD_DELAY = 60000;
-	public static int CONFIG_RELOAD_MOB_DELAY = 18000000;
+	public static long FLOOD_TIME = 1*60000;
+	public static int CONFIG_SAVE_TIME = 30*60000;
+	public static int CONFIG_LOAD_DELAY = 10*60000;
+	public static int CONFIG_RELOAD_MOB_DELAY = 300*60000;
 	//Message
 	public static String CONFIG_MOTD = "";
 	public static String CONFIG_MOTD_COLOR = "";
@@ -78,10 +79,9 @@ public class Ancestra {
 	//Inactivité
 	public static int CONFIG_MAX_IDLE_TIME = 1800000;//En millisecondes
 	//HDV
-	public static ArrayList<Integer> NOTINHDV = new ArrayList<Integer>();//FIXME : FULLHDV command TODO
-	//UseCompactDATA
-	public static boolean CONFIG_SOCKET_USE_COMPACT_DATA = false;
-	public static int CONFIG_SOCKET_TIME_COMPACT_DATA = 200;
+	public static ArrayList<Integer> NOTINHDV = new ArrayList<Integer>();
+	//Abonnement
+	public static boolean USE_SUBSCRIBE = false;
 	/** ComServer **/
 	public static ComServer comServer;
 	public static int COM_PORT = -1;
@@ -105,6 +105,14 @@ public class Ancestra {
 			}
 		}
 		);
+		
+		try {
+	         System.setOut(new PrintStream(System.out, true, "IBM850"));
+		} catch (final UnsupportedEncodingException e)
+		{
+		         e.printStackTrace();
+		}
+		
 		System.out.println("==============================================================\n\n");
 		System.out.println(makeHeader());
 		System.out.println("==============================================================\n");
@@ -119,6 +127,8 @@ public class Ancestra {
 			System.out.println("Connexion echouee!");
 			System.exit(0);
 		}
+		System.out.println("Utilisation des monstres : "+CONFIG_USE_MOBS);
+		
 		System.out.println("\n");
 		System.out.println("Creation du Monde :");
 		long startTime = System.currentTimeMillis();
@@ -147,10 +157,6 @@ public class Ancestra {
 		gameServer = new GameServer(Ip);
 		System.out.println(" : GameServer OK!");
 		if(CONFIG_USE_IP) System.out.println("Ip du serveur "+IP+" crypt "+GAMESERVER_IP);
-		
-		System.out.print("Creation du FlushTimer");
-		SendManager.FlushTimer().start();
-		System.out.println(" : FlushTimer OK!");
 		
 		System.out.print("Creation du ComServer sur le port "+Ancestra.COM_PORT);
 		comServer = new ComServer();
@@ -234,10 +240,10 @@ public class Ancestra {
 					Ancestra.CONFIG_PLAYER_LIMIT = Integer.parseInt(value);
 				}else if (param.equalsIgnoreCase("LOAD_ACTION_DELAY"))
 				{
-					Ancestra.CONFIG_LOAD_DELAY = (Integer.parseInt(value) * 1000);
+					Ancestra.CONFIG_LOAD_DELAY = (Integer.parseInt(value)*60000);
 				}else if(param.equalsIgnoreCase("SAVE_TIME"))
 				{
-					Ancestra.CONFIG_SAVE_TIME = Integer.parseInt(value)*60*1000000000;
+					Ancestra.CONFIG_SAVE_TIME = (Integer.parseInt(value)*60000);
 				}else if(param.equalsIgnoreCase("DB_HOST"))
 				{
 					Ancestra.DB_HOST = value;
@@ -336,7 +342,10 @@ public class Ancestra {
 					}
 				}else if (param.equalsIgnoreCase("ARENA_TIMER"))
 				{
-					Ancestra.CONFIG_ARENA_TIMER = Integer.parseInt(value);
+					Ancestra.CONFIG_ARENA_TIMER = (Integer.parseInt(value)*60000);
+				}else if (param.equalsIgnoreCase("USE_SUBSCRIBE"))
+				{
+					Ancestra.USE_SUBSCRIBE = value.equalsIgnoreCase("true");
 				}
 			}
 			if(REALM_IP == null || REALM_DB_HOST  == null || REALM_DB_NAME  == null || REALM_DB_USER  == null || REALM_DB_PASS  == null ||
@@ -450,7 +459,7 @@ public class Ancestra {
 	{
 		StringBuilder mess = new StringBuilder();
 		mess.append("Ancestra-R Game v"+Constants.SERVER_VERSION);
-		mess.append("\nPar DeathDown pour Dofus "+Constants.CLIENT_VERSION);
+		mess.append("\nPar DeathDown & DeeZ pour Dofus "+Constants.CLIENT_VERSION);
 		mess.append("\nThanks Diabu.");
 		mess.append("\nhttp://sourceforge.net/projects/ancestrar/\n\n");
 		return mess.toString();
@@ -458,12 +467,12 @@ public class Ancestra {
 	
 	public static void try_ComServer()
 	{
-		if(com_Try == 0)
+		if(com_Try == 0 && isRunning)
 		{
 			try {
 				System.out.print("Creation d'une nouvelle connexion avec le Realm (ComServer) ... ");
 				com_Try = 1;
-				while(Ancestra.com_Running == false)
+				while(Ancestra.com_Running == false && isRunning)
 				{
 					comServer = new ComServer();
 					Thread.sleep(10000);

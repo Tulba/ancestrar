@@ -15,8 +15,11 @@ import common.World.ItemSet;
 import objects.Action;
 import objects.Carte;
 import objects.Compte;
+import objects.Hdv;
+import objects.HdvEntry;
 import objects.NPC_tmpl;
 import objects.Objet;
+import objects.Percepteur;
 import objects.Personnage;
 import objects.Carte.MountPark;
 import objects.Metier.StatsMetier;
@@ -25,6 +28,7 @@ import objects.NPC_tmpl.NPC;
 import objects.NPC_tmpl.NPC_question;
 import objects.NPC_tmpl.NPC_reponse;
 import objects.Objet.ObjTemplate;
+import objects.PetsEntry;
 
 
 public class Commands {
@@ -145,7 +149,7 @@ public class Commands {
 		}if(command.equalsIgnoreCase("MAPINFO"))
 		{
 			String mess = 	"==========\n"
-						+	"Liste des Npcs de la carte:";
+						+	"Liste des Npcs de la carte: (dans l'ordre : ID, TemplateID, CellID, InitQuestionID)";
 			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
 			Carte map = _perso.get_curCarte();
 			for(Entry<Integer,NPC> entry : map.get_npcs().entrySet())
@@ -153,11 +157,19 @@ public class Commands {
 				mess = entry.getKey()+" "+entry.getValue().get_template().get_id()+" "+entry.getValue().get_cellID()+" "+entry.getValue().get_template().get_initQuestionID();
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
 			}
-			mess = "Liste des groupes de monstres:";
+			mess = "Liste des groupes de monstres: (dans l'ordre : ID, CellID, Alignement, Size)";
 			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
 			for(Entry<Integer,MobGroup> entry : map.getMobGroups().entrySet())
 			{
 				mess = entry.getKey()+" "+entry.getValue().getCellID()+" "+entry.getValue().getAlignement()+" "+entry.getValue().getSize();
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
+			}
+			Percepteur p = Percepteur.GetPercoByMapID(map.get_id());
+			if(p != null)
+			{
+				mess = "Percepteur sur la carte: (dans l'ordre : ID, CellID, GuildID)";
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
+				mess = p.getGuid()+" "+p.get_cellID()+" "+p.get_guildID();
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, mess);
 			}
 			mess = "==========";
@@ -824,7 +836,8 @@ public class Commands {
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
 				return;
 			}
-			target.addHonor(honor);
+			if(honor < 0) target.remHonor(honor);
+			else target.addHonor(honor);
 			SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,str);
 			
 		}else
@@ -1194,7 +1207,7 @@ public class Commands {
 			SocketManager.GAME_SEND_Ow_PACKET(_perso);
 		}else 
 		if (command.equalsIgnoreCase("SPAWN"))
-		{			
+		{
 			String Mob = null;
 			try
 			{
@@ -1806,8 +1819,424 @@ public class Commands {
 				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out, "Le joueur a ete kick.");
 			}	
 		}else
+		if(command.equalsIgnoreCase("FULLHDV"))
+		{
+			int numb = 1;
+			try
+			{
+				numb = Integer.parseInt(infos[1]);
+			}catch(Exception e){};
+			fullHdv(numb);
+		}else
+		if(command.equalsIgnoreCase("RES"))
+		{
+			int objID = 1;
+			try
+			{
+				objID = Integer.parseInt(infos[1]);
+			}catch(Exception e){};
+			PetsEntry p = World.get_PetsEntry(objID);
+			if(p == null) return;
+			p.resurrection();
+			SocketManager.GAME_SEND_UPDATE_OBJECT_DISPLAY_PACKET(_perso, World.getObjet(objID));
+		}if(command.equalsIgnoreCase("SENDME"))
+		{
+			String str = null;
+			try
+			{
+				str = infos[1];
+			}catch(Exception e){};
+			SocketManager.send(_perso, str);
+		}else
 		{
 			this.commandGmThree(command, infos, msg);
 		}
+	}
+	
+	private void fullHdv(int ofEachTemplate)
+	{
+		SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"Démarrage du remplissage!");
+		
+		Objet objet = null;
+		byte amount = 0;
+		int rAmount = 0;
+		int hdv = 0;
+		
+		int lastSend = 0;
+		long time1 = System.currentTimeMillis();//TIME
+		for (ObjTemplate curTemp : World.getObjTemplates())//Boucler dans les template
+		{
+			try
+			{
+				if(Ancestra.NOTINHDV.contains(curTemp.getID())) continue;
+				
+				for (int j = 0; j < ofEachTemplate; j++)//Ajouter plusieur fois le template
+				{
+					if(curTemp.getType() == 85) break;
+					
+					objet = curTemp.createNewItem(1, false);
+					hdv = getHdv(objet.getTemplate().getType());//Obtient la map (liée a l'HDV) correspondant au template de l'item
+					
+					if(hdv < 0) break;
+					
+					Hdv curHdv = World.getHdv(hdv);
+					
+					amount = (byte) Formulas.getRandomValue(1, 3);
+					rAmount = (int)(Math.pow(10,amount)/10);
+					objet.setQuantity(rAmount);
+					HdvEntry toAdd = new HdvEntry(objet.getGuid(), objet, curHdv.get_mapID(), -1,  calculPrice(objet, rAmount), rAmount);//Créer l'entry
+					World.addHdvItem(-1, curHdv.get_mapID(), toAdd);//Ajoute l'entry dans le world
+					World.addObjet(objet, false);
+				}
+			}catch (Exception e)
+			{
+				continue;
+			}
+			
+			if((System.currentTimeMillis() - time1)/1000 != lastSend
+				&& (System.currentTimeMillis() - time1)/1000 % 3 == 0)
+			{
+				lastSend = (int) ((System.currentTimeMillis() - time1)/1000);
+				SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,(System.currentTimeMillis() - time1)/1000 + "sec Template: "+curTemp.getID());
+			}
+		}
+		SocketManager.GAME_SEND_CONSOLE_MESSAGE_PACKET(_out,"Remplissage fini en "+(System.currentTimeMillis() - time1) + "ms");
+		World.saveAll(null);
+		SocketManager.GAME_SEND_MESSAGE_TO_ALL("HDV remplis!",Ancestra.CONFIG_MOTD_COLOR);
+	}
+	
+	private int getHdv(int type)
+	{
+		int rand = Formulas.getRandomValue(1, 4);
+		int map = -1;
+		
+		switch(type)
+		{
+			case 12:
+			case 14: 
+			case 26: 
+			case 43: 
+			case 44: 
+			case 45: 
+			case 66: 
+			case 70: 
+			case 71: 
+			case 86:
+				if(rand == 1)
+				{
+					map = 4271;
+				}else
+				if(rand == 2)
+				{
+					map = 4607;
+				}else
+				{
+					map = 7516;
+				}
+				return map;
+			case 1:
+			case 9:
+				if(rand == 1)
+				{
+					map = 4216;
+				}else
+				if(rand == 2)
+				{
+					map = 4622;
+				}else
+				{
+					map = 7514;
+				}
+				return map;
+			case 18: 
+			case 72: 
+			case 77: 
+			case 90: 
+			case 97: 
+			case 113: 
+			case 116:
+				if(rand == 1)
+				{
+					map = 8759;
+				}else
+				{
+					map = 8753;
+				}
+				return map;
+			case 63:
+			case 64:
+			case 69:
+				if(rand == 1)
+				{
+					map = 4287;
+				}else
+				if(rand == 2)
+				{
+					map = 4595;
+				}else
+				if(rand == 3)
+				{
+					map = 7515;
+				}else
+				{
+					map = 7350;
+				}
+				return map;
+			case 33:
+			case 42:
+				if(rand == 1)
+				{
+					map = 2221;
+				}else
+				if(rand == 2)
+				{
+					map = 4630;
+				}else
+				{
+					map = 7510;
+				}
+				return map;
+			case 84: 
+			case 93: 
+			case 112: 
+			case 114:
+				if(rand == 1)
+				{
+					map = 4232;
+				}else
+				if(rand == 2)
+				{
+					map = 4627;
+				}else
+				{
+					map = 12262;
+				}
+				return map;
+			case 38: 
+			case 95: 
+			case 96: 
+			case 98: 
+			case 108:
+				if(rand == 1)
+				{
+					map = 4178;
+				}else
+				if(rand == 2)
+				{
+					map = 5112;
+				}else
+				{
+					map = 7289;
+				}
+				return map;
+			case 10:
+			case 11:
+				if(rand == 1)
+				{
+					map = 4183;
+				}else
+				if(rand == 2)
+				{
+					map = 4562;
+				}else
+				{
+					map = 7602;
+				}
+				return map;
+			case 13: 
+			case 25: 
+			case 73: 
+			case 75: 
+			case 76:
+				if(rand == 1)
+				{
+					map = 8760;
+				}else
+				{
+					map = 8754;
+				}
+				return map;
+			case 5: 
+			case 6: 
+			case 7: 
+			case 8: 
+			case 19: 
+			case 20: 
+			case 21: 
+			case 22:
+				if(rand == 1)
+				{
+					map = 4098;
+				}else
+				if(rand == 2)
+				{
+					map = 5317;
+				}else
+				{
+					map = 7511;
+				}
+				return map;
+			case 39: 
+			case 40: 
+			case 50: 
+			case 51: 
+			case 88:
+				if(rand == 1)
+				{
+					map = 4179;
+				}else
+				if(rand == 2)
+				{
+					map = 5311;
+				}else
+				{
+					map = 7443;
+				}
+				return map;
+			case 87:
+				if(rand == 1)
+				{
+					map = 6159;
+				}else
+				{
+					map = 6167;
+				}
+				return map;
+			case 34:
+			case 52:
+			case 60:
+				if(rand == 1)
+				{
+					map = 4299;
+				}else
+				if(rand == 2)
+				{
+					map = 4629;
+				}else
+				{
+					map = 7397;
+				}
+				return map;
+			case 41:
+			case 49:
+			case 62:
+				if(rand == 1)
+				{
+					map = 4247;
+				}else
+				if(rand == 2)
+				{
+					map = 4615;
+				}else
+				if(rand == 3)
+				{
+					map = 7501;
+				}else
+				{
+					map = 7348;
+				}
+				return map;
+			case 15: 
+			case 35: 
+			case 36: 
+			case 46: 
+			case 47: 
+			case 48: 
+			case 53: 
+			case 54: 
+			case 55: 
+			case 56: 
+			case 57: 
+			case 58: 
+			case 59: 
+			case 65: 
+			case 68: 
+			case 103: 
+			case 104: 
+			case 105: 
+			case 106: 
+			case 107: 
+			case 109: 
+			case 110: 
+			case 111:
+				if(rand == 1)
+				{
+					map = 4262;
+				}else
+				if(rand == 2)
+				{
+					map = 4646;
+				}else
+				{
+					map = 7413;
+				}
+				return map;
+			case 78:
+				if(rand == 1)
+				{
+					map = 8757;
+				}else
+				{
+					map = 8756;
+				}
+				return map;
+			case 2:
+			case 3:
+			case 4:
+				if(rand == 1)
+				{
+					map = 4174;
+				}else
+				if(rand == 2)
+				{
+					map = 4618;
+				}else
+				{
+					map = 7512;
+				}
+				return map;
+			case 16:
+			case 17:
+			case 81:
+				if(rand == 1)
+				{
+					map = 4172;
+				}else
+				if(rand == 2)
+				{
+					map = 4588;
+				}else
+				{
+					map = 7513;
+				}
+				return map;
+			case 83:
+				if(rand == 1)
+				{
+					map = 10129;
+				}else
+				{
+					map = 8482;
+				}
+				return map;
+			case 82:
+				return 8039;
+			default:
+				return -1;
+		}
+	}
+	
+	private int calculPrice(Objet obj, int amount)
+	{
+		int stats = 0;
+		
+		for(int curStat : obj.getStats().getMap().values())
+		{
+			stats += curStat;
+		}
+		if(stats > 0)
+			return (int) (((Math.cbrt(stats) * Math.pow(obj.getTemplate().getLevel(), 2)) * 10 + Formulas.getRandomValue(1, obj.getTemplate().getLevel()*100)) * amount);
+		else
+			return (int) ((Math.pow(obj.getTemplate().getLevel(),2) * 10 + Formulas.getRandomValue(1, obj.getTemplate().getLevel()*100))*amount);
 	}
 }

@@ -15,13 +15,14 @@ public class Account {
 	private String _reponse;
 	private boolean _banned = false;
 	private int _gmLvl = 0;
-	private int _subscriber = 0;//Time en minute
+	private int _subscriber = 0;//Timestamp en secondes
 	private String _curIP = "";
 	private String _lastConnectionDate = "";
+	private String _giftID = "";
 	
 	private RealmThread _realmThread = null;
 	
-	public Account(int aGUID,String aName,String aPass, String aPseudo,String aQuestion,String aReponse,int aGmLvl, int subscriber, boolean aBanned, String aLastIp, String aLastConnectionDate)
+	public Account(int aGUID,String aName,String aPass, String aPseudo,String aQuestion,String aReponse,int aGmLvl, int asubscriber, boolean aBanned, String aLastIp, String aLastConnectionDate, String agiftID)
 	{
 		this._GUID 					= aGUID;
 		this._name 					= aName;
@@ -30,10 +31,11 @@ public class Account {
 		this._question				= aQuestion;
 		this._reponse				= aReponse;
 		this._gmLvl					= aGmLvl;
-		this._subscriber			= subscriber;
+		this._subscriber			= asubscriber;
 		this._banned				= aBanned;
 		this._lastIP				= aLastIp;
 		this._lastConnectionDate 	= aLastConnectionDate;
+		this._giftID 				= agiftID;
 	}
 	
 	public void setCurIP(String ip)
@@ -96,7 +98,32 @@ public class Account {
 		return _pseudo;
 	}
 	
-	public int get_subscriber() 
+	public int get_subscriberTime()//Renvoi le temps restant
+	{
+		if(!Ancestra.USE_SUBSCRIBE) return 525600;
+		if(_subscriber == 0)
+		{
+			//Si non abo ou abo dépasser
+			return 0;
+		}else
+		if((System.currentTimeMillis()/1000) > _subscriber)
+		{
+			//Il faut désabonner le compte
+			_subscriber = 0;
+			SQLManager.UPDATE_ACCOUNT(_curIP, true, 0, get_GUID());
+			return 0;
+		}else
+		{
+			//Temps restant
+			int TimeRemaining = (int) (_subscriber - (System.currentTimeMillis()/1000));
+			//Conversion en minute
+			int TimeRemMinute = (int) Math.floor(TimeRemaining/60);
+			
+			return TimeRemMinute;
+		}
+	}
+	
+	public int get_subscriber()//Renvoi la date limite d'abonnement TimeStamp
 	{
 		return _subscriber;
 	}
@@ -139,5 +166,15 @@ public class Account {
 	public void setGmLvl(int gmLvl)
 	{
 		_gmLvl = gmLvl;
+	}
+
+	public String get_giftID()
+	{
+		return _giftID;
+	}
+
+	public void set_giftID(String _giftID)
+	{
+		this._giftID = _giftID;
 	}
 }

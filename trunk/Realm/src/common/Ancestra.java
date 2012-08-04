@@ -16,7 +16,7 @@ import realm.RealmServer;
 public class Ancestra
 {
 	private static final String CONFIG = "Realm_Config.txt";
-	public static String REALM_VERSION = "0.2";
+	public static String REALM_VERSION = "0.3";
 	public static int REALM_PORT = -1;
 	public static int REALM_COM_PORT = -1;
 	public static String REALM_DB_HOST = null;
@@ -29,6 +29,7 @@ public class Ancestra
 	public static String CLIENT_VERSION = "1.29.1";
 	public static boolean isInit = false;
 	public static boolean isRunning = false;
+	public static boolean USE_SUBSCRIBE = false;
 	/** LOGS **/
 	public static BufferedWriter Log_Realm;
 	public static BufferedWriter Log_Com;
@@ -138,6 +139,10 @@ public class Ancestra
 			if(param.equalsIgnoreCase("REALM_COM_PORT"))
 			{
 				Ancestra.REALM_COM_PORT = Integer.parseInt(value);
+			}else
+			if(param.equalsIgnoreCase("USE_SUBSCRIBE"))
+			{
+				Ancestra.USE_SUBSCRIBE = (value.equalsIgnoreCase("true") ? true : false);
 			}
 			}
 			if (REALM_DB_NAME == null || REALM_DB_HOST == null || REALM_DB_PASSWORD == null || REALM_DB_USER == null || REALM_PORT == -1 || REALM_COM_PORT == -1) 
