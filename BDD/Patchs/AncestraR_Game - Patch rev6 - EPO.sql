@@ -1,4 +1,4 @@
-DELETE FROM `ancestra_game`.`use_item_actions` WHERE `use_item_actions`.`template` = 9380 AND `use_item_actions`.`type` = 27 AND `use_item_actions`.`args` = \'\' LIMIT 1;
+DELETE FROM `ancestra_game`.`use_item_actions` WHERE `use_item_actions`.`template` = 9380 AND `use_item_actions`.`type` = 27 AND `use_item_actions`.`args` = '' LIMIT 1;
 INSERT INTO `ancestra_game`.`use_item_actions` (`template`, `type`, `args`) VALUES ('8985', '116', ''), ('8986', '116', ''), ('8987', '116', ''), ('8988', '116', '');
 INSERT INTO `ancestra_game`.`use_item_actions` (`template`, `type`, `args`) VALUES ('8985', '5', '8985,-1'), ('8986', '5', '8986,-1'), ('8987', '5', '8987,-1'), ('8988', '5', '8988,-1');
 /* Oublier les fées :/ */
