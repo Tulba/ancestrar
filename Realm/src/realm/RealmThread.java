@@ -286,6 +286,12 @@ public class RealmThread implements Runnable {
 				System.out.println("RealmThreadOUT : Connexion to the server with the following ip:" +ip2);
 				Ancestra.addToRealmLog("RealmThreadOUT : Connexion to the server with the following ip:" +ip2);
 				SocketManager.SEND_GAME_SERVER_IP(_out, _compte.get_GUID(), number);
+			}else
+			if(packet.substring(0, 2).equals("AF"))
+			{
+				//TODO
+				@SuppressWarnings("unused")
+				String name = packet.substring(2);
 			}
 		break;
 		}

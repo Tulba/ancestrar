@@ -1,3 +1,6 @@
+[14/08/2012]
+- SQLManager : Reconnection automatique du Realm a la BDD en cas de perte de connexion.
+
 [22/07/2012]
 - [...] : Correction des bugs de connexion suite aux cadeaux [DeeZ].
 

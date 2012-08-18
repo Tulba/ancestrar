@@ -34,7 +34,7 @@ public class GameThread implements Runnable
 	private Compte _compte;
 	private Personnage _perso;
 	private Map<Integer,GameAction> _actions = new TreeMap<Integer,GameAction>();
-	private long _timeLastTradeMsg = 0, _timeLastRecrutmentMsg = 0, _timeLastsave = 0, _timeLastAlignMsg = 0;
+	private long _timeLastTradeMsg = 0, _timeLastRecrutmentMsg = 0, _timeLastsave = 0, _timeLastAlignMsg = 0, _timeLastIncarnamMsg = 0;
 	
 	private Commands command;
 	
@@ -3666,6 +3666,23 @@ public class GameThread implements Runnable
 				if(_perso.get_compte().get_gmLvl() ==0)return;
 				msg = packet.split("\\|",2)[1];
 				SocketManager.GAME_SEND_cMK_PACKET_TO_ADMIN("@", _perso.get_GUID(), _perso.get_name(), msg);
+			break;
+			case '¤'://Canal Admin (Console?) IG : /m
+				//TODO
+			break;
+			case '^':// Canal Incarnam 
+				msg = packet.split("\\|", 2)[1];
+				long x;
+				if((x = System.currentTimeMillis() - _timeLastIncarnamMsg) < Ancestra.FLOOD_TIME)
+				{ 
+					x = (Ancestra.FLOOD_TIME - x)/1000;//Calculamos a diferença em segundos
+					SocketManager.GAME_SEND_Im_PACKET(_perso, "0115;"+((int)Math.ceil(x)+1));
+					return;
+				}
+				if(_perso.get_curCarte().getSubArea().get_area().get_id() != 45) return;
+				_timeLastIncarnamMsg = System.currentTimeMillis();
+				msg = packet.split("\\|",2)[1];
+				SocketManager.GAME_SEND_cMK_PACKET_TO_INCARNAM(_perso, "^", _perso.get_GUID(), _perso.get_name(), msg);
 			break;
 			case '?'://Canal recrutement
 				if(!_perso.get_canaux().contains(packet.charAt(2)+""))return;

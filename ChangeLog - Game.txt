@@ -1,3 +1,27 @@
+[16/08/2012]
+- GameThread : Ajout du canal Incarnam (/i).
+- Fight : Débug du drop objet/kamas du coffre des énus.
+
+[10/08/2012]
+- SpellEffect : Correction de applyEffect_77 (Vol de PM).
+- SpellEffect : Morrir pendant sont tour de jeu passe automatiquement le tour.
+
+[08/08/2012]
+- Fight/Challenges : Correction d'un NullPointerException lors de l'abandon du combat.
+
+[06/08/2012]
+- IA : Ajout de l'IA du sac animé.
+- IA : Ajout de l'influence du sac animé pour lancé Sacrifice.
+- IA : Ajout de l'influence de l'arbre de vie.
+- SocketManager/Fight : Lors d'un echec conditions on est plus obligé de passé son tour.
+- Fight : Lorsqu'un combattant meurt et qu'il avait donner des buffs à des combattantants les buffs sont retiré.
+- Personnage : On peut désormais voir la couleur des ailes suivant le niveau du joueur.
+- Personnage : On peut désormais voir les ailes troués grâce au point de déshonneur.
+
+[05/08/2012]
+- Fight : Correction du calcul de la prospection pour les challenges.
+- Fight : Correction du Drop.
+
 [03/08/2012]
 - GameThread : Correction de la fermeture du panneaux d'invitation en groupe si l'invité repond Non.
 

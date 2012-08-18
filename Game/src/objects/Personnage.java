@@ -1003,10 +1003,19 @@ public class Personnage {
 			str.append(_GUID).append(";").append(_name).append(";").append(_classe);
 			str.append((this.get_title()>0?(","+this.get_title()+";"):(";")));
 			str.append(_gfxID).append("^").append(_size).append(";");//gfxID^size
-			str.append(_sexe).append(";").append(_align).append(",");//1,0,0,4055064
-			str.append("0,");//FIXME:?
+			str.append(_sexe).append(";");
+			str.append(_align).append(",");
+			str.append("0").append(",");//FIXME:?
 			str.append((_showWings?getGrade():"0")).append(",");
-			str.append(_lvl).append(";");
+			str.append(_lvl+_GUID);
+			if(_showWings && _deshonor > 0)
+			{
+				str.append(",");
+				str.append(_deshonor>0?1:0).append(';');
+			}else
+			{
+				str.append(";");
+			}
 			str.append((_color1==-1?"-1":Integer.toHexString(_color1))).append(";");
 			str.append((_color2==-1?"-1":Integer.toHexString(_color2))).append(";");
 			str.append((_color3==-1?"-1":Integer.toHexString(_color3))).append(";");
@@ -1059,6 +1068,7 @@ public class Personnage {
 		StringBuilder ASData = new StringBuilder();
 		ASData.append("As").append(xpString(",")).append("|");
 		ASData.append(_kamas).append("|").append(_capital).append("|").append(_spellPts).append("|");
+		//FIXME : start fight wing like no deshonor
 		ASData.append(_align).append("~").append(_align).append(",").append(_aLvl).append(",").append(getGrade()).append(",").append(_honor).append(",").append(_deshonor+",").append((_showWings?"1":"0")).append("|");
 		
 		int pdv = get_PDV();
@@ -2640,6 +2650,19 @@ public class Personnage {
 		{
 			stats.addOneStat(entry.getValue().getEffectID(), entry.getValue().getValue());
 		}
+		if(_fight != null)
+		{
+			Fighter fighter = _fight.getFighterByPerso(this);
+			if(fighter != null)
+			{
+				ArrayList<SpellEffect> fightBuffs = new ArrayList<SpellEffect>();
+				fightBuffs.addAll(fighter.get_fightBuff());
+				for(SpellEffect buff : fightBuffs)
+				{
+					stats.addOneStat(buff.getEffectID(), buff.getValue());
+				}
+			}
+		}
 		return stats;
 	}
 	/** Stats **/
@@ -3929,6 +3952,11 @@ public class Personnage {
 	public void set_hasEndFight(boolean hasEndFight)
 	{
 		this._hasEndFight = hasEndFight;
+	}
+	
+	public int get_deshonor()
+	{
+		return _deshonor;
 	}
 	
 	public void resetVars()

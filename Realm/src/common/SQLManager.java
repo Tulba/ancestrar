@@ -77,11 +77,13 @@ public class SQLManager
 			
 			
 			othCon.commit();
+			
 		}catch(SQLException e)
 		{
 			System.out.println("SQL : "+e.getMessage());
 			Ancestra.addToErrorLog("SQL : "+e.getMessage());
 			e.printStackTrace();
+			commitTransacts();
 		}
 	}
 	
@@ -190,8 +192,15 @@ public class SQLManager
 			closePreparedStatement(p);
 		}catch(SQLException e)
 		{
-			System.out.println("SQL : "+e.getMessage());
 			Ancestra.addToErrorLog("SQL : "+e.getMessage());
+			try {
+				if(othCon.isClosed()) setUpConnexion();
+				if(!othCon.isClosed()) UPDATE_ACCOUNT(ip, UpdateSub, Sub, guid);
+			} catch (SQLException e1) {
+				System.out.println("SQL : "+e.getMessage());
+				Ancestra.addToErrorLog("SQL : "+e.getMessage());
+				e1.printStackTrace();
+			}
 		}
 	}
 	
@@ -208,6 +217,7 @@ public class SQLManager
 		{
 			System.out.println("SQL : "+e.getMessage());
 			Ancestra.addToErrorLog("SQL : "+e.getMessage());
+			e.printStackTrace();
 		}
 	}
 	
@@ -223,8 +233,15 @@ public class SQLManager
 			closeResultSet(RS);
 		}catch(SQLException e)
 		{
-			System.out.println("SQL : "+e.getMessage());
 			Ancestra.addToErrorLog("SQL : "+e.getMessage());
+			try {
+				if(othCon.isClosed()) setUpConnexion();
+				if(!othCon.isClosed()) getNumberPersosOnThisServer(guid,ID);
+			} catch (SQLException e1) {
+				System.out.println("SQL : "+e.getMessage());
+				Ancestra.addToErrorLog("SQL : "+e.getMessage());
+				e1.printStackTrace();
+			}
 		}
 		return a;
 	}
@@ -255,9 +272,15 @@ public class SQLManager
 			closeResultSet(RS);
 		}catch(SQLException e)
 		{
-			System.out.println("SQL : "+e.getMessage());
 			Ancestra.addToErrorLog("SQL : "+e.getMessage());
-			e.printStackTrace();
+			try {
+				if(othCon.isClosed()) setUpConnexion();
+				if(!othCon.isClosed()) LOAD_ACCOUNT_BY_USER(user);
+			} catch (SQLException e1) {
+				System.out.println("SQL : "+e.getMessage());
+				Ancestra.addToErrorLog("SQL : "+e.getMessage());
+				e1.printStackTrace();
+			}
 		}
 	}
 	
@@ -326,9 +349,15 @@ public class SQLManager
 			closePreparedStatement(p);
 		}catch(SQLException e)
 		{
-			System.out.println("SQL : "+e.getMessage());
 			Ancestra.addToErrorLog("SQL : "+e.getMessage());
-			e.printStackTrace();
+			try {
+				if(othCon.isClosed()) setUpConnexion();
+				if(!othCon.isClosed()) ADD_BANIP(ip);
+			} catch (SQLException e1) {
+				System.out.println("SQL : "+e.getMessage());
+				Ancestra.addToErrorLog("SQL : "+e.getMessage());
+				e1.printStackTrace();
+			}
 		}
 	}
 }
