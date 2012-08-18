@@ -4514,7 +4514,6 @@ public class GameThread implements Runnable
 				
 				_compte.removeGift(giftId);
 				
-				SQLManager.DELETE_GIFT_BY_GIFTID(giftId);
 				SQLManager.DELETE_GIFT_BY_ACCOUNT(giftId);
 				
 				SocketManager.GAME_SEND_ATTRIBUTE_GIFT_SUCCESS(_out);
