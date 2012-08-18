@@ -323,7 +323,7 @@ public class SpellEffect
 				for (Entry<Integer, Challenge> c : fight.get_challenges().entrySet())
 				{
 					if (c.getValue() == null) continue;
-					c.getValue().onFighters_attacked(cibles , caster, effectID);
+					c.getValue().onFighters_attacked(cibles, caster, effectID);
 				}
 			}
 			
@@ -734,7 +734,7 @@ public class SpellEffect
 			if(!cell.isWalkable(true) || cell.getFighters().size() >0)return;
 			Fighter target = caster.get_isHolding();
 			if(target == null)return;
-			if(target.isState(6))return;//Stabilisation
+			//if(target.isState(6))return;//Stabilisation
 			
 			//on ajoute le porté a sa case
 			target.set_fightCell(cell);
@@ -916,8 +916,12 @@ public class SpellEffect
 				target.removePDV(finalDommage);
 				finalDommage = -(finalDommage);
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				if(target.getPDV() <=0)
+				if(target.getPDV() <= 0)
+				{
 					fight.onFighterDie(target, target);
+					if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+					else if(target.canPlay()) target.setCanPlay(false);
+				}
 			}
 		}
 
@@ -1933,13 +1937,13 @@ public class SpellEffect
 				target.addBuff(Constants.STATS_REM_PM, val, turns,0, true, spell,args,caster);
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7,Constants.STATS_REM_PM, caster.getGUID()+"", target.getGUID()+",-"+val+","+turns);
 				num += val;
-				//Gain de PM pendant le tour de jeu
-				if(target.canPlay() && target == caster) target.setCurPM(fight, target.getPM()+val);
 			}
 			if(num != 0)
 			{
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7,Constants.STATS_ADD_PM, caster.getGUID()+"", caster.getGUID()+","+num+","+turns);
-				caster.addBuff(Constants.STATS_ADD_PM, num, 1, 0, true, spell,args,caster);
+				caster.addBuff(Constants.STATS_ADD_PM, num, 0, 0, true, spell,args,caster);
+				//Gain de PM pendant le tour de jeu
+				if(caster.canPlay()) caster.setCurPM(fight, caster.getPM()+num);
 			}
 		}
 
@@ -2269,8 +2273,12 @@ public class SpellEffect
 					caster.removePDV(-heal);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
 					
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -2375,9 +2383,12 @@ public class SpellEffect
 						{
 							target.removePDV(finalDommage);
 							SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+",-"+finalDommage);
-							if(target.getPDV() <=0)
+							if(target.getPDV() <= 0)
 							{
+								
 								fight.onFighterDie(target, target);
+								if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+								else if(target.canPlay()) target.setCanPlay(false);
 								return;
 							}
 						}
@@ -2423,18 +2434,23 @@ public class SpellEffect
 					int dmg = Formulas.getRandomJet(args.split(";")[5]);
 					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_EAU, dmg,false,true,spell);
 				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				int heal = (int)(-finalDommage)/2;
-				if((caster.getPDV()+heal) > caster.getPDVMAX())
-					heal = caster.getPDVMAX()-caster.getPDV();
-				caster.removePDV(-heal);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					int heal = (int)(-finalDommage)/2;
+					if((caster.getPDV()+heal) > caster.getPDVMAX())
+						heal = caster.getPDVMAX()-caster.getPDV();
+					caster.removePDV(-heal);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -2471,8 +2487,12 @@ public class SpellEffect
 					caster.removePDV(-heal);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
 					
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -2502,18 +2522,23 @@ public class SpellEffect
 					int dmg = Formulas.getRandomJet(args.split(";")[5]);
 					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_TERRE, dmg,false,true,spell);
 				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				int heal = (int)(-finalDommage)/2;
-				if((caster.getPDV()+heal) > caster.getPDVMAX())
-					heal = caster.getPDVMAX()-caster.getPDV();
-				caster.removePDV(-heal);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					int heal = (int)(-finalDommage)/2;
+					if((caster.getPDV()+heal) > caster.getPDVMAX())
+						heal = caster.getPDVMAX()-caster.getPDV();
+					caster.removePDV(-heal);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -2550,8 +2575,12 @@ public class SpellEffect
 					caster.removePDV(-heal);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
 					
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -2581,18 +2610,23 @@ public class SpellEffect
 					int dmg = Formulas.getRandomJet(args.split(";")[5]);
 					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_AIR, dmg,false,true,spell);
 				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				int heal = (int)(-finalDommage)/2;
-				if((caster.getPDV()+heal) > caster.getPDVMAX())
-					heal = caster.getPDVMAX()-caster.getPDV();
-				caster.removePDV(-heal);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					int heal = (int)(-finalDommage)/2;
+					if((caster.getPDV()+heal) > caster.getPDVMAX())
+						heal = caster.getPDVMAX()-caster.getPDV();
+					caster.removePDV(-heal);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -2629,8 +2663,12 @@ public class SpellEffect
 					caster.removePDV(-heal);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
 					
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -2660,18 +2698,23 @@ public class SpellEffect
 					int dmg = Formulas.getRandomJet(args.split(";")[5]);
 					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_FEU, dmg,false,true,spell);
 				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				int heal = (int)(-finalDommage)/2;
-				if((caster.getPDV()+heal) > caster.getPDVMAX())
-					heal = caster.getPDVMAX()-caster.getPDV();
-				caster.removePDV(-heal);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					int heal = (int)(-finalDommage)/2;
+					if((caster.getPDV()+heal) > caster.getPDVMAX())
+						heal = caster.getPDVMAX()-caster.getPDV();
+					caster.removePDV(-heal);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -2707,8 +2750,12 @@ public class SpellEffect
 					caster.removePDV(-heal);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
 					
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -2738,18 +2785,23 @@ public class SpellEffect
 					int dmg = Formulas.getRandomJet(args.split(";")[5]);
 					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_NEUTRE, dmg,false,true,spell);
 				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				int heal = (int)(-finalDommage)/2;
-				if((caster.getPDV()+heal) > caster.getPDVMAX())
-					heal = caster.getPDVMAX()-caster.getPDV();
-				caster.removePDV(-heal);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					int heal = (int)(-finalDommage)/2;
+					if((caster.getPDV()+heal) > caster.getPDVMAX())
+						heal = caster.getPDVMAX()-caster.getPDV();
+					caster.removePDV(-heal);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -2786,8 +2838,12 @@ public class SpellEffect
 					caster.removePDV(-heal);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, target.getGUID()+"", caster.getGUID()+","+heal);
 					
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -2841,8 +2897,12 @@ public class SpellEffect
 					target.removePDV(val);
 					val = -(val);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+val);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -2896,8 +2956,12 @@ public class SpellEffect
 					target.removePDV(val);
 					val = -(val);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+val);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -2951,8 +3015,12 @@ public class SpellEffect
 					target.removePDV(val);
 					val = -(val);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+val);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -3006,8 +3074,12 @@ public class SpellEffect
 					target.removePDV(val);
 					val = -(val);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+val);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -3061,8 +3133,12 @@ public class SpellEffect
 					target.removePDV(val);
 					val = -(val);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+val);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -3105,15 +3181,20 @@ public class SpellEffect
 							dmg += add;
 						}
 					}
-				int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_EAU, dmg,false,true,spell);
-				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_EAU, dmg,false,true,spell);
+					
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -3161,8 +3242,12 @@ public class SpellEffect
 					target.removePDV(finalDommage);
 					finalDommage = -(finalDommage);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -3205,15 +3290,20 @@ public class SpellEffect
 							dmg += add;
 						}
 					}
-				int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_TERRE, dmg,false,true,spell);
-				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_TERRE, dmg,false,true,spell);
+					
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -3273,8 +3363,13 @@ public class SpellEffect
 						target.removePDV(finalDommage);
 						finalDommage = -(finalDommage);
 						SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-						if(target.getPDV() <=0)
+						if(target.getPDV() <= 0)
+						{
 							fight.onFighterDie(target, target);
+							if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+							else if(target.canPlay()) target.setCanPlay(false);
+						}
+						
 					}
 					
 				}
@@ -3327,7 +3422,12 @@ public class SpellEffect
 				target.removePDV(finalDommage);
 				finalDommage = -(finalDommage);
 				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+				if(target.getPDV() <= 0)
+				{
+					fight.onFighterDie(target, target);
+					if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+					else if(target.canPlay()) target.setCanPlay(false);
+				}
 				}
 			}else if(turns <= 0)
 			{
@@ -3375,8 +3475,12 @@ public class SpellEffect
 					target.removePDV(finalDommage);
 					finalDommage = -(finalDommage);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -3420,15 +3524,20 @@ public class SpellEffect
 							dmg += add;
 						}
 					}
-				int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_FEU, dmg,false,true,spell);
-				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_FEU, dmg,false,true,spell);
+					
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -3479,8 +3588,12 @@ public class SpellEffect
 					target.removePDV(finalDommage);
 					finalDommage = -(finalDommage);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{
@@ -3523,15 +3636,20 @@ public class SpellEffect
 							dmg += add;
 						}
 					}
-				int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_NEUTRE, dmg,false,true,spell);
-				
-				finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
-				
-				if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
-				target.removePDV(finalDommage);
-				finalDommage = -(finalDommage);
-				SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-				if(target.getPDV() <=0) fight.onFighterDie(target, target);
+					int finalDommage = Formulas.calculFinalDommage(fight,caster, target,Constants.ELEMENT_NEUTRE, dmg,false,true,spell);
+					
+					finalDommage = applyOnHitBuffs(finalDommage,target,caster,fight);//S'il y a des buffs spéciaux
+					
+					if(finalDommage>target.getPDV())finalDommage = target.getPDV();//Target va mourrir
+					target.removePDV(finalDommage);
+					finalDommage = -(finalDommage);
+					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
+					if(target.getPDV() <= 0)
+					{
+						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else if(turns <= 0)
 			{
@@ -3579,8 +3697,12 @@ public class SpellEffect
 					target.removePDV(finalDommage);
 					finalDommage = -(finalDommage);
 					SocketManager.GAME_SEND_GA_PACKET_TO_FIGHT(fight, 7, 100, caster.getGUID()+"", target.getGUID()+","+finalDommage);
-					if(target.getPDV() <=0)
+					if(target.getPDV() <= 0)
+					{
 						fight.onFighterDie(target, target);
+						if(target.canPlay() && target.getPersonnage() != null) fight.endTurn();
+						else if(target.canPlay()) target.setCanPlay(false);
+					}
 				}
 			}else
 			{

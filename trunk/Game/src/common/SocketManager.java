@@ -1159,6 +1159,21 @@ public class SocketManager {
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
 	
+	public static void GAME_SEND_cMK_PACKET_TO_INCARNAM(Personnage perso,String suffix,int guid,String name,String msg)
+	{
+		String packet = "cMK"+suffix+"|"+guid+"|"+name+"|"+msg;
+		for(Personnage incarnamPerso : World.getOnlinePersos())
+		{
+			if(incarnamPerso.get_lvl() > 15) continue;
+			if(incarnamPerso.get_curCarte().getSubArea().get_area().get_id() == 45)
+			{
+				send(incarnamPerso,packet);
+			}
+		}
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: ALL Incarnam("+World.getOnlinePersos().size()+"): Send>>"+packet);
+	}
+	
 	public static void GAME_SEND_FIGHT_LIST_PACKET(PrintWriter out,Carte map)
 	{
 		StringBuilder packet = new StringBuilder();
@@ -2579,4 +2594,17 @@ public class SocketManager {
 		if(Ancestra.CONFIG_DEBUG)
 			GameServer.addToSockLog("Game: Send>>"+packet);
 	}
+	
+	public static void GAME_SEND_GA_CLEAR_PACKET_TO_FIGHT(final Fight fight, final int teams)
+	{
+		String packet = "GA;0";
+		for(final Fighter f : fight.getFighters(teams))
+		{
+			if(f.hasLeft() || f.getPersonnage() == null || !f.getPersonnage().isOnline())continue;
+			send(f.getPersonnage(), packet);
+		}
+		if(Ancestra.CONFIG_DEBUG)
+			GameServer.addToSockLog("Game: Fight: Send>>"+packet.toString());
+	}
+	
 }

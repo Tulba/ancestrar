@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -408,9 +409,17 @@ public class Fight
 					str.append(_perso.get_sexe()).append(";");
 					str.append(_perso.get_lvl()).append(";");
 					str.append(_perso.get_align()).append(",");
-					str.append("0,");//TODO
+					str.append("0").append(",");
 					str.append((_perso.is_showWings()?_perso.getGrade():"0")).append(",");
-					str.append(_perso.get_GUID()).append(";");
+					str.append(_perso.get_lvl()+_perso.get_GUID());
+					if(_perso.is_showWings() && _perso.get_deshonor() > 0)
+					{
+						str.append(",");
+						str.append(_perso.get_deshonor()>0?1:0).append(';');
+					}else
+					{
+						str.append(";");
+					}
 					str.append((_perso.get_color1()==-1?"-1":Integer.toHexString(_perso.get_color1()))).append(";");
 					str.append((_perso.get_color2()==-1?"-1":Integer.toHexString(_perso.get_color2()))).append(";");
 					str.append((_perso.get_color3()==-1?"-1":Integer.toHexString(_perso.get_color3()))).append(";");
@@ -743,10 +752,13 @@ public class Fight
 					SocketManager.GAME_SEND_FIGHT_GIE_TO_FIGHT(_fight, 7, id, getGUID(), val, valMax1, "", "", duration, spellID);
 					}
 					break;
-
 				default:
 					SocketManager.GAME_SEND_FIGHT_GIE_TO_FIGHT(_fight, 7, id, getGUID(), val, "", "", "", duration, spellID);
 				break;
+			}
+			if(_perso!=null)
+			{
+				SocketManager.GAME_SEND_STATS_PACKET(_perso);
 			}
 		}
 		
@@ -2587,7 +2599,9 @@ public class Fight
 			if(Ancestra.CONFIG_DEBUG) GameServer.addToLog("("+_curPlayer+") Sort non existant");
 			if(perso != null)
 			{
+				SocketManager.GAME_SEND_GA_CLEAR_PACKET_TO_FIGHT(this, 7);
 				SocketManager.GAME_SEND_Im_PACKET(perso, "1169");
+				SocketManager.GAME_SEND_GAF_PACKET_TO_FIGHT(this, 7, 0, perso.get_GUID());
 			}
 			return false;
 		}
@@ -2729,27 +2743,25 @@ public class Fight
         /**Drop**/
         //Calcul de la PP de groupe
 	    int groupPP = 0,minkamas = 0,maxkamas = 0;
-	    for(Fighter F : TEAM1)if(!F.isInvocation() || (F.getMob() != null && F.getMob().getTemplate().getID() ==258))groupPP += F.getTotalStats().getEffect(Constants.STATS_ADD_PROS);
+	    for(Fighter F : TEAM1)
+	    {
+	    	if(!F.isInvocation() || (F.getMob() != null && F.getMob().getTemplate().getID() == 285))
+	    		groupPP += F.getTotalStats().getEffect(Constants.STATS_ADD_PROS);
+	    }
 	    if(groupPP <0)groupPP =0;
         //Calcul des drops possibles sur l'équipe perdante
 		double factChalDrop = 100;
 		if((this._type == Constants.FIGHT_TYPE_PVM) && (this._challenges.size() > 0))
 		{
-  	    	   for (Entry<Integer, Challenge> c : this._challenges.entrySet())
-  	    	   {
-  	    		   if((c.getValue() == null) || (!((Challenge)c.getValue()).get_win())) continue; 
-  	    		   factChalDrop += c.getValue().getDrop();
-  	    	   }
-  	    factChalDrop += _mobGroup.getStarBonus();
+			for (Entry<Integer, Challenge> c : this._challenges.entrySet())
+			{
+				if((c.getValue() == null) || (!((Challenge)c.getValue()).get_win())) continue; 
+				factChalDrop += c.getValue().getDrop();
+			}
+			factChalDrop += _mobGroup.getStarBonus();
 		}
  		factChalDrop /= 100;
-        	//Calcul de la PP de groupe
-	        for(Fighter F : TEAM1) {
-	        	if(!F.isInvocation() || (F.getMob() != null && F.getMob().getTemplate().getID() ==285))
-	        		groupPP += F.getTotalStats().getEffect(Constants.STATS_ADD_PROS);
-	        }
-	        if(groupPP <0)groupPP =0;
-	        groupPP *= factChalDrop;
+		groupPP *= factChalDrop;
 	    ArrayList<Drop> possibleDrops = new ArrayList<Drop>();
 	    if(_type == Constants.FIGHT_TYPE_PVT && win == 1)//Combat contre percepteur, perco perdu
 	    {
@@ -2900,7 +2912,7 @@ public class Fight
 	    /**Capture d'âmes**/
 	    for(Fighter i : TEAM1)//Les gagnants
 		{
-	    	if(i.isInvocation() && i.getMob() != null && i.getMob().getTemplate().getID() != 258)continue;//Pas d'invoc dans les gains
+	    	if(i.isInvocation() && i.getMob() != null && i.getMob().getTemplate().getID() != 285)continue;//Pas d'invoc dans les gains
 	    	if(i._double != null)continue;//Pas de double dans les gains
 	    	if(_type == Constants.FIGHT_TYPE_PVT || _type == Constants.FIGHT_TYPE_PVM  || _type == Constants.FIGHT_TYPE_CHALLENGE)//Perco ou PVM
 	    	{
@@ -2923,11 +2935,13 @@ public class Fight
         		String drops = "";
 	        	ArrayList<Drop> temp = new ArrayList<Drop>();
 	        	temp.addAll(possibleDrops);
+	        	Collections.shuffle(temp);
 	        	Map<Integer,Integer> itemWon = new TreeMap<Integer,Integer>();
-	        	
+	        	int k = 0;
+	        	int ItemWonPerPerso = (int)Math.floor(temp.size()/TEAM1.size());
 	        	for(Drop D : temp)
 	        	{
-	        		
+	        		if(k > ItemWonPerPerso) continue;
 	        		int t = (int)(D.get_taux()*100);//Permet de gerer des taux>0.01
 	        		int jet = Formulas.getRandomValue(0, 100*100);
 	        		if(jet < t)
@@ -2940,6 +2954,7 @@ public class Fight
 	        			D.setMax(D.get_max()-1);
 	        			if(D.get_max() == 0)possibleDrops.remove(D);
 	        		}
+	        		k++;
 	        	}
 	        	if(i._id == captWinner && pierrePleine != null)	//S'il à capturé le groupe
 	        	{
@@ -2955,15 +2970,19 @@ public class Fight
 	        		if(drops.length() >0)drops += ",";
 	        		drops += entry.getKey()+"~"+entry.getValue();
 	        		Objet obj = OT.createNewItem(entry.getValue(), false);
-	        		if(i.getPersonnage().addObjet(obj, true))
+	        		if(i.getPersonnage() != null && i.getPersonnage().addObjet(obj, true))
+	        			World.addObjet(obj, true);
+	        		else if(i.isInvocation() && i.getMob().getTemplate().getID() == 285 && i.getInvocator().getPersonnage().addObjet(obj, true)) 
 	        			World.addObjet(obj, true);
 	        	}
         		/**Drop**/
         		winxp = XP.get();
         		if(winxp != 0 && i.getPersonnage() != null)
         			i.getPersonnage().addXp(winxp);
-        		if(winKamas != 0 && i.getPersonnage() != null)
+        		if(winKamas != 0  && i.getPersonnage() != null)
         			i.getPersonnage().addKamas(winKamas);
+        		if(winKamas != 0  && i.isInvocation() && i.getInvocator().getPersonnage() != null)
+        			i.getInvocator().getPersonnage().addKamas(winKamas);
         		if(guildxp > 0 && i.getPersonnage().getGuildMember() != null)
         			i.getPersonnage().getGuildMember().giveXpToGuild(guildxp);
         		Packet.append("2;").append(i.getGUID()).append(";").append(i.getPacketsName()).append(";").append(i.get_lvl()).append(";").append((i.isDead() ?  "1" : "0" )).append(";");
@@ -3536,6 +3555,20 @@ public class Fight
 				this.onFighterDie(f, target);
 				verifIfTeamAllDead();
 			}
+		}
+		
+		for(Fighter fighter : getFighters(3))
+		{
+			ArrayList <SpellEffect> newBuffs = new ArrayList<SpellEffect>();
+			for(SpellEffect entry : fighter.get_fightBuff())
+			{
+				int casterId = entry.getCaster().getGUID();
+				if(casterId == target.getGUID()) continue;
+				newBuffs.add(entry);
+			}
+			fighter.get_fightBuff().clear();
+			fighter.get_fightBuff().addAll(newBuffs);
+			//TODO:Enlevez l'affiché des buffs en combat
 		}
 		try {
 			Thread.sleep(500);

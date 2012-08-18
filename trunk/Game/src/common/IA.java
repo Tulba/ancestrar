@@ -9,6 +9,7 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import objects.*;
+import objects.Fight.Fighter;
 import objects.Sort.SortStats;
 import objects.Carte.Case;
 import objects.Fight.*;
@@ -86,6 +87,9 @@ public class IA {
 					break;
 					case 6://IA type invocations
 						apply_type6(_fighter,_fight);
+					break;
+					case 7://IA sac animé
+						apply_type7(_fighter,_fight);
 					break;
 				}
 				try {
@@ -304,6 +308,22 @@ public class IA {
 							}
 						}
 					}	
+				}
+			}
+		}
+		
+		private static void apply_type7(Fighter fighter, Fight fight)
+		{
+			while(!stop && fighter.canPlay())
+			{
+				Fighter friend = getNearestFriend(fight, fighter);
+				if(friend == null) continue;
+				if(!buffIfPossible(fight, fighter, friend))
+				{
+					if(!moveNearIfPossible(fight, fighter, friend))
+					{
+						stop = true;
+					}
 				}
 			}
 		}
@@ -1376,7 +1396,12 @@ public class IA {
 					case 265://réduction dommage
 						inf = -250 * Formulas.getMiddleJet(SE.getJet());
 					break;
-						
+					case 765://Sacrifice
+						inf = -1000;
+					break;
+					case 786://Arbre de vie
+						inf = -1000;
+					break;
 					
 				}
 				if(C.getTeam() == T.getTeam())//Si Amis

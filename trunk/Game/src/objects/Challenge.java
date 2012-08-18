@@ -419,6 +419,12 @@ public class Challenge
 	public void onMob_die(Fighter mob, Fighter caster)
 	{
 		if(!challengeAlive) return;
+		if(caster == null)
+		{
+			challenge_loose(null);
+			return;
+		}
+		
 		boolean isKiller = (caster.getGUID() == mob.getGUID() ? false : true);
 		
 		switch (type)
