@@ -1,3 +1,6 @@
+[18/08/2012]
+- SQLManger/GameThread : Correction des cadeaux.
+
 [16/08/2012]
 - GameThread : Ajout du canal Incarnam (/i).
 - Fight : Débug du drop objet/kamas du coffre des énus.

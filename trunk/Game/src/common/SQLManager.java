@@ -3014,22 +3014,6 @@ public class SQLManager {
     			return i;
     		}
     	}
-    	public static void DELETE_GIFT_BY_GIFTID(int guid)
-    	{
-    		String baseQuery = "DELETE FROM gift WHERE giftId = ?;";
-    		try
-    		{
-    			PreparedStatement p = newTransact(baseQuery, gameCon);
-    			p.setInt(1, guid);
-    			
-    			p.execute();
-    			closePreparedStatement(p);
-    		}catch(SQLException e)
-    		{
-    			GameServer.addToLog("Game: SQL ERROR: "+e.getMessage());
-    			GameServer.addToLog("Game: Query: "+baseQuery);
-    		}
-    	}
     	public static void DELETE_GIFT_BY_ACCOUNT(int guid)
     	{
     		String baseQuery = "UPDATE accounts SET `giftID`=? WHERE `guid`=?";
